@@ -71,6 +71,49 @@ The mount arrives owned by `root` while php-fpm's workers run as `www-data`, so
 permissions: Laravel's view compiler calls `touch()` with an explicit mtime, and
 setting the mtime of a file you do not own fails with `EPERM` even at mode 777.
 
+## Why code changes need a restart
+
+The same slow bind mount makes page loads expensive: PHP re-reads and re-checks
+thousands of files per request across it. Measured inside the container, the
+bind mount walks about **125 files/second** where the VM's own filesystem does
+**~16,000/s**.
+
+Two settings in `docker/php/php.ini` cut most of that cost:
+
+- `opcache.max_accelerated_files = 30000`. The default 10,000 is smaller than
+  `vendor/` alone (17,016 PHP files), so opcache filled up and evicted itself on
+  a loop, re-reading over the slow mount every time.
+- `opcache.validate_timestamps = 0`. PHP stops stat-ing every file on every
+  request — the single most expensive thing it did.
+
+Together with cached config, routes, events and views this took the front page
+from ~12 s to a median of **5.9 s** (8 samples, 5.0–9.1 s) and `/admin` from
+~30 s to a median of **11.2 s** (4 samples, 10.4–15.0 s). Roughly 2× and 3×.
+Still slow — the bind mount is the ceiling. Moving the code into a WSL2
+filesystem is the fix that removes it.
+
+**The cost: edited PHP is not picked up until the container restarts.**
+
+```bash
+docker compose restart app      # after editing any .php file
+docker compose exec app art view:cache   # after editing any .blade.php
+```
+
+Set `opcache.validate_timestamps = 1` and rebuild (`docker compose build app`)
+to go back to edit-and-refresh while working on something churn-heavy.
+
+### Clear the config cache before testing
+
+`bootstrap/cache/config.php` bakes in the values from `.env`, which means the
+`DB_CONNECTION=sqlite` override in `phpunit.xml` is ignored while it exists —
+the suite would run `RefreshDatabase` against the **real MySQL database** and
+wipe it. Always test through the Composer script, which clears it first:
+
+```bash
+docker compose exec app art composer test
+docker compose exec app art config:cache   # put it back afterwards
+```
+
 ## Layout of the port
 
 ```
