@@ -1,0 +1,86 @@
+# Image produksi: source dipanggang ke dalam image, bukan bind mount.
+#
+# Beda pokok dengan image dev:
+#   - tidak ada composer/git di runtime
+#   - vendor dipasang tanpa paket dev, autoloader dioptimalkan
+#   - seluruh source dimiliki www-data sejak awal, jadi tidak perlu chown
+#     saat berjalan (akal-akalan `art` di dev tidak diperlukan di sini)
+#   - opcache tidak lagi mengecek timestamp
+
+# ---------------------------------------------------------------- stage: vendor
+FROM php:8.4-cli AS vendor
+
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+RUN install-php-extensions intl zip bcmath pdo_mysql gd \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Lapisan dependensi di-cache selama composer.lock tidak berubah.
+COPY composer.json composer.lock ./
+RUN composer install \
+        --no-dev \
+        --no-scripts \
+        --no-autoloader \
+        --prefer-dist \
+        --no-interaction \
+        --no-progress
+
+COPY . .
+
+RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
+    && rm -rf tests .git .github storage/logs/*.log
+
+# --------------------------------------------------------------- stage: runtime
+FROM php:8.4-fpm AS runtime
+
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN install-php-extensions \
+        pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY docker/php/php.prod.ini /usr/local/etc/php/conf.d/99-app.ini
+COPY docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+WORKDIR /var/www/html
+
+COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+
+# Direktori yang ditulis saat runtime; isinya akan ditimpa volume di compose,
+# tapi harus ada di image agar volume baru mewarisi struktur & kepemilikannya.
+RUN mkdir -p storage/framework/{cache/data,sessions,views} storage/logs public/uploads \
+    && chown -R www-data:www-data storage bootstrap/cache public/uploads
+
+# `docker compose exec` masuk sebagai root, jadi artisan yang dijalankan
+# setelah container hidup meninggalkan cache view milik root — dan worker
+# www-data tidak bisa menyetel mtime file milik orang lain, sehingga halaman
+# berikutnya gagal dengan "touch(): Utime failed". Wrapper ini mengembalikan
+# kepemilikan setiap selesai:
+#
+#   docker compose -f compose.prod.yaml exec app art migrate --force
+#
+# Diletakkan di akhir agar layer COPY vendor yang mahal tetap ter-cache.
+COPY docker/php/art /usr/local/bin/art
+RUN chmod +x /usr/local/bin/art
+
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["php-fpm"]
+
+# ------------------------------------------------------------------- stage: web
+# nginx perlu membaca public/ sendiri untuk melayani berkas statis. Karena
+# source tidak lagi di-bind mount, berkasnya diambil dari stage yang sama
+# dengan aplikasi — sehingga keduanya dijamin berasal dari build yang identik.
+FROM nginx:1.27-alpine AS web
+
+COPY docker/nginx/prod.conf /etc/nginx/conf.d/default.conf
+COPY --from=vendor /app/public /var/www/html/public
+
+RUN mkdir -p /var/www/html/public/uploads

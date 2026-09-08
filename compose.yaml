@@ -1,0 +1,79 @@
+name: knalpot
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: knalpot-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    # vendor/ and node_modules/ live in named volumes, NOT on the Windows bind
+    # mount: the bind mount writes ~35 files/s, a named volume ~2100 files/s.
+    # composer install times out on the bind mount.
+    volumes:
+      - ./:/var/www/html
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
+    environment:
+      COMPOSER_PROCESS_TIMEOUT: 0
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: knalpot-web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.4
+    container_name: knalpot-db
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: knalpot
+      MYSQL_USER: knalpot
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: knalpot-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  node:
+    image: node:24-alpine
+    container_name: knalpot-node
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    ports:
+      - "5176:5176"
+    command: sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port 5176"
+    profiles: ["dev"]
+
+volumes:
+  dbdata:
+  vendor:
+  node_modules:

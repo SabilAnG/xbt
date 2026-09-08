@@ -1,0 +1,30 @@
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+# Normally the symlink made by `artisan storage:link`. Here it is a real folder
+# holding the product photos mirrored from the live site, so it must be tracked.
+# Re-ignore this once those images move into the database via Filament.
+# /public/storage
+/storage/*.key
+/storage/pail
+/vendor
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+Thumbs.db

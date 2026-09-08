@@ -1,0 +1,1266 @@
+[
+  {
+    "key": "header.image.1",
+    "page": "global",
+    "label": "Header — image 1",
+    "type": "image",
+    "value": "assets/images/misc/phone.svg",
+    "sort_order": 1
+  },
+  {
+    "key": "header.image.2",
+    "page": "global",
+    "label": "Header — image 2",
+    "type": "image",
+    "value": "assets/images/misc/envelope.svg",
+    "sort_order": 2
+  },
+  {
+    "key": "header.image.3",
+    "page": "global",
+    "label": "Header — image 3",
+    "type": "image",
+    "value": "assets/images/logo-white.png",
+    "sort_order": 3
+  },
+  {
+    "key": "header.image.4",
+    "page": "global",
+    "label": "Header — image 4",
+    "type": "image",
+    "value": "assets/images/logo-white.png",
+    "sort_order": 4
+  },
+  {
+    "key": "header.text.1",
+    "page": "global",
+    "label": "Header — Tracking",
+    "type": "text",
+    "value": "Tracking",
+    "sort_order": 1001
+  },
+  {
+    "key": "header.text.2",
+    "page": "global",
+    "label": "Header — Tracking",
+    "type": "text",
+    "value": "Tracking",
+    "sort_order": 1002
+  },
+  {
+    "key": "footer.text.1",
+    "page": "global",
+    "label": "Footer — Company",
+    "type": "text",
+    "value": "Company",
+    "sort_order": 1001
+  },
+  {
+    "key": "footer.text.2",
+    "page": "global",
+    "label": "Footer — Our Social Media",
+    "type": "text",
+    "value": "Our Social Media",
+    "sort_order": 1002
+  },
+  {
+    "key": "footer.text.3",
+    "page": "global",
+    "label": "Footer — Contact Us",
+    "type": "text",
+    "value": "Contact Us",
+    "sort_order": 1003
+  },
+  {
+    "key": "home.image.1",
+    "page": "home",
+    "label": "Home — image 1",
+    "type": "image",
+    "value": "storage/17/conversions/01KANSR90RHTWZCQ0HDKZ1ZTDN-thumb.jpg",
+    "sort_order": 1
+  },
+  {
+    "key": "home.image.2",
+    "page": "home",
+    "label": "Home — image 2",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 2
+  },
+  {
+    "key": "home.image.3",
+    "page": "home",
+    "label": "Home — image 3",
+    "type": "image",
+    "value": "storage/14/conversions/01KANRF7VX9GB46SMNDAGQ7XQX-thumb.jpg",
+    "sort_order": 3
+  },
+  {
+    "key": "home.image.4",
+    "page": "home",
+    "label": "Home — image 4",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 4
+  },
+  {
+    "key": "home.image.5",
+    "page": "home",
+    "label": "Home — image 5",
+    "type": "image",
+    "value": "storage/11/conversions/01KANQ5G6PRB5J96CQWBYBGXN5-thumb.jpg",
+    "sort_order": 5
+  },
+  {
+    "key": "home.image.6",
+    "page": "home",
+    "label": "Home — image 6",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 6
+  },
+  {
+    "key": "home.image.7",
+    "page": "home",
+    "label": "Home — image 7",
+    "type": "image",
+    "value": "storage/8/conversions/01KANMSXW37ZCJPMH5GHFHECH3-thumb.jpg",
+    "sort_order": 7
+  },
+  {
+    "key": "home.image.8",
+    "page": "home",
+    "label": "Home — image 8",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 8
+  },
+  {
+    "key": "home.image.9",
+    "page": "home",
+    "label": "Home — image 9",
+    "type": "image",
+    "value": "storage/3/conversions/01KANG8PM10CC0K56KVZJ0BRJS-thumb.jpg",
+    "sort_order": 9
+  },
+  {
+    "key": "home.image.10",
+    "page": "home",
+    "label": "Home — image 10",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 10
+  },
+  {
+    "key": "home.text.1",
+    "page": "home",
+    "label": "Home — SPEED",
+    "type": "text",
+    "value": "SPEED",
+    "sort_order": 1001
+  },
+  {
+    "key": "home.text.2",
+    "page": "home",
+    "label": "Home — At HST, we deliver reliable, ",
+    "type": "text",
+    "value": "At HST, we deliver reliable,\n                                efficient detailing for motorcycle exhausts,\n                                enhancing performance, restoring lasting shine,\n                                extending durability, and protecting your ride’s value.",
+    "sort_order": 1002
+  },
+  {
+    "key": "home.text.3",
+    "page": "home",
+    "label": "Home — HYPER SONIC SPEED TECH",
+    "type": "text",
+    "value": "HYPER SONIC SPEED TECH",
+    "sort_order": 1003
+  },
+  {
+    "key": "home.text.4",
+    "page": "home",
+    "label": "Home — At HYPER SONIC SPEED TECH, quality is our founda",
+    "type": "text",
+    "value": "At HYPER SONIC SPEED TECH, quality is our foundation.\n                        Every exhaust is crafted from superior-grade materials,\n                        ensuring durability, flawless finish, and unmatched performance.\n                        Our dedication to excellence allows us to deliver products\n                        that meet the highest standards—designed to endure, inspire, and perform.",
+    "sort_order": 1004
+  },
+  {
+    "key": "home.text.5",
+    "page": "home",
+    "label": "Home — Read More",
+    "type": "text",
+    "value": "Read More",
+    "sort_order": 1005
+  },
+  {
+    "key": "home.text.6",
+    "page": "home",
+    "label": "Home — Premium Exhaust System",
+    "type": "text",
+    "value": "Premium Exhaust System",
+    "sort_order": 1006
+  },
+  {
+    "key": "home.text.7",
+    "page": "home",
+    "label": "Home — View Details",
+    "type": "text",
+    "value": "View Details",
+    "sort_order": 1007
+  },
+  {
+    "key": "home.text.8",
+    "page": "home",
+    "label": "Home — HARLEY DAVIDSON TOURING SERIES 2-2 EXHAUST SYSTE",
+    "type": "text",
+    "value": "HARLEY DAVIDSON TOURING SERIES 2-2 EXHAUST SYSTEM",
+    "sort_order": 1008
+  },
+  {
+    "key": "home.text.9",
+    "page": "home",
+    "label": "Home — View Details",
+    "type": "text",
+    "value": "View Details",
+    "sort_order": 1009
+  },
+  {
+    "key": "home.text.10",
+    "page": "home",
+    "label": "Home — HARLEY DAVIDSON DYNA 2-1 EXHAUST SYSTEM",
+    "type": "text",
+    "value": "HARLEY DAVIDSON DYNA  2-1 EXHAUST SYSTEM",
+    "sort_order": 1010
+  },
+  {
+    "key": "home.text.11",
+    "page": "home",
+    "label": "Home — View Details",
+    "type": "text",
+    "value": "View Details",
+    "sort_order": 1011
+  },
+  {
+    "key": "home.text.12",
+    "page": "home",
+    "label": "Home — HARLEY DAVIDSON SPORTSTER HORN MODEL 2-2 EXHAUST",
+    "type": "text",
+    "value": "HARLEY DAVIDSON SPORTSTER HORN MODEL 2-2 EXHAUST SYSTEM",
+    "sort_order": 1012
+  },
+  {
+    "key": "home.text.13",
+    "page": "home",
+    "label": "Home — View Details",
+    "type": "text",
+    "value": "View Details",
+    "sort_order": 1013
+  },
+  {
+    "key": "home.text.14",
+    "page": "home",
+    "label": "Home — HARLEY DAVIDSON V-ROD 2-1 EXHAUST SYSTEM",
+    "type": "text",
+    "value": "HARLEY DAVIDSON V-ROD 2-1 EXHAUST SYSTEM",
+    "sort_order": 1014
+  },
+  {
+    "key": "home.text.15",
+    "page": "home",
+    "label": "Home — View Details",
+    "type": "text",
+    "value": "View Details",
+    "sort_order": 1015
+  },
+  {
+    "key": "home.text.16",
+    "page": "home",
+    "label": "Home — HARLEY DAVIDSON SPORTSTER TWISTED MODEL 2-2 EXHA",
+    "type": "text",
+    "value": "HARLEY DAVIDSON SPORTSTER TWISTED MODEL 2-2 EXHAUST SYSTEM",
+    "sort_order": 1016
+  },
+  {
+    "key": "home.text.17",
+    "page": "home",
+    "label": "Home — Before & After: Exhaust Performance Transformati",
+    "type": "html",
+    "value": "Before & After: Exhaust Performance Transformations",
+    "sort_order": 1017
+  },
+  {
+    "key": "home.text.18",
+    "page": "home",
+    "label": "Home — Experience the dramatic difference a precision-e",
+    "type": "text",
+    "value": "Experience the dramatic difference a precision-engineered exhaust makes—unleashing deeper sound,\n                        improved horsepower, and enhanced driving dynamics. From stock to performance, every upgrade counts,\n                        and the results speak for themselves.",
+    "sort_order": 1018
+  },
+  {
+    "key": "home.text.19",
+    "page": "home",
+    "label": "Home — See our portfolio company",
+    "type": "text",
+    "value": "See our portfolio company",
+    "sort_order": 1019
+  },
+  {
+    "key": "home.text.20",
+    "page": "home",
+    "label": "Home — Read More",
+    "type": "text",
+    "value": "Read\n                            More",
+    "sort_order": 1020
+  },
+  {
+    "key": "home.text.21",
+    "page": "home",
+    "label": "Home — Why Choose Our Exhaust Systems?",
+    "type": "text",
+    "value": "Why Choose Our Exhaust Systems?",
+    "sort_order": 1021
+  },
+  {
+    "key": "home.text.22",
+    "page": "home",
+    "label": "Home — From daily driving to high-performance racing, w",
+    "type": "text",
+    "value": "From daily driving to high-performance racing, we engineer exhaust solutions with precision,\n                        innovation, and a commitment to unmatched quality.",
+    "sort_order": 1022
+  },
+  {
+    "key": "home.text.23",
+    "page": "home",
+    "label": "Home — Expert Engineering",
+    "type": "text",
+    "value": "Expert Engineering",
+    "sort_order": 1023
+  },
+  {
+    "key": "home.text.24",
+    "page": "home",
+    "label": "Home — Our exhausts are designed by specialists with ye",
+    "type": "text",
+    "value": "Our exhausts are designed by specialists with years of experience in performance tuning and\n                                fabrication.",
+    "sort_order": 1024
+  },
+  {
+    "key": "home.text.25",
+    "page": "home",
+    "label": "Home — Tailored Solutions",
+    "type": "text",
+    "value": "Tailored Solutions",
+    "sort_order": 1025
+  },
+  {
+    "key": "home.text.26",
+    "page": "home",
+    "label": "Home — Options customized for different vehicles and dr",
+    "type": "text",
+    "value": "Options customized for different vehicles and driving styles — from street performance to\n                                full racing setups.",
+    "sort_order": 1026
+  },
+  {
+    "key": "home.text.27",
+    "page": "home",
+    "label": "Home — Competitive Pricing",
+    "type": "text",
+    "value": "Competitive Pricing",
+    "sort_order": 1027
+  },
+  {
+    "key": "home.text.28",
+    "page": "home",
+    "label": "Home — Premium quality at fair, transparent prices — de",
+    "type": "text",
+    "value": "Premium quality at fair, transparent prices — delivering maximum value without compromise.",
+    "sort_order": 1028
+  },
+  {
+    "key": "home.text.29",
+    "page": "home",
+    "label": "Home — After-Sales Support",
+    "type": "text",
+    "value": "After-Sales Support",
+    "sort_order": 1029
+  },
+  {
+    "key": "home.text.30",
+    "page": "home",
+    "label": "Home — We provide installation guidance, tuning tips, a",
+    "type": "text",
+    "value": "We provide installation guidance, tuning tips, and long-term support to ensure your exhaust\n                                performs at its best.",
+    "sort_order": 1030
+  },
+  {
+    "key": "home.text.31",
+    "page": "home",
+    "label": "Home — Frequently Asked Questions",
+    "type": "text",
+    "value": "Frequently Asked Questions",
+    "sort_order": 1031
+  },
+  {
+    "key": "products.image.1",
+    "page": "products",
+    "label": "Products — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "products.image.2",
+    "page": "products",
+    "label": "Products — image 2",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 2
+  },
+  {
+    "key": "products.image.3",
+    "page": "products",
+    "label": "Products — image 3",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 3
+  },
+  {
+    "key": "products.text.1",
+    "page": "products",
+    "label": "Products — Our Products",
+    "type": "text",
+    "value": "Our Products",
+    "sort_order": 1001
+  },
+  {
+    "key": "products.text.2",
+    "page": "products",
+    "label": "Products — Our Products",
+    "type": "text",
+    "value": "Our Products",
+    "sort_order": 1002
+  },
+  {
+    "key": "products.text.3",
+    "page": "products",
+    "label": "Products — Categories",
+    "type": "text",
+    "value": "Categories",
+    "sort_order": 1003
+  },
+  {
+    "key": "products.text.4",
+    "page": "products",
+    "label": "Products — All Categories",
+    "type": "text",
+    "value": "All Categories",
+    "sort_order": 1004
+  },
+  {
+    "key": "products.text.5",
+    "page": "products",
+    "label": "Products — PIPE ONLY",
+    "type": "text",
+    "value": "PIPE ONLY",
+    "sort_order": 1005
+  },
+  {
+    "key": "products.text.6",
+    "page": "products",
+    "label": "Products — FULL SYSTEM",
+    "type": "text",
+    "value": "FULL SYSTEM",
+    "sort_order": 1006
+  },
+  {
+    "key": "products.text.7",
+    "page": "products",
+    "label": "Products — SLIP-ON",
+    "type": "text",
+    "value": "SLIP-ON",
+    "sort_order": 1007
+  },
+  {
+    "key": "products.text.8",
+    "page": "products",
+    "label": "Products — HEADER ONLY",
+    "type": "text",
+    "value": "HEADER ONLY",
+    "sort_order": 1008
+  },
+  {
+    "key": "products.text.9",
+    "page": "products",
+    "label": "Products — Brands",
+    "type": "text",
+    "value": "Brands",
+    "sort_order": 1009
+  },
+  {
+    "key": "products.text.10",
+    "page": "products",
+    "label": "Products — All Brands",
+    "type": "text",
+    "value": "All Brands",
+    "sort_order": 1010
+  },
+  {
+    "key": "products.text.11",
+    "page": "products",
+    "label": "Products — Harley Davidson",
+    "type": "text",
+    "value": "Harley Davidson",
+    "sort_order": 1011
+  },
+  {
+    "key": "products.text.12",
+    "page": "products",
+    "label": "Products — kawasaki",
+    "type": "text",
+    "value": "kawasaki",
+    "sort_order": 1012
+  },
+  {
+    "key": "products.text.13",
+    "page": "products",
+    "label": "Products — Yamaha",
+    "type": "text",
+    "value": "Yamaha",
+    "sort_order": 1013
+  },
+  {
+    "key": "products.text.14",
+    "page": "products",
+    "label": "Products — BMW",
+    "type": "text",
+    "value": "BMW",
+    "sort_order": 1014
+  },
+  {
+    "key": "workshop.image.1",
+    "page": "workshop",
+    "label": "Workshop — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "workshop.image.2",
+    "page": "workshop",
+    "label": "Workshop — image 2",
+    "type": "image",
+    "value": "storage/workshop1.jpg",
+    "sort_order": 2
+  },
+  {
+    "key": "workshop.image.3",
+    "page": "workshop",
+    "label": "Workshop — image 3",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 3
+  },
+  {
+    "key": "workshop.image.4",
+    "page": "workshop",
+    "label": "Workshop — image 4",
+    "type": "image",
+    "value": "storage/workshop2.jpg",
+    "sort_order": 4
+  },
+  {
+    "key": "workshop.image.5",
+    "page": "workshop",
+    "label": "Workshop — image 5",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 5
+  },
+  {
+    "key": "workshop.image.6",
+    "page": "workshop",
+    "label": "Workshop — image 6",
+    "type": "image",
+    "value": "storage/workshop3.jpg",
+    "sort_order": 6
+  },
+  {
+    "key": "workshop.image.7",
+    "page": "workshop",
+    "label": "Workshop — image 7",
+    "type": "image",
+    "value": "assets/images/workshop/fallback-1000x1000.webp",
+    "sort_order": 7
+  },
+  {
+    "key": "workshop.image.8",
+    "page": "workshop",
+    "label": "Workshop — image 8",
+    "type": "image",
+    "value": "assets/images/bg/bg.jpg",
+    "sort_order": 8
+  },
+  {
+    "key": "workshop.text.1",
+    "page": "workshop",
+    "label": "Workshop — Workshop",
+    "type": "text",
+    "value": "Workshop",
+    "sort_order": 1001
+  },
+  {
+    "key": "workshop.text.2",
+    "page": "workshop",
+    "label": "Workshop — Workshop",
+    "type": "text",
+    "value": "Workshop",
+    "sort_order": 1002
+  },
+  {
+    "key": "workshop.text.3",
+    "page": "workshop",
+    "label": "Workshop — Budi Santoso",
+    "type": "text",
+    "value": "Budi Santoso",
+    "sort_order": 1003
+  },
+  {
+    "key": "workshop.text.4",
+    "page": "workshop",
+    "label": "Workshop — Kepala Mekanik",
+    "type": "text",
+    "value": "Kepala Mekanik",
+    "sort_order": 1004
+  },
+  {
+    "key": "workshop.text.5",
+    "page": "workshop",
+    "label": "Workshop — Jakarta",
+    "type": "text",
+    "value": "Jakarta",
+    "sort_order": 1005
+  },
+  {
+    "key": "workshop.text.6",
+    "page": "workshop",
+    "label": "Workshop — Contact Person",
+    "type": "text",
+    "value": "Contact Person",
+    "sort_order": 1006
+  },
+  {
+    "key": "workshop.text.7",
+    "page": "workshop",
+    "label": "Workshop — WhatsApp Message",
+    "type": "text",
+    "value": "WhatsApp Message",
+    "sort_order": 1007
+  },
+  {
+    "key": "workshop.text.8",
+    "page": "workshop",
+    "label": "Workshop — Siti Aminah",
+    "type": "text",
+    "value": "Siti Aminah",
+    "sort_order": 1008
+  },
+  {
+    "key": "workshop.text.9",
+    "page": "workshop",
+    "label": "Workshop — Manajer Bengkel",
+    "type": "text",
+    "value": "Manajer Bengkel",
+    "sort_order": 1009
+  },
+  {
+    "key": "workshop.text.10",
+    "page": "workshop",
+    "label": "Workshop — Bandung",
+    "type": "text",
+    "value": "Bandung",
+    "sort_order": 1010
+  },
+  {
+    "key": "workshop.text.11",
+    "page": "workshop",
+    "label": "Workshop — Contact Person",
+    "type": "text",
+    "value": "Contact Person",
+    "sort_order": 1011
+  },
+  {
+    "key": "workshop.text.12",
+    "page": "workshop",
+    "label": "Workshop — WhatsApp Message",
+    "type": "text",
+    "value": "WhatsApp Message",
+    "sort_order": 1012
+  },
+  {
+    "key": "workshop.text.13",
+    "page": "workshop",
+    "label": "Workshop — Andi Wijaya",
+    "type": "text",
+    "value": "Andi Wijaya",
+    "sort_order": 1013
+  },
+  {
+    "key": "workshop.text.14",
+    "page": "workshop",
+    "label": "Workshop — Mekanik Senior",
+    "type": "text",
+    "value": "Mekanik Senior",
+    "sort_order": 1014
+  },
+  {
+    "key": "workshop.text.15",
+    "page": "workshop",
+    "label": "Workshop — Surabaya",
+    "type": "text",
+    "value": "Surabaya",
+    "sort_order": 1015
+  },
+  {
+    "key": "workshop.text.16",
+    "page": "workshop",
+    "label": "Workshop — Contact Person",
+    "type": "text",
+    "value": "Contact Person",
+    "sort_order": 1016
+  },
+  {
+    "key": "workshop.text.17",
+    "page": "workshop",
+    "label": "Workshop — WhatsApp Message",
+    "type": "text",
+    "value": "WhatsApp Message",
+    "sort_order": 1017
+  },
+  {
+    "key": "workshop.text.18",
+    "page": "workshop",
+    "label": "Workshop — We are always ready to help you",
+    "type": "text",
+    "value": "We are always ready to help you",
+    "sort_order": 1018
+  },
+  {
+    "key": "workshop.text.19",
+    "page": "workshop",
+    "label": "Workshop — Whether you have a question, a suggestion, or ju",
+    "type": "html",
+    "value": "Whether you have a question, a suggestion, or just want to say hello, this is the place to do\n                                it. Please fill out the form below with your details and message, and we'll get back to you\n                                as soon as possible.",
+    "sort_order": 1019
+  },
+  {
+    "key": "workshop.text.20",
+    "page": "workshop",
+    "label": "Workshop — Exhaust Specialist for Power & Performance",
+    "type": "html",
+    "value": "Exhaust Specialist for Power & Performance",
+    "sort_order": 1020
+  },
+  {
+    "key": "workshop.text.21",
+    "page": "workshop",
+    "label": "Workshop — At Hypersonic Tech Speed, we are passionate abou",
+    "type": "text",
+    "value": "At Hypersonic Tech Speed, we are passionate about engineering high-performance exhaust systems that\n                        elevate driving experiences. Since our beginning, we’ve committed ourselves to precision\n                        craftsmanship, using premium materials and advanced technology to deliver exhaust solutions that\n                        maximize power, sound, and durability.",
+    "sort_order": 1021
+  },
+  {
+    "key": "workshop.text.22",
+    "page": "workshop",
+    "label": "Workshop — We believe performance upgrades should be powerf",
+    "type": "text",
+    "value": "We believe performance upgrades should be powerful and reliable. That’s why we design and manufacture\n                        precision exhaust systems, from daily-driver solutions to high-performance racing setups-each\n                        tailored to your vehicle’s needs. With a focus on innovation, durability, and driving satisfaction,\n                        Hypersonic Tech Speed is your trusted partner in maximizing power, sound, and style on every\n                        journey.",
+    "sort_order": 1022
+  },
+  {
+    "key": "about.image.1",
+    "page": "about",
+    "label": "About — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "about.image.2",
+    "page": "about",
+    "label": "About — image 2",
+    "type": "image",
+    "value": "assets/images/about/p3.webp",
+    "sort_order": 2
+  },
+  {
+    "key": "about.image.3",
+    "page": "about",
+    "label": "About — image 3",
+    "type": "image",
+    "value": "assets/images/about/p2.webp",
+    "sort_order": 3
+  },
+  {
+    "key": "about.text.1",
+    "page": "about",
+    "label": "About — About Us",
+    "type": "text",
+    "value": "About Us",
+    "sort_order": 1001
+  },
+  {
+    "key": "about.text.2",
+    "page": "about",
+    "label": "About — About Us",
+    "type": "text",
+    "value": "About Us",
+    "sort_order": 1002
+  },
+  {
+    "key": "about.text.3",
+    "page": "about",
+    "label": "About — HYPER SONIC SPEED TECH",
+    "type": "text",
+    "value": "HYPER SONIC SPEED TECH",
+    "sort_order": 1003
+  },
+  {
+    "key": "about.text.4",
+    "page": "about",
+    "label": "About — Founded in early 2025, HYPER SONIC SPEED TECH wa",
+    "type": "text",
+    "value": "Founded in early 2025, HYPER SONIC SPEED TECH was born from a passion for power, precision, and performance.\n                        We specialize in the production and distribution of premium exhaust systems for Harley-Davidson and\n                        large-displacement motorcycles. Our mission is to deliver products that not only enhance performance\n                        but also reflect the spirit of freedom and prestige that these machines embody.",
+    "sort_order": 1004
+  },
+  {
+    "key": "about.text.5",
+    "page": "about",
+    "label": "About — At HYPER SONIC SPEED TECH, quality is our founda",
+    "type": "text",
+    "value": "At HYPER SONIC SPEED TECH, quality is our foundation. Every exhaust is crafted from superior-grade materials,\n                        ensuring durability, flawless finish, and unmatched performance.\n                        Our dedication to excellence allows us to deliver products that meet the highest standards—designed\n                        to endure, inspire, and perform. One of our key strengths lies in unmatched availability.\n                        With an extensive stock always on hand, we guarantee that every order is ready to ship without delay.\n                        Whether you are an enthusiast or a dealer, our commitment ensures that you receive your products quickly,\n                        without compromise.",
+    "sort_order": 1005
+  },
+  {
+    "key": "about.text.6",
+    "page": "about",
+    "label": "About — Beyond quality and availability, our company pri",
+    "type": "text",
+    "value": "Beyond quality and availability, our company prides itself on productivity and precision engineering.\n                        Every step of our production process reflects efficiency, innovation, and craftsmanship.\n                        This allows us to stay ahead in meeting the demands of the market,\n                        while maintaining the exclusivity and high-class appeal that define our brand.\n                        At HYPER SONIC SPEED TECH, we don’t just manufacture exhausts—we create statements of performance and style.\n                        With us, speed, sound, and technology converge into one seamless experience, setting new benchmarks for motorcycle enthusiasts worldwide.",
+    "sort_order": 1006
+  },
+  {
+    "key": "contact.image.1",
+    "page": "contact",
+    "label": "Contact — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "contact.image.2",
+    "page": "contact",
+    "label": "Contact — image 2",
+    "type": "image",
+    "value": "assets/images/bg/bg.jpg",
+    "sort_order": 2
+  },
+  {
+    "key": "contact.text.1",
+    "page": "contact",
+    "label": "Contact — Contact Us",
+    "type": "text",
+    "value": "Contact Us",
+    "sort_order": 1001
+  },
+  {
+    "key": "contact.text.2",
+    "page": "contact",
+    "label": "Contact — Contact Us",
+    "type": "text",
+    "value": "Contact Us",
+    "sort_order": 1002
+  },
+  {
+    "key": "contact.text.3",
+    "page": "contact",
+    "label": "Contact — We are always ready to help you",
+    "type": "text",
+    "value": "We are always ready to help you",
+    "sort_order": 1003
+  },
+  {
+    "key": "contact.text.4",
+    "page": "contact",
+    "label": "Contact — Whether you have a question, a suggestion, or ju",
+    "type": "html",
+    "value": "Whether you have a question, a suggestion, or just want to say hello, this is the place to do\n                                it. Please fill out the form below with your details and message, and we'll get back to you\n                                as soon as possible.",
+    "sort_order": 1004
+  },
+  {
+    "key": "contact.text.5",
+    "page": "contact",
+    "label": "Contact — Get In Touch",
+    "type": "text",
+    "value": "Get In Touch",
+    "sort_order": 1005
+  },
+  {
+    "key": "tracking.image.1",
+    "page": "tracking",
+    "label": "Tracking — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "tracking.text.1",
+    "page": "tracking",
+    "label": "Tracking — Track Your Order",
+    "type": "text",
+    "value": "Track Your Order",
+    "sort_order": 1001
+  },
+  {
+    "key": "tracking.text.2",
+    "page": "tracking",
+    "label": "Tracking — Track Your Order",
+    "type": "text",
+    "value": "Track Your Order",
+    "sort_order": 1002
+  },
+  {
+    "key": "tracking.text.3",
+    "page": "tracking",
+    "label": "Tracking — Real Time Tracking Orders",
+    "type": "text",
+    "value": "Real Time Tracking Orders",
+    "sort_order": 1003
+  },
+  {
+    "key": "tracking.text.4",
+    "page": "tracking",
+    "label": "Tracking — Enter your Order Number below to view the latest",
+    "type": "text",
+    "value": "Enter your Order Number below to view the latest shipment status.",
+    "sort_order": 1004
+  },
+  {
+    "key": "tracking.text.5",
+    "page": "tracking",
+    "label": "Tracking — Track",
+    "type": "text",
+    "value": "Track",
+    "sort_order": 1005
+  },
+  {
+    "key": "tracking.text.6",
+    "page": "tracking",
+    "label": "Tracking — Fetching tracking details...",
+    "type": "text",
+    "value": "Fetching tracking details...",
+    "sort_order": 1006
+  },
+  {
+    "key": "tracking.text.7",
+    "page": "tracking",
+    "label": "Tracking — Multiple shipments found for your order",
+    "type": "text",
+    "value": "Multiple shipments found for your order",
+    "sort_order": 1007
+  },
+  {
+    "key": "privacy-policy.image.1",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "privacy-policy.text.1",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — Privacy Policy",
+    "type": "text",
+    "value": "Privacy Policy",
+    "sort_order": 1001
+  },
+  {
+    "key": "privacy-policy.text.2",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — Privacy Policy",
+    "type": "text",
+    "value": "Privacy Policy",
+    "sort_order": 1002
+  },
+  {
+    "key": "privacy-policy.text.3",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — Privacy Policy",
+    "type": "text",
+    "value": "Privacy Policy",
+    "sort_order": 1003
+  },
+  {
+    "key": "privacy-policy.text.4",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — Hypersonic.id",
+    "type": "text",
+    "value": "Hypersonic.id",
+    "sort_order": 1004
+  },
+  {
+    "key": "privacy-policy.text.5",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 1. Information We Collect",
+    "type": "text",
+    "value": "1. Information We Collect",
+    "sort_order": 1005
+  },
+  {
+    "key": "privacy-policy.text.6",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — We may collect personal information such as your",
+    "type": "text",
+    "value": "We may collect personal information such as your name, email address, phone number, shipping address, \n                            and payment details when you create an account, place an order, or subscribe to our newsletter.",
+    "sort_order": 1006
+  },
+  {
+    "key": "privacy-policy.text.7",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 2. How We Use Your Information",
+    "type": "text",
+    "value": "2. How We Use Your Information",
+    "sort_order": 1007
+  },
+  {
+    "key": "privacy-policy.text.8",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — The information we collect is used to process yo",
+    "type": "text",
+    "value": "The information we collect is used to process your orders, provide customer support, \n                            improve our services, and send you promotional offers (if you opt-in).",
+    "sort_order": 1008
+  },
+  {
+    "key": "privacy-policy.text.9",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 3. Cookies & Tracking",
+    "type": "html",
+    "value": "3. Cookies & Tracking",
+    "sort_order": 1009
+  },
+  {
+    "key": "privacy-policy.text.10",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — Our website uses cookies and similar technologie",
+    "type": "text",
+    "value": "Our website uses cookies and similar technologies to enhance your browsing experience, \n                            analyze traffic, and personalize content. You can disable cookies in your browser settings, \n                            but some features may not function properly.",
+    "sort_order": 1010
+  },
+  {
+    "key": "privacy-policy.text.11",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 4. Data Security",
+    "type": "text",
+    "value": "4. Data Security",
+    "sort_order": 1011
+  },
+  {
+    "key": "privacy-policy.text.12",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — We implement industry-standard security measures",
+    "type": "text",
+    "value": "We implement industry-standard security measures to protect your personal data from unauthorized \n                            access, alteration, or disclosure. However, no method of transmission over the Internet is 100% secure.",
+    "sort_order": 1012
+  },
+  {
+    "key": "privacy-policy.text.13",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 5. Third-Party Services",
+    "type": "text",
+    "value": "5. Third-Party Services",
+    "sort_order": 1013
+  },
+  {
+    "key": "privacy-policy.text.14",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — We may share limited information with trusted th",
+    "type": "text",
+    "value": "We may share limited information with trusted third-party providers such as payment gateways \n                            and shipping partners to complete your transactions. These providers are obligated to keep \n                            your information secure.",
+    "sort_order": 1014
+  },
+  {
+    "key": "privacy-policy.text.15",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 6. Your Rights",
+    "type": "text",
+    "value": "6. Your Rights",
+    "sort_order": 1015
+  },
+  {
+    "key": "privacy-policy.text.16",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — 7. Policy Updates",
+    "type": "text",
+    "value": "7. Policy Updates",
+    "sort_order": 1016
+  },
+  {
+    "key": "privacy-policy.text.17",
+    "page": "privacy-policy",
+    "label": "Privacy Policy — We may update this Privacy Policy from time to t",
+    "type": "text",
+    "value": "We may update this Privacy Policy from time to time. \n                            Any changes will be posted on this page with the updated revision date.",
+    "sort_order": 1017
+  },
+  {
+    "key": "terms-and-conditions.image.1",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — image 1",
+    "type": "image",
+    "value": "assets/images/2345.png",
+    "sort_order": 1
+  },
+  {
+    "key": "terms-and-conditions.text.1",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Terms &amp; Conditions",
+    "type": "html",
+    "value": "Terms &amp; Conditions",
+    "sort_order": 1001
+  },
+  {
+    "key": "terms-and-conditions.text.2",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Terms &amp; Conditions",
+    "type": "html",
+    "value": "Terms &amp; Conditions",
+    "sort_order": 1002
+  },
+  {
+    "key": "terms-and-conditions.text.3",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Terms & Conditions",
+    "type": "html",
+    "value": "Terms & Conditions",
+    "sort_order": 1003
+  },
+  {
+    "key": "terms-and-conditions.text.4",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Hypersonic.id",
+    "type": "text",
+    "value": "Hypersonic.id",
+    "sort_order": 1004
+  },
+  {
+    "key": "terms-and-conditions.text.5",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 1. Website Usage",
+    "type": "text",
+    "value": "1. Website Usage",
+    "sort_order": 1005
+  },
+  {
+    "key": "terms-and-conditions.text.6",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — You agree to use this website solely for lawful ",
+    "type": "text",
+    "value": "You agree to use this website solely for lawful purposes and in a way that does not infringe \n                            on the rights of, restrict, or inhibit anyone else’s use of the website.",
+    "sort_order": 1006
+  },
+  {
+    "key": "terms-and-conditions.text.7",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 2. Product Information",
+    "type": "text",
+    "value": "2. Product Information",
+    "sort_order": 1007
+  },
+  {
+    "key": "terms-and-conditions.text.8",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — We make every effort to provide accurate product",
+    "type": "text",
+    "value": "We make every effort to provide accurate product details. However, there may be slight differences \n                            in color, specifications, or stock availability due to production updates or system limitations.",
+    "sort_order": 1008
+  },
+  {
+    "key": "terms-and-conditions.text.9",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 3. Orders & Payments",
+    "type": "html",
+    "value": "3. Orders & Payments",
+    "sort_order": 1009
+  },
+  {
+    "key": "terms-and-conditions.text.10",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — All orders are considered valid once payment is ",
+    "type": "text",
+    "value": "All orders are considered valid once payment is verified. \n                            We reserve the right to cancel transactions in cases of pricing errors or suspected fraud.",
+    "sort_order": 1010
+  },
+  {
+    "key": "terms-and-conditions.text.11",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 4. Shipping",
+    "type": "text",
+    "value": "4. Shipping",
+    "sort_order": 1011
+  },
+  {
+    "key": "terms-and-conditions.text.12",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Delivery times may vary depending on courier ser",
+    "type": "text",
+    "value": "Delivery times may vary depending on courier services and destination. \n                            We are not responsible for delays caused by third-party logistics providers.",
+    "sort_order": 1012
+  },
+  {
+    "key": "terms-and-conditions.text.13",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 5. Warranty Policy",
+    "type": "text",
+    "value": "5. Warranty Policy",
+    "sort_order": 1013
+  },
+  {
+    "key": "terms-and-conditions.text.14",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Hypersonic.id products come with an official war",
+    "type": "text",
+    "value": "Hypersonic.id products come with an official warranty. \n                            Warranty claims are only valid for manufacturing defects and do not cover damages caused \n                            by misuse or improper handling.",
+    "sort_order": 1014
+  },
+  {
+    "key": "terms-and-conditions.text.15",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 6. Amendments",
+    "type": "text",
+    "value": "6. Amendments",
+    "sort_order": 1015
+  },
+  {
+    "key": "terms-and-conditions.text.16",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — Hypersonic.id reserves the right to update or re",
+    "type": "html",
+    "value": "Hypersonic.id reserves the right to update or revise these Terms & Conditions at any time. \n                            Any changes will be published on our official website.",
+    "sort_order": 1016
+  },
+  {
+    "key": "terms-and-conditions.text.17",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 7 days",
+    "type": "text",
+    "value": "7 days",
+    "sort_order": 1017
+  },
+  {
+    "key": "terms-and-conditions.text.18",
+    "page": "terms-and-conditions",
+    "label": "Terms & Conditions — 7 days",
+    "type": "text",
+    "value": "7 days",
+    "sort_order": 1018
+  }
+]

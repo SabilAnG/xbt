@@ -1,0 +1,46 @@
+/**
+ * Custom Style For Hypersonic Speed Tech
+ **/
+
+html,
+body {
+    overflow-x: hidden !important;
+}
+
+a.btn-tracking-mobile {
+    margin-top: 10px;
+    width: 100%;
+    background: var(--primary-color);
+    color: var(--btn-color);
+    font-family: var(--btn-font-family);
+    font-size: var(--btn-font-size);
+    font-weight: var(--btn-font-weight);
+    letter-spacing: var(--btn-letter-spacing);
+    padding: var(--btn-padding);
+    text-decoration: var(--btn-text-decoration);
+    text-transform: var(--btn-text-transform);
+    border-radius: var(--btn-rounded);
+    -moz-border-radius: var(--btn-rounded);
+    -webkit-border-radius: var(--btn-rounded);
+    border: none;
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    outline: 0;
+    white-space: nowrap;
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff6b00, #ff8533);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+@media only screen and (max-width: 992px) {
+    .dark-scheme header.header-mobile #mainmenu li.tracking-link-mobile {
+        border-bottom: none !important;
+    }
+}

@@ -1,0 +1,28 @@
+#!/bin/sh
+# Jalankan artisan/composer lalu kembalikan kepemilikan storage ke www-data.
+#
+# `docker compose exec` masuk sebagai root, jadi file cache view yang dibuatnya
+# jadi milik root. Worker php-fpm berjalan sebagai www-data dan tidak bisa
+# menyetel mtime file milik orang lain (butuh kepemilikan, bukan izin tulis),
+# sehingga halaman berikutnya gagal dengan "touch(): Utime failed".
+#
+#   docker compose exec app art migrate
+#   docker compose exec app art optimize:clear
+#
+set -e
+
+cd /var/www/html
+
+case "$1" in
+    composer)
+        shift
+        composer "$@" || status=$?
+        ;;
+    *)
+        php artisan "$@" || status=$?
+        ;;
+esac
+
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+exit "${status:-0}"
