@@ -26,31 +26,41 @@ class LembarHitung extends Page
 
     protected string $view = 'filament.resources.stock-opnames.lembar-hitung';
 
-    public StockOpname $record;
+    /**
+     * Kosong bila lembar dicetak tanpa sesi — kertasnya justru dibutuhkan
+     * SEBELUM sesi dibuat, untuk dibawa keliling gudang.
+     */
+    public ?StockOpname $record = null;
 
     public bool $tampilkanSistem = false;
 
-    public function mount(StockOpname $record): void
+    public function mount(?StockOpname $record = null): void
     {
-        $this->record = $record->load(['items.item.category']);
+        $this->record = $record?->load(['items.item.category']);
     }
 
     public function getTitle(): string
     {
-        return 'Lembar Hitung '.$this->record->opname_number;
+        return $this->record
+            ? 'Lembar Hitung '.$this->record->opname_number
+            : 'Lembar Hitung Kosong';
     }
 
     public function getSubheading(): ?string
     {
+        if (! $this->record) {
+            return 'Belum terikat sesi mana pun — berisi seluruh barang aktif, siap dibawa ke gudang.';
+        }
+
         return $this->dariMaster()
             ? 'Sesi ini belum berisi barang — lembar diambil dari seluruh barang aktif.'
             : 'Berisi '.$this->record->items->count().' barang yang sudah terdaftar di sesi ini.';
     }
 
-    /** Sesi draft yang masih kosong tetap harus bisa dicetak, jadi jatuh ke master barang. */
+    /** Tanpa sesi, atau sesi draft yang masih kosong, sama-sama jatuh ke master barang. */
     public function dariMaster(): bool
     {
-        return $this->record->items->isEmpty();
+        return $this->record === null || $this->record->items->isEmpty();
     }
 
     /**
@@ -109,8 +119,17 @@ class LembarHitung extends Page
                 ->label('Isi Hasil Hitung')
                 ->icon('heroicon-o-pencil-square')
                 ->color('success')
-                ->visible(fn () => ! $this->record->isPosted())
+                ->visible(fn () => $this->record && ! $this->record->isPosted())
                 ->url(fn () => StockOpnameResource::getUrl('edit', ['record' => $this->record])),
+
+            // Lembar kosong belum punya sesi; sediakan jalan membuatnya setelah
+            // hitungan di kertas selesai.
+            Action::make('buatSesi')
+                ->label('Buat Sesi Opname')
+                ->icon('heroicon-o-plus-circle')
+                ->color('success')
+                ->visible(fn () => $this->record === null)
+                ->url(fn () => StockOpnameResource::getUrl('create')),
 
             Action::make('kembali')
                 ->label('Kembali')

@@ -32,31 +32,41 @@ class LembarHitung extends Page
 
     protected string $view = 'filament.resources.material-opnames.lembar-hitung';
 
-    public MaterialOpname $record;
+    /**
+     * Kosong bila lembar dicetak tanpa sesi — kertasnya justru dibutuhkan
+     * SEBELUM sesi dibuat, untuk dibawa keliling rak.
+     */
+    public ?MaterialOpname $record = null;
 
     public bool $tampilkanSistem = false;
 
-    public function mount(MaterialOpname $record): void
+    public function mount(?MaterialOpname $record = null): void
     {
-        $this->record = $record->load(['items.material', 'items.rack.warehouse', 'warehouse']);
+        $this->record = $record?->load(['items.material', 'items.rack.warehouse', 'warehouse']);
     }
 
     public function getTitle(): string
     {
-        return 'Lembar Hitung Bahan '.$this->record->opname_number;
+        return $this->record
+            ? 'Lembar Hitung Bahan '.$this->record->opname_number
+            : 'Lembar Hitung Bahan Kosong';
     }
 
     public function getSubheading(): ?string
     {
+        if (! $this->record) {
+            return 'Belum terikat sesi mana pun — berisi seluruh catatan stok per rak, siap dibawa ke gudang.';
+        }
+
         return $this->dariMaster()
             ? 'Sesi ini belum berisi bahan — lembar diambil dari catatan stok per rak.'
             : 'Berisi '.$this->record->items->count().' baris yang sudah terdaftar di sesi ini.';
     }
 
-    /** Sesi draft yang masih kosong tetap harus bisa dicetak, jadi jatuh ke stok rak. */
+    /** Tanpa sesi, atau sesi draft yang masih kosong, sama-sama jatuh ke stok rak. */
     public function dariMaster(): bool
     {
-        return $this->record->items->isEmpty();
+        return $this->record === null || $this->record->items->isEmpty();
     }
 
     /**
@@ -96,7 +106,7 @@ class LembarHitung extends Page
      */
     private function dariStokRak(): Collection
     {
-        $gudang = $this->record->warehouse_id;
+        $gudang = $this->record?->warehouse_id;
 
         $stok = MaterialStock::query()
             ->with(['material', 'rack.warehouse'])
@@ -153,8 +163,17 @@ class LembarHitung extends Page
                 ->label('Isi Hasil Hitung')
                 ->icon('heroicon-o-pencil-square')
                 ->color('success')
-                ->visible(fn () => ! $this->record->isPosted())
+                ->visible(fn () => $this->record && ! $this->record->isPosted())
                 ->url(fn () => MaterialOpnameResource::getUrl('edit', ['record' => $this->record])),
+
+            // Lembar kosong belum punya sesi; sediakan jalan membuatnya setelah
+            // hitungan di kertas selesai.
+            Action::make('buatSesi')
+                ->label('Buat Sesi Opname')
+                ->icon('heroicon-o-plus-circle')
+                ->color('success')
+                ->visible(fn () => $this->record === null)
+                ->url(fn () => MaterialOpnameResource::getUrl('create')),
 
             Action::make('kembali')
                 ->label('Kembali')

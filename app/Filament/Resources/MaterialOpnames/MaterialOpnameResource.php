@@ -58,6 +58,8 @@ class MaterialOpnameResource extends Resource
             'create' => CreateMaterialOpname::route('/create'),
             'edit' => EditMaterialOpname::route('/{record}/edit'),
             'lembar-hitung' => LembarHitung::route('/{record}/lembar-hitung'),
+            // Tanpa sesi: kertas kosong yang dibawa lebih dulu ke gudang.
+            'lembar-kosong' => LembarHitung::route('/lembar-hitung'),
         ];
     }
 }

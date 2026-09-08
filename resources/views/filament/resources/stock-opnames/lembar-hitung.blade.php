@@ -34,11 +34,13 @@
         @include('filament.cetak.kop', [
             'judul' => 'Lembar Hitung Fisik',
             'sub' => 'Stok Opname — Aset / Barang Jadi',
+            {{-- Tanpa sesi, nilainya sengaja kosong: kop tercetak bergaris
+                 titik-titik supaya nomor dan tanggalnya ditulis tangan. --}}
             'meta' => [
-                'No. Opname' => $opname->opname_number,
-                'Tanggal' => $opname->opname_date?->translatedFormat('d F Y'),
-                'Status' => \App\Models\StockOpname::STATUSES[$opname->status] ?? $opname->status,
-                'Petugas' => $opname->counted_by,
+                'No. Opname' => $opname?->opname_number,
+                'Tanggal' => $opname?->opname_date?->translatedFormat('d F Y'),
+                'Status' => $opname ? (\App\Models\StockOpname::STATUSES[$opname->status] ?? $opname->status) : null,
+                'Petugas' => $opname?->counted_by,
                 'Mulai hitung' => null,
                 'Selesai' => null,
             ],
@@ -131,17 +133,19 @@
             </tbody>
         </table>
 
-        @if ($opname->notes)
+        @if ($opname?->notes)
             <div class="petunjuk" style="margin-top:9px">
                 <b>Catatan sesi:</b> {{ $opname->notes }}
             </div>
         @endif
 
         @include('filament.cetak.ttd', [
-            'petugas' => $opname->counted_by,
-            'kaki' => $this->dariMaster()
-                ? 'Diambil dari seluruh barang aktif — sesi '.$opname->opname_number.' belum berisi baris. '.$total.' barang.'
-                : 'Baris dari sesi '.$opname->opname_number.'. '.$total.' barang.',
+            'petugas' => $opname?->counted_by,
+            'kaki' => match (true) {
+                ! $opname => 'Lembar kosong dari seluruh barang aktif — belum terikat sesi. '.$total.' barang.',
+                $this->dariMaster() => 'Diambil dari seluruh barang aktif — sesi '.$opname->opname_number.' belum berisi baris. '.$total.' barang.',
+                default => 'Baris dari sesi '.$opname->opname_number.'. '.$total.' barang.',
+            },
         ])
     </div>
 </x-filament-panels::page>

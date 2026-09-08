@@ -102,6 +102,42 @@ class LembarHitungOpnameTest extends TestCase
             ->assertSee('Selisih</th>', escape: false);
     }
 
+    /**
+     * Alur nyatanya: kertas dicetak DULU, dibawa ke gudang, sesinya menyusul.
+     * Jadi lembar harus keluar walau belum ada satu pun sesi opname.
+     */
+    public function test_lembar_aset_kosong_bisa_dicetak_tanpa_sesi_apa_pun(): void
+    {
+        Item::create(['sku' => 'KNL-010', 'name' => 'Silencer Oval', 'unit' => 'pcs']);
+
+        $this->assertSame(0, StockOpname::count());
+
+        $this->get(StockOpnameResource::getUrl('lembar-kosong'))
+            ->assertOk()
+            ->assertSee('Lembar Hitung Fisik')
+            ->assertSee('Silencer Oval')
+            ->assertSee('Hitung Fisik');
+    }
+
+    public function test_lembar_bahan_kosong_bisa_dicetak_tanpa_sesi_apa_pun(): void
+    {
+        Material::create([
+            'sku' => 'PIP-010',
+            'name' => 'Pipa Uji Kosong',
+            'dimension_type' => 'linear',
+            'unit' => 'batang',
+            'length_mm' => 6000,
+        ]);
+
+        $this->assertSame(0, MaterialOpname::count());
+
+        $this->get(MaterialOpnameResource::getUrl('lembar-kosong'))
+            ->assertOk()
+            ->assertSee('Lembar Hitung Fisik Bahan')
+            ->assertSee('Pipa Uji Kosong')
+            ->assertSee('Belum Tercatat di Rak');
+    }
+
     public function test_lembar_bahan_memuat_rak_dan_konversi_satuan(): void
     {
         $gudang = Warehouse::create(['name' => 'Gudang Produksi', 'code' => 'GP']);

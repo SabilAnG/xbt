@@ -56,6 +56,8 @@ class StockOpnameResource extends Resource
             'create' => CreateStockOpname::route('/create'),
             'edit' => EditStockOpname::route('/{record}/edit'),
             'lembar-hitung' => LembarHitung::route('/{record}/lembar-hitung'),
+            // Tanpa sesi: kertas kosong yang dibawa lebih dulu ke gudang.
+            'lembar-kosong' => LembarHitung::route('/lembar-hitung'),
         ];
     }
 }
