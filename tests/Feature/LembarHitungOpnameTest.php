@@ -119,6 +119,28 @@ class LembarHitungOpnameTest extends TestCase
             ->assertSee('Hitung Fisik');
     }
 
+    /**
+     * Banyaknya temuan tak terdaftar berbeda tiap gudang, jadi ruang tulisnya
+     * harus bisa ditambah sebelum kertasnya keluar dari printer.
+     */
+    public function test_baris_kosong_bisa_diatur_sebelum_dicetak(): void
+    {
+        // Satu barang tanpa kategori berarti tepat satu kelompok, sehingga
+        // jumlah baris kosong yang tercetak bisa dihitung persis.
+        Item::create(['sku' => 'KNL-020', 'name' => 'Silencer Panjang', 'unit' => 'pcs']);
+
+        $lembar = Livewire::test(LembarHitung::class)->assertSuccessful();
+
+        // Penanda ini hanya dipakai baris kosong saat stok sistem disembunyikan.
+        $this->assertSame(2, substr_count($lembar->html(), 'num kotak'));
+
+        $lembar->set('barisKosong', 8);
+        $this->assertSame(8, substr_count($lembar->html(), 'num kotak'));
+
+        $lembar->set('barisKosong', 0);
+        $this->assertSame(0, substr_count($lembar->html(), 'num kotak'));
+    }
+
     public function test_lembar_bahan_kosong_bisa_dicetak_tanpa_sesi_apa_pun(): void
     {
         Material::create([

@@ -3,7 +3,7 @@
     $opname = $this->record;
     $kelompok = $this->kelompok();
     $sistem = $this->tampilkanSistem;
-    $kosong = $this::BARIS_KOSONG;
+    $kosong = $this->barisKosong;
     $total = $this->jumlahBaris();
 
     $kolom = $sistem ? 10 : 9;
@@ -29,6 +29,8 @@
         <b>Utuh</b> dalam satuan beli (batang, lembar, kg) dan <b>Sisa</b> dalam satuan dasar (mm, mm², gram, ml).
         Kolom <b>Total</b> diisi dengan hasil <i>utuh × konversi + sisa</i> — angka itulah yang dimasukkan ke
         kolom Hitung Fisik pada form opname. Dicetak melintang (A4 landscape).
+        Sekarang ada <b>{{ $kosong }} baris kosong</b> di tiap rak; ubah lewat tombol
+        <b>Baris Kosong</b> kalau ruang tulisnya kurang.
         @if ($sistem)
             Stok sistem sedang <b>ditampilkan</b>.
         @else

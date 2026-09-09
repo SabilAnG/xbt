@@ -3,7 +3,7 @@
     $opname = $this->record;
     $kelompok = $this->kelompok();
     $sistem = $this->tampilkanSistem;
-    $kosong = $this::BARIS_KOSONG;
+    $kosong = $this->barisKosong;
     $total = $this->jumlahBaris();
 
     // Angka gudang jarang berkoma; nolnya dibuang agar "12,00" tidak ramai.
@@ -23,6 +23,8 @@
     <div class="lh-layar">
         Ini tampilan kertasnya. Tekan <b>Cetak</b> di kanan atas — menu dan tombol tidak ikut tercetak.
         Ukuran kertas A4 tegak, satu baris dibuat setinggi tulisan tangan.
+        Sekarang ada <b>{{ $kosong }} baris kosong</b> di tiap kelompok; ubah lewat tombol
+        <b>Baris Kosong</b> kalau ruang tulisnya kurang.
         @if ($sistem)
             Stok sistem sedang <b>ditampilkan</b>; sembunyikan bila petugas tidak boleh melihat angka sistem saat menghitung.
         @else

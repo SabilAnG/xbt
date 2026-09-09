@@ -6,6 +6,7 @@ use App\Filament\Resources\StockOpnames\StockOpnameResource;
 use App\Models\Item;
 use App\Models\StockOpname;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Collection;
 
@@ -19,8 +20,8 @@ use Illuminate\Support\Collection;
  */
 class LembarHitung extends Page
 {
-    /** Baris kosong tiap kelompok, untuk barang yang ketemu di rak tapi belum terdaftar. */
-    public const BARIS_KOSONG = 2;
+    /** Batas atas yang masih masuk akal untuk selembar kertas. */
+    public const BARIS_KOSONG_MAKS = 30;
 
     protected static string $resource = StockOpnameResource::class;
 
@@ -33,6 +34,13 @@ class LembarHitung extends Page
     public ?StockOpname $record = null;
 
     public bool $tampilkanSistem = false;
+
+    /**
+     * Baris kosong tiap kelompok, untuk barang yang ketemu di rak tapi belum
+     * terdaftar. Bisa diatur sebelum mencetak karena banyaknya temuan itu
+     * berbeda-beda tiap gudang.
+     */
+    public int $barisKosong = 2;
 
     public function mount(?StockOpname $record = null): void
     {
@@ -114,6 +122,26 @@ class LembarHitung extends Page
                 ->icon(fn () => $this->tampilkanSistem ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                 ->color('gray')
                 ->action(fn () => $this->tampilkanSistem = ! $this->tampilkanSistem),
+
+            Action::make('aturBarisKosong')
+                ->label(fn () => 'Baris Kosong: '.$this->barisKosong)
+                ->icon('heroicon-o-plus-circle')
+                ->color('gray')
+                ->modalHeading('Berapa baris kosong tiap kelompok?')
+                ->modalDescription('Ruang tulis untuk barang yang ketemu di rak tapi belum terdaftar. Perubahannya langsung terlihat di lembar sebelum dicetak.')
+                ->modalSubmitActionLabel('Terapkan')
+                ->schema([
+                    TextInput::make('jumlah')
+                        ->label('Baris kosong per kelompok')
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(self::BARIS_KOSONG_MAKS)
+                        ->required()
+                        ->default(fn () => $this->barisKosong),
+                ])
+                ->action(function (array $data) {
+                    $this->barisKosong = max(0, min(self::BARIS_KOSONG_MAKS, (int) $data['jumlah']));
+                }),
 
             Action::make('isiHasil')
                 ->label('Isi Hasil Hitung')
