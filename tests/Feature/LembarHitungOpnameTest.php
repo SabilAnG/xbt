@@ -131,6 +131,10 @@ class LembarHitungOpnameTest extends TestCase
 
         $lembar = Livewire::test(LembarHitung::class)->assertSuccessful();
 
+        // Tombol pengaturnya harus benar-benar terlihat, bukan sekadar ada di
+        // kode — kalau labelnya tidak terender, fiturnya tidak terpakai.
+        $lembar->assertSee('Baris Kosong: 2');
+
         // Penanda ini hanya dipakai baris kosong saat stok sistem disembunyikan.
         $this->assertSame(2, substr_count($lembar->html(), 'num kotak'));
 
