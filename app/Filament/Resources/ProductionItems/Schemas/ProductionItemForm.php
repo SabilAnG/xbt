@@ -28,8 +28,6 @@ class ProductionItemForm
 
     public static function configure(Schema $schema): Schema
     {
-        $bentuk = fn (string ...$tipe) => fn (callable $get) => in_array($get('shape'), $tipe, true);
-
         return $schema->components([
             Section::make('Identitas')
                 ->description('Pilih jenisnya, dan peran serta cara pengadaannya ikut terisi sendiri — tinggal lanjut ke ukuran dan harga.')
@@ -82,98 +80,7 @@ class ProductionItemForm
             Section::make('Ukuran, Satuan & Harga')
                 ->description('Anda membeli per batang atau lembar, tapi memakainya per milimeter. Isi ukurannya sekali di sini, sistem yang menghitung harga per satuan pakai.')
                 ->columns(3)
-                ->schema([
-                    Select::make('shape')
-                        ->label('Bentuk')
-                        ->options(ProductionItem::SHAPES)
-                        ->default('count')->required()->live()
-                        ->helperText('Menentukan ukuran mana yang berlaku.'),
-
-                    TextInput::make('unit')
-                        ->label('Satuan Beli')->required()->default('pcs')->maxLength(255)
-                        ->helperText('Cara Anda membelinya: batang, lembar, kg, tabung, pcs.'),
-
-                    TextInput::make('cost_price')
-                        ->label('Harga per Satuan Beli')
-                        ->numeric()->prefix('Rp')->default(0)->required()->live(onBlur: true),
-
-                    Select::make('size_unit')
-                        ->label('Satuan ukuran')
-                        ->options(ProductionItem::SIZE_UNIT_LABELS)
-                        ->default('mm')->required()->live()
-                        ->visible($bentuk('linear', 'sheet', 'count'))
-                        ->helperText('Cara Anda menyebut ukurannya. Disimpan tetap dalam mm, jadi perhitungan tidak ikut berubah.')
-                        ->afterStateUpdated(function ($state, $old, callable $get, callable $set) {
-                            // Angka di layar dinyatakan ulang dalam satuan baru;
-                            // ukuran fisiknya tetap sama. 6.000 mm jadi 600 cm,
-                            // bukan tiba-tiba berarti 6.000 cm.
-                            foreach (self::MEDAN_UKURAN as $medan) {
-                                $nilai = $get($medan);
-
-                                if ($nilai === null || $nilai === '') {
-                                    continue;
-                                }
-
-                                $mm = ProductionItem::toMm((float) $nilai, $old);
-                                $set($medan, self::rapikan(ProductionItem::fromMm($mm, $state)));
-                            }
-                        }),
-
-                    TextInput::make('length_mm')
-                        ->label(fn (callable $get) => $get('shape') === 'sheet' ? 'Panjang lembar' : 'Panjang per batang')
-                        ->numeric()->minValue(0)->live(onBlur: true)
-                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
-                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
-                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                        ->required($bentuk('linear', 'sheet'))
-                        ->visible($bentuk('linear', 'sheet')),
-
-                    TextInput::make('width_mm')
-                        ->label('Lebar lembar')
-                        ->numeric()->minValue(0)->live(onBlur: true)
-                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
-                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
-                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                        ->required($bentuk('sheet'))
-                        ->visible($bentuk('sheet')),
-
-                    TextInput::make('weight_gram')
-                        ->label('Berat per satuan beli (gram)')
-                        ->numeric()->minValue(0)->live(onBlur: true)
-                        ->required($bentuk('weight'))
-                        ->visible($bentuk('weight'))
-                        ->helperText('1 kg = 1000.'),
-
-                    TextInput::make('volume_ml')
-                        ->label('Volume per satuan beli (ml)')
-                        ->numeric()->minValue(0)->live(onBlur: true)
-                        ->required($bentuk('volume'))
-                        ->visible($bentuk('volume'))
-                        ->helperText('1 liter = 1000.'),
-
-                    TextInput::make('diameter_mm')
-                        ->label('Diameter')
-                        ->numeric()->minValue(0)
-                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
-                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
-                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                        ->visible($bentuk('linear', 'count'))
-                        ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
-
-                    TextInput::make('thickness_mm')
-                        ->label('Tebal')
-                        ->numeric()->minValue(0)
-                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
-                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
-                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                        ->visible($bentuk('linear', 'sheet'))
-                        ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
-
-                    Placeholder::make('konversi')
-                        ->label('Hasil konversi')
-                        ->columnSpanFull()
-                        ->content(fn (callable $get) => self::previewKonversi($get)),
-                ]),
+                ->schema(self::medanUkuranHarga()),
 
             Section::make('Stok')
                 ->columns(3)
@@ -226,6 +133,171 @@ class ProductionItemForm
                 ->options(ProductionItem::SOURCES)
                 ->default('beli')->required(),
         ];
+    }
+
+    // ------------------------------------------------- isian yang dipakai ulang
+
+    /**
+     * Ukuran, satuan, dan harga — bagian yang sama di mana pun barang dibuat.
+     *
+     * Dipakai bersama oleh form penuh dan oleh isian ringkas di layar lain,
+     * supaya barang yang dibuat lewat stok opname punya ukuran selengkap yang
+     * dibuat lewat menunya sendiri. Menyalinnya berarti menunggu keduanya
+     * berbeda diam-diam.
+     *
+     * @return array<int, mixed>
+     */
+    private static function medanUkuranHarga(): array
+    {
+        $bentuk = fn (string ...$tipe) => fn (callable $get) => in_array($get('shape'), $tipe, true);
+
+        return [
+            Select::make('shape')
+                ->label('Bentuk')
+                ->options(ProductionItem::SHAPES)
+                ->default('count')->required()->live()
+                ->helperText('Menentukan ukuran mana yang berlaku.'),
+
+            TextInput::make('unit')
+                ->label('Satuan Beli')->required()->default('pcs')->maxLength(255)
+                ->helperText('Cara Anda membelinya: batang, lembar, kg, tabung, pcs.'),
+
+            TextInput::make('cost_price')
+                ->label('Harga per Satuan Beli')
+                ->numeric()->prefix('Rp')->default(0)->required()->live(onBlur: true),
+
+            Select::make('size_unit')
+                ->label('Satuan ukuran')
+                ->options(ProductionItem::SIZE_UNIT_LABELS)
+                ->default('mm')->required()->live()
+                ->visible($bentuk('linear', 'sheet', 'count'))
+                ->helperText('Cara Anda menyebut ukurannya. Disimpan tetap dalam mm, jadi perhitungan tidak ikut berubah.')
+                ->afterStateUpdated(function ($state, $old, callable $get, callable $set) {
+                    // Angka di layar dinyatakan ulang dalam satuan baru; ukuran
+                    // fisiknya tetap sama. 6.000 mm jadi 600 cm, bukan tiba-tiba
+                    // berarti 6.000 cm.
+                    foreach (self::MEDAN_UKURAN as $medan) {
+                        $nilai = $get($medan);
+
+                        if ($nilai === null || $nilai === '') {
+                            continue;
+                        }
+
+                        $mm = ProductionItem::toMm((float) $nilai, $old);
+                        $set($medan, self::rapikan(ProductionItem::fromMm($mm, $state)));
+                    }
+                }),
+
+            TextInput::make('length_mm')
+                ->label(fn (callable $get) => $get('shape') === 'sheet' ? 'Panjang lembar' : 'Panjang per batang')
+                ->numeric()->minValue(0)->live(onBlur: true)
+                ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
+                ->required($bentuk('linear', 'sheet'))
+                ->visible($bentuk('linear', 'sheet')),
+
+            TextInput::make('width_mm')
+                ->label('Lebar lembar')
+                ->numeric()->minValue(0)->live(onBlur: true)
+                ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
+                ->required($bentuk('sheet'))
+                ->visible($bentuk('sheet')),
+
+            TextInput::make('weight_gram')
+                ->label('Berat per satuan beli (gram)')
+                ->numeric()->minValue(0)->live(onBlur: true)
+                ->required($bentuk('weight'))
+                ->visible($bentuk('weight'))
+                ->helperText('1 kg = 1000.'),
+
+            TextInput::make('volume_ml')
+                ->label('Volume per satuan beli (ml)')
+                ->numeric()->minValue(0)->live(onBlur: true)
+                ->required($bentuk('volume'))
+                ->visible($bentuk('volume'))
+                ->helperText('1 liter = 1000.'),
+
+            TextInput::make('diameter_mm')
+                ->label('Diameter')
+                ->numeric()->minValue(0)
+                ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
+                ->visible($bentuk('linear', 'count'))
+                ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
+
+            TextInput::make('thickness_mm')
+                ->label('Tebal')
+                ->numeric()->minValue(0)
+                ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
+                ->visible($bentuk('linear', 'sheet'))
+                ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
+
+            Placeholder::make('konversi')
+                ->label('Hasil konversi')
+                ->columnSpanFull()
+                ->content(fn (callable $get) => self::previewKonversi($get)),
+        ];
+    }
+
+    /**
+     * Isian lengkap untuk membuat barang dari layar lain — stok opname,
+     * nanti juga pembelian dan formula.
+     *
+     * Selengkap form aslinya kecuali stok, yang memang tidak boleh diketik.
+     *
+     * @return array<int, mixed>
+     */
+    public static function ringkas(): array
+    {
+        return array_merge([
+            TextInput::make('name')
+                ->label('Nama Barang')->required()->maxLength(255)
+                ->helperText('Contoh: Pipa SS 201 Ø28 x 1,2mm'),
+
+            TextInput::make('sku')
+                ->label('Kode / SKU')->required()->maxLength(64)
+                ->unique(table: 'production_items', column: 'sku'),
+
+            // Sengaja options(), bukan relationship(): isian ini juga dipakai
+            // di layar yang tidak terikat model barang mana pun.
+            Select::make('production_item_category_id')
+                ->label('Jenis Barang')
+                ->options(fn () => ProductionItemCategory::query()
+                    ->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                ->searchable()->live()
+                ->createOptionForm(fn () => self::jenisBaru())
+                ->createOptionUsing(fn (array $data) => ProductionItemCategory::create(
+                    $data + ['slug' => Str::slug($data['name'])]
+                )->getKey())
+                ->afterStateUpdated(function ($state, callable $set) {
+                    if (! $jenis = ProductionItemCategory::find($state)) {
+                        return;
+                    }
+
+                    $set('role', $jenis->role);
+                    $set('source', $jenis->source);
+                }),
+
+            Select::make('role')
+                ->label('Perannya di produk')
+                ->options(ProductionItem::ROLES)->default('utama')->required()
+                ->helperText('Terisi dari jenis barang.'),
+
+            Select::make('source')
+                ->label('Didapat dari')
+                ->options(ProductionItem::SOURCES)->default('beli')->required(),
+        ], self::medanUkuranHarga(), [
+            TextInput::make('min_reusable')
+                ->label('Sisa terkecil yang masih terpakai')
+                ->numeric()->default(0)->minValue(0)
+                ->helperText('Sisa potong di bawah angka ini dihitung sampah. Isi 0 bila semua sisa masih terpakai.'),
+        ]);
     }
 
     // ------------------------------------------------------- satuan ukuran

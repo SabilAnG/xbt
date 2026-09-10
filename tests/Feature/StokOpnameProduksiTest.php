@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\ProductionItemOpnames\Pages\CreateProductionItemOpname;
+use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemMovement;
 use App\Models\ProductionItemOpname;
 use App\Models\ProductionItemOpnameItem;
+use App\Models\User;
 use App\Services\ProductionStockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -144,6 +148,45 @@ class StokOpnameProduksiTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->stok->postOpname($this->sesi());
+    }
+
+    // ------------------------------------------- mengisi master dari opname
+
+    /**
+     * Barang yang dibuat lewat stok opname harus selengkap yang dibuat lewat
+     * menunya sendiri — kalau ukurannya hilang, HPP-nya tidak akan pernah benar.
+     */
+    public function test_isian_ringkas_memuat_ukuran_selengkap_form_aslinya(): void
+    {
+        $medan = array_filter(array_map(
+            fn ($komponen) => method_exists($komponen, 'getName') ? $komponen->getName() : null,
+            ProductionItemForm::ringkas(),
+        ));
+
+        $wajib = [
+            'name', 'sku', 'production_item_category_id', 'role', 'source',
+            'shape', 'size_unit', 'unit', 'cost_price',
+            'length_mm', 'width_mm', 'diameter_mm', 'thickness_mm',
+            'weight_gram', 'volume_ml', 'min_reusable',
+        ];
+
+        foreach ($wajib as $nama) {
+            $this->assertContains($nama, $medan, "Isian ringkas kehilangan medan {$nama}.");
+        }
+
+        // Stok justru tidak boleh ada: ia hanya berubah lewat kartu stok.
+        $this->assertNotContains('stock', $medan);
+    }
+
+    public function test_form_opname_menyaring_barang_lewat_jenisnya(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateProductionItemOpname::class)
+            ->assertSuccessful()
+            ->assertSee('Jenis Barang')
+            ->assertSee('Catatan Sistem')
+            ->assertSee('Hitung Fisik');
     }
 
     // --------------------------------------------------------------- fixture

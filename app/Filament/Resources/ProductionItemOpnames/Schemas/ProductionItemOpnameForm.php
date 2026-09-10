@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\ProductionItemOpnames\Schemas;
 
+use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
 use App\Models\ProductionItem;
+use App\Models\ProductionItemCategory;
 use App\Models\ProductionItemOpname;
 use App\Services\DocumentNumber;
 use Filament\Forms\Components\DatePicker;
@@ -57,13 +59,44 @@ class ProductionItemOpnameForm
                         ->disabled($terkunci)
                         ->itemLabel(fn (array $state) => self::barisLabel($state))
                         ->schema([
+                            // Jenis dipilih dulu supaya daftar barangnya pendek.
+                            // Tidak disimpan — ia hanya alat menyaring.
+                            Select::make('jenis_id')
+                                ->label('Jenis Barang')
+                                ->options(fn () => ProductionItemCategory::query()
+                                    ->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                                ->searchable()->live()->dehydrated(false)
+                                ->columnSpan(['default' => 1, 'md' => 2])
+                                ->afterStateHydrated(function ($state, callable $get, callable $set) {
+                                    // Nota lama dibuka: jenisnya diturunkan dari
+                                    // barangnya, supaya penyaringnya tetap benar.
+                                    if ($state === null && $barang = ProductionItem::find($get('production_item_id'))) {
+                                        $set('jenis_id', $barang->production_item_category_id);
+                                    }
+                                })
+                                ->afterStateUpdated(fn (callable $set) => $set('production_item_id', null)),
+
                             Select::make('production_item_id')
                                 ->label('Barang')
-                                ->options(fn () => ProductionItem::query()
-                                    ->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                                ->options(fn (callable $get) => ProductionItem::query()
+                                    ->where('is_active', true)
+                                    ->when($get('jenis_id'), fn ($q, $id) => $q->where('production_item_category_id', $id))
+                                    ->orderBy('name')->pluck('name', 'id'))
                                 ->searchable()->required()->distinct()
                                 ->columnSpan(['default' => 1, 'md' => 3])
                                 ->live()
+                                // Barang yang belum terdaftar dibuat di sini,
+                                // selengkap form aslinya — opname memang jalan
+                                // masuk pertama untuk barang maupun stoknya.
+                                ->createOptionForm(fn () => ProductionItemForm::ringkas())
+                                ->createOptionUsing(function (array $data, callable $set) {
+                                    $barang = ProductionItem::create($data);
+
+                                    $set('jenis_id', $barang->production_item_category_id);
+                                    $set('system_qty', (float) $barang->stock);
+
+                                    return $barang->getKey();
+                                })
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     // Catatan sistem dibekukan saat barang dipilih,
                                     // supaya selisihnya tetap bercerita walau stok
