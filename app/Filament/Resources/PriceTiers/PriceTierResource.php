@@ -20,7 +20,7 @@ class PriceTierResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static ?int $navigationSort = 180;
+    protected static ?int $navigationSort = 60;
 
     protected static ?string $modelLabel = 'Tingkatan Harga';
 
@@ -30,7 +30,7 @@ class PriceTierResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Produksi';
+        return 'Master Data';
     }
 
     public static function form(Schema $schema): Schema

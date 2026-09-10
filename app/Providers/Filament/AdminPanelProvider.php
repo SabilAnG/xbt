@@ -6,7 +6,6 @@ use App\Filament\Widgets\CashflowChart;
 use App\Filament\Widgets\DraftDocuments;
 use App\Filament\Widgets\InventoryOverview;
 use App\Filament\Widgets\LowStockItems;
-use App\Filament\Widgets\ProductionOverview;
 use App\Models\Setting;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -66,12 +65,10 @@ class AdminPanelProvider extends PanelProvider
             // lalu aset & laporan, baru data acuan yang jarang disentuh.
             ->navigationGroups([
                 NavigationGroup::make('Operasional')->icon('heroicon-o-arrows-right-left'),
-                NavigationGroup::make('Produksi')->icon('heroicon-o-wrench-screwdriver'),
+                // Grup "Produksi" sengaja belum didaftarkan: modulnya sedang
+                // dibangun ulang. Tambahkan kembali bersama resource barunya.
                 NavigationGroup::make('Aset')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Master Data')->icon('heroicon-o-rectangle-stack')->collapsed(),
-                // Data acuan produksi dulu berdiri sendiri sebagai "Master
-                // Produksi". Sekarang menyatu di grup Produksi, diurutkan mulai
-                // dari 110 supaya tetap berada di bawah menu harian.
                 NavigationGroup::make('Toko Online')->icon('heroicon-o-globe-alt')->collapsed(),
                 NavigationGroup::make('Website')->icon('heroicon-o-cog-6-tooth')->collapsed(),
             ])
@@ -84,7 +81,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 InventoryOverview::class,
-                ProductionOverview::class,
                 CashflowChart::class,
                 LowStockItems::class,
                 DraftDocuments::class,

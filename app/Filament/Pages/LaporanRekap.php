@@ -3,8 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Models\Expense;
-use App\Models\MaterialPurchase;
-use App\Models\Production;
 use App\Models\Purchase;
 use App\Models\Sale;
 use BackedEnum;
@@ -75,8 +73,6 @@ class LaporanRekap extends Page implements HasForms
                                 'pembelian' => 'Pembelian',
                                 'penjualan' => 'Penjualan',
                                 'pengeluaran' => 'Pengeluaran',
-                                'bahan' => 'Pembelian Bahan',
-                                'produksi' => 'Produksi',
                             ])
                             ->default('semua')
                             ->live(),
@@ -134,27 +130,8 @@ class LaporanRekap extends Page implements HasForms
             ->get();
     }
 
-    public function getMaterialPurchasesProperty()
-    {
-        [$dari, $sampai] = $this->range();
-
-        return MaterialPurchase::posted()
-            ->with(['vendor', 'wallet'])
-            ->whereBetween('purchased_at', [$dari, $sampai])
-            ->orderBy('purchased_at')
-            ->get();
-    }
-
-    public function getProductionsProperty()
-    {
-        [$dari, $sampai] = $this->range();
-
-        return Production::posted()
-            ->with('formula')
-            ->whereBetween('produced_at', [$dari, $sampai])
-            ->orderBy('produced_at')
-            ->get();
-    }
+    // Rekap pembelian bahan dan nota produksi menyusul bersama modul produksi
+    // yang sedang dibangun ulang.
 
     public function getExpensesProperty()
     {
@@ -178,14 +155,11 @@ class LaporanRekap extends Page implements HasForms
         $pengeluaran = (float) $this->expenses->sum('amount');
         $labaKotor = $penjualan - $modal;
 
-        // Angka produksi ditampilkan terpisah dan TIDAK ikut mengurangi laba.
-        // Belanja bahan sudah menjadi nilai stok, dan biaya produksi sudah
-        // masuk ke modal barang saat terjual — menjumlahkannya lagi di sini
-        // akan menghitung pengeluaran yang sama dua kali.
-        $belanjaBahan = (float) $this->materialPurchases->sum('total');
-        $biayaProduksi = (float) $this->productions->sum('total_cost');
-        $unitProduksi = (float) $this->productions->sum('output_qty');
-
+        // Angka belanja bahan dan produksi menyusul bersama modul produksi yang
+        // sedang dibangun ulang. Keduanya memang tidak pernah ikut mengurangi
+        // laba — belanja bahan menjadi nilai stok, dan biaya produksi sudah
+        // masuk ke modal barang saat terjual — jadi laba di laporan ini tetap
+        // benar tanpa keduanya.
         return [
             'pembelian' => $pembelian,
             'penjualan' => $penjualan,
@@ -193,10 +167,6 @@ class LaporanRekap extends Page implements HasForms
             'laba_kotor' => $labaKotor,
             'pengeluaran' => $pengeluaran,
             'laba_bersih' => $labaKotor - $pengeluaran,
-            'belanja_bahan' => $belanjaBahan,
-            'biaya_produksi' => $biayaProduksi,
-            'unit_produksi' => $unitProduksi,
-            'hpp_rata' => $unitProduksi > 0 ? $biayaProduksi / $unitProduksi : 0.0,
         ];
     }
 
@@ -320,12 +290,10 @@ class LaporanRekap extends Page implements HasForms
         $purchases = $this->purchases;
         $sales = $this->sales;
         $expenses = $this->expenses;
-        $materialPurchases = $this->materialPurchases;
-        $productions = $this->productions;
         $summary = $this->summary;
         $shows = fn (string $k) => $this->shows($k);
 
-        return response()->streamDownload(function () use ($purchases, $sales, $expenses, $materialPurchases, $productions, $summary, $shows) {
+        return response()->streamDownload(function () use ($purchases, $sales, $expenses, $summary, $shows) {
             $out = fopen('php://output', 'wb');
             // BOM supaya Excel membaca UTF-8 dengan benar.
             fwrite($out, "\xEF\xBB\xBF");
@@ -382,46 +350,6 @@ class LaporanRekap extends Page implements HasForms
                 fputcsv($out, []);
             }
 
-            if ($shows('bahan')) {
-                fputcsv($out, ['PEMBELIAN BAHAN BAKU']);
-                fputcsv($out, ['Tanggal', 'No. Nota', 'Vendor', 'Dompet', 'Total']);
-                foreach ($materialPurchases as $b) {
-                    fputcsv($out, [
-                        $b->purchased_at?->format('Y-m-d'),
-                        $b->invoice_number,
-                        $b->vendor?->name,
-                        $b->wallet?->name,
-                        (float) $b->total,
-                    ]);
-                }
-                fputcsv($out, ['', '', '', 'Subtotal', $summary['belanja_bahan']]);
-                fputcsv($out, []);
-            }
-
-            if ($shows('produksi')) {
-                fputcsv($out, ['PRODUKSI']);
-                fputcsv($out, ['Tanggal', 'No. Produksi', 'Formula', 'Unit', 'Biaya Bahan',
-                    'Tenaga Kerja', 'Menit Kerja', 'Biaya Mesin', 'Overhead', 'Total', 'HPP/unit']);
-                foreach ($productions as $p) {
-                    fputcsv($out, [
-                        $p->produced_at?->format('Y-m-d'),
-                        $p->production_number,
-                        $p->formula?->name,
-                        (float) $p->output_qty,
-                        (float) $p->material_cost,
-                        (float) $p->service_cost,
-                        (float) $p->total_minutes,
-                        (float) $p->machine_cost,
-                        (float) $p->overhead_cost,
-                        (float) $p->total_cost,
-                        (float) $p->hpp_per_unit,
-                    ]);
-                }
-                fputcsv($out, ['', '', 'Subtotal', $summary['unit_produksi'], '', '', '', '', '',
-                    $summary['biaya_produksi'], $summary['hpp_rata']]);
-                fputcsv($out, []);
-            }
-
             fputcsv($out, ['RINGKASAN']);
             fputcsv($out, ['Total pembelian', $summary['pembelian']]);
             fputcsv($out, ['Total penjualan', $summary['penjualan']]);
@@ -429,12 +357,6 @@ class LaporanRekap extends Page implements HasForms
             fputcsv($out, ['Laba kotor', $summary['laba_kotor']]);
             fputcsv($out, ['Total pengeluaran', $summary['pengeluaran']]);
             fputcsv($out, ['Laba bersih', $summary['laba_bersih']]);
-            fputcsv($out, []);
-            fputcsv($out, ['PRODUKSI (di luar hitungan laba)']);
-            fputcsv($out, ['Belanja bahan baku', $summary['belanja_bahan']]);
-            fputcsv($out, ['Biaya produksi', $summary['biaya_produksi']]);
-            fputcsv($out, ['Unit diproduksi', $summary['unit_produksi']]);
-            fputcsv($out, ['HPP rata-rata', $summary['hpp_rata']]);
 
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);

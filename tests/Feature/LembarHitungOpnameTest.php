@@ -2,19 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\MaterialOpnames\MaterialOpnameResource;
 use App\Filament\Resources\StockOpnames\Pages\LembarHitung;
 use App\Filament\Resources\StockOpnames\StockOpnameResource;
 use App\Models\Item;
 use App\Models\ItemCategory;
-use App\Models\Material;
-use App\Models\MaterialOpname;
-use App\Models\MaterialOpnameItem;
-use App\Models\Rack;
 use App\Models\StockOpname;
 use App\Models\StockOpnameItem;
 use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -143,64 +137,6 @@ class LembarHitungOpnameTest extends TestCase
 
         $lembar->set('barisKosong', 0);
         $this->assertSame(0, substr_count($lembar->html(), 'num kotak'));
-    }
-
-    public function test_lembar_bahan_kosong_bisa_dicetak_tanpa_sesi_apa_pun(): void
-    {
-        Material::create([
-            'sku' => 'PIP-010',
-            'name' => 'Pipa Uji Kosong',
-            'dimension_type' => 'linear',
-            'unit' => 'batang',
-            'length_mm' => 6000,
-        ]);
-
-        $this->assertSame(0, MaterialOpname::count());
-
-        $this->get(MaterialOpnameResource::getUrl('lembar-kosong'))
-            ->assertOk()
-            ->assertSee('Lembar Hitung Fisik Bahan')
-            ->assertSee('Pipa Uji Kosong')
-            ->assertSee('Belum Tercatat di Rak');
-    }
-
-    public function test_lembar_bahan_memuat_rak_dan_konversi_satuan(): void
-    {
-        $gudang = Warehouse::create(['name' => 'Gudang Produksi', 'code' => 'GP']);
-        $rak = Rack::create(['warehouse_id' => $gudang->id, 'name' => 'Rak Pipa', 'code' => 'A1']);
-
-        $bahan = Material::create([
-            'sku' => 'PIP-304',
-            'name' => 'Pipa Stainless 304 1.5 inch',
-            'dimension_type' => 'linear',
-            'unit' => 'batang',
-            'length_mm' => 6000,
-            'stock' => 30000,
-        ]);
-
-        $opname = MaterialOpname::create([
-            'opname_number' => 'SOB-UJI-1',
-            'opname_date' => now(),
-            'warehouse_id' => $gudang->id,
-            'counted_by' => 'Sigit',
-            'status' => 'draft',
-        ]);
-
-        MaterialOpnameItem::create([
-            'material_opname_id' => $opname->id,
-            'material_id' => $bahan->id,
-            'rack_id' => $rak->id,
-            'system_qty' => 30000,
-            'physical_qty' => 0,
-        ]);
-
-        $this->get(MaterialOpnameResource::getUrl('lembar-hitung', ['record' => $opname]))
-            ->assertOk()
-            ->assertSee('Lembar Hitung Fisik Bahan')
-            ->assertSee('Pipa Stainless 304 1.5 inch')
-            ->assertSee('Gudang Produksi / A1')
-            ->assertSee('1 batang = 6 m')
-            ->assertSee('Gudang Produksi');
     }
 
     private function sesiAset(): StockOpname
