@@ -31,7 +31,12 @@ class KomponenKnalpotTest extends TestCase
 
         $silincer = ExhaustComponent::where('name', 'Silincer')->sole();
         $this->assertSame(
-            ['Shock', 'Tutup DB', 'Tabung Silincer', 'Braket Atas', 'Braket Tengah', 'Braket Bawah'],
+            [
+                'Shock Pipa Depan', 'Tutup DB Depan', 'Tabung Silincer', 'Tutup DB Belakang',
+                'Moncong Knalpot', 'Shock Belakang', 'Sarangan', 'Tameng', 'Emblem',
+                'Braket Atas', 'Braket Tengah', 'Braket Bawah', 'Braket Samping',
+                'Baut', 'Mur', 'Baut Ripet',
+            ],
             $silincer->children->pluck('name')->all(),
         );
     }
@@ -64,14 +69,15 @@ class KomponenKnalpotTest extends TestCase
     public function test_komponen_baru_bisa_ditambahkan_ke_bagian_yang_ada(): void
     {
         $silincer = ExhaustComponent::where('name', 'Silincer')->sole();
+        $sebelum = $silincer->children()->count();
 
         ExhaustComponent::create([
             'parent_id' => $silincer->id,
             'name' => 'Peredam Glasswool',
-            'sort_order' => 70,
+            'sort_order' => 200,
         ]);
 
-        $this->assertSame(7, $silincer->refresh()->children()->count());
+        $this->assertSame($sebelum + 1, $silincer->refresh()->children()->count());
         $this->assertSame('Silincer / Peredam Glasswool', ExhaustComponent::where('name', 'Peredam Glasswool')->sole()->fullName());
     }
 
