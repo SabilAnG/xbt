@@ -9,6 +9,7 @@ use App\Models\ProductionItemOpname;
 use App\Models\Warehouse;
 use App\Services\DocumentNumber;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -19,9 +20,13 @@ use Filament\Schemas\Schema;
 /**
  * Form stok opname barang produksi.
  *
+ * Hitung fisik diisi SEBAGAIMANA ORANG MENGHITUNGNYA — "4 batang utuh, sisa
+ * 3 meter" — bukan dalam milimeter. Menyuruh orang mengalikan 4 x 6.000 + 3.000
+ * sendiri berarti memindahkan pekerjaan sistem ke tangannya, dan di situlah
+ * salah hitung lahir.
+ *
  * Juga cara mengisi stok pertama kali: barang yang belum pernah punya stok
- * tercatat 0, jadi hitungan fisiknya langsung menjadi selisih dan masuk ke
- * kartu stok begitu dibukukan.
+ * tercatat 0, jadi hitungan fisiknya langsung menjadi stok awal.
  */
 class ProductionItemOpnameForm
 {
@@ -32,7 +37,7 @@ class ProductionItemOpnameForm
         return $schema->components([
             Section::make('Sesi Opname')
                 ->description('Nota ini tidak menyentuh stok sampai ditekan Bukukan.')
-                ->columns(3)
+                ->columns(4)
                 ->schema([
                     TextInput::make('opname_number')
                         ->label('No. Opname')
@@ -62,27 +67,25 @@ class ProductionItemOpnameForm
                 ]),
 
             Section::make('Hasil Hitung Fisik')
-                ->description('Selisih dihitung otomatis: fisik − catatan. Hanya baris yang selisih yang mengoreksi stok, dan koreksinya tercatat di kartu stok.')
+                ->description('Isi apa adanya sesuai cara Anda menghitung — berapa batang atau lembar yang utuh, lalu sisanya. Selisih dihitung otomatis, dan hanya baris yang selisih yang mengoreksi stok.')
                 ->schema([
                     Repeater::make('items')
                         ->relationship()
                         ->hiddenLabel()
                         ->addActionLabel('Tambah barang')
-                        ->columns(['default' => 1, 'md' => 8])
+                        ->columns(['default' => 1, 'md' => 12])
                         ->disabled($terkunci)
                         ->itemLabel(fn (array $state) => self::barisLabel($state))
                         ->schema([
                             // Jenis dipilih dulu supaya daftar barangnya pendek.
                             // Tidak disimpan — ia hanya alat menyaring.
                             Select::make('jenis_id')
-                                ->label('Jenis Barang')
+                                ->label('Jenis')
                                 ->options(fn () => ProductionItemCategory::query()
                                     ->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
                                 ->searchable()->live()->dehydrated(false)
                                 ->columnSpan(['default' => 1, 'md' => 2])
                                 ->afterStateHydrated(function ($state, callable $get, callable $set) {
-                                    // Nota lama dibuka: jenisnya diturunkan dari
-                                    // barangnya, supaya penyaringnya tetap benar.
                                     if ($state === null && $barang = ProductionItem::find($get('production_item_id'))) {
                                         $set('jenis_id', $barang->production_item_category_id);
                                     }
@@ -98,15 +101,11 @@ class ProductionItemOpnameForm
                                 ->searchable()->required()->distinct()
                                 ->columnSpan(['default' => 1, 'md' => 3])
                                 ->live()
-                                // Barang yang belum terdaftar dibuat di sini,
-                                // selengkap form aslinya — opname memang jalan
-                                // masuk pertama untuk barang maupun stoknya.
                                 ->createOptionForm(fn () => ProductionItemForm::ringkas())
                                 ->createOptionUsing(function (array $data, callable $set) {
                                     $barang = ProductionItem::create($data);
 
                                     $set('jenis_id', $barang->production_item_category_id);
-                                    // Barang baru: belum ada stok di gudang mana pun.
                                     $set('system_qty', 0);
 
                                     return $barang->getKey();
@@ -114,33 +113,47 @@ class ProductionItemOpnameForm
                                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                     // Catatan sistem dibekukan saat barang dipilih,
                                     // supaya selisihnya tetap bercerita walau stok
-                                    // bergerak sebelum notanya dibukukan. Yang
-                                    // dibaca stok DI GUDANG SESI INI, bukan totalnya.
+                                    // bergerak sebelum notanya dibukukan. Yang dibaca
+                                    // stok DI GUDANG SESI INI, bukan totalnya.
                                     $barang = ProductionItem::find($state);
                                     $gudang = (int) $get('../../warehouse_id');
 
-                                    $set('system_qty', $barang && $gudang
-                                        ? $barang->stockIn($gudang)
-                                        : 0);
+                                    $set('system_qty', $barang && $gudang ? $barang->stockIn($gudang) : 0);
                                 }),
 
                             TextInput::make('system_qty')
                                 ->label('Catatan Sistem')
                                 ->numeric()->required()->default(0)
                                 ->disabled()->dehydrated()
-                                ->suffix(fn (callable $get) => self::satuan($get('production_item_id')))
+                                ->columnSpan(['default' => 1, 'md' => 2])
+                                ->helperText(fn (callable $get) => self::bacaanSistem($get)),
+
+                            TextInput::make('count_whole')
+                                ->label('Utuh')
+                                ->numeric()->minValue(0)->default(0)->live(onBlur: true)
+                                ->suffix(fn (callable $get) => self::satuanBeli($get('production_item_id')))
                                 ->columnSpan(['default' => 1, 'md' => 2]),
 
-                            TextInput::make('physical_qty')
-                                ->label('Hitung Fisik')
-                                ->numeric()->required()->default(0)
-                                ->suffix(fn (callable $get) => self::satuan($get('production_item_id')))
+                            TextInput::make('count_remainder')
+                                ->label(fn (callable $get) => self::labelSisa($get('production_item_id')))
+                                ->numeric()->minValue(0)->live(onBlur: true)
+                                ->columnSpan(['default' => 1, 'md' => 1])
+                                ->visible(fn (callable $get) => self::punyaSisa($get('production_item_id'))),
+
+                            TextInput::make('count_remainder_width')
+                                ->label('x Lebar (mm)')
+                                ->numeric()->minValue(0)->live(onBlur: true)
+                                ->columnSpan(['default' => 1, 'md' => 1])
+                                ->visible(fn (callable $get) => self::bentuk($get('production_item_id')) === 'sheet'),
+
+                            Placeholder::make('hasil')
+                                ->label('Hitung fisik')
                                 ->columnSpan(['default' => 1, 'md' => 2])
-                                ->helperText(fn (callable $get) => self::petunjukSatuan($get('production_item_id'))),
+                                ->content(fn (callable $get) => self::hasilHitung($get)),
 
                             TextInput::make('notes')
                                 ->label('Catatan')->maxLength(255)
-                                ->columnSpan(['default' => 1, 'md' => 1]),
+                                ->columnSpan(['default' => 1, 'md' => 12]),
                         ]),
                 ]),
 
@@ -150,36 +163,117 @@ class ProductionItemOpnameForm
         ]);
     }
 
-    /** Satuan pakai barang yang dipilih, untuk imbuhan isian. */
-    private static function satuan(mixed $itemId): ?string
+    // ------------------------------------------------------------- pembantu
+
+    private static function barang(mixed $itemId): ?ProductionItem
     {
-        return ProductionItem::find($itemId)?->baseUnit();
+        return $itemId ? ProductionItem::find($itemId) : null;
     }
 
-    /** Pengingat konversi, supaya batang tidak tertukar dengan milimeter. */
-    private static function petunjukSatuan(mixed $itemId): ?string
+    private static function bentuk(mixed $itemId): ?string
     {
-        $barang = ProductionItem::find($itemId);
+        return self::barang($itemId)?->shape;
+    }
 
-        if (! $barang || $barang->shape === 'count') {
+    private static function satuanBeli(mixed $itemId): ?string
+    {
+        return self::barang($itemId)?->unit;
+    }
+
+    private static function punyaSisa(mixed $itemId): bool
+    {
+        $barang = self::barang($itemId);
+
+        // Baut tidak punya "setengah baut"; lembaran sisanya berupa potongan
+        // berukuran, jadi diisi panjang kali lebar.
+        return $barang !== null && $barang->shape !== 'count';
+    }
+
+    private static function labelSisa(mixed $itemId): string
+    {
+        $barang = self::barang($itemId);
+
+        if (! $barang) {
+            return 'Sisa';
+        }
+
+        if ($barang->shape === 'sheet') {
+            return 'Sisa: Panjang (mm)';
+        }
+
+        return 'Sisa ('.($barang->remainderUnit()[0] ?? '').')';
+    }
+
+    /** Catatan sistem dalam bentuk yang enak dibaca, plus setaranya. */
+    private static function bacaanSistem(callable $get): ?string
+    {
+        $barang = self::barang($get('production_item_id'));
+
+        if (! $barang) {
             return null;
         }
 
-        return 'Isi dalam '.$barang->baseUnit().' — '.$barang->conversionLabel().'.';
+        $qty = (float) $get('system_qty');
+        $bacaan = $barang->formatBase($qty);
+
+        if ($barang->shape === 'count' || $barang->basePerUnit() <= 1) {
+            return $bacaan;
+        }
+
+        $trim = fn ($n) => rtrim(rtrim(number_format($n, 2, ',', '.'), '0'), ',');
+
+        return $bacaan.'  ≈ '.$trim($barang->toPurchase($qty)).' '.$barang->unit;
+    }
+
+    /** Hasil hitungnya, supaya salah ketik ketahuan sebelum disimpan. */
+    private static function hasilHitung(callable $get): string
+    {
+        $barang = self::barang($get('production_item_id'));
+
+        if (! $barang) {
+            return 'Pilih barangnya dulu.';
+        }
+
+        $total = $barang->fromCount(
+            (float) $get('count_whole'),
+            $get('count_remainder') !== null && $get('count_remainder') !== '' ? (float) $get('count_remainder') : null,
+            $get('count_remainder_width') !== null && $get('count_remainder_width') !== '' ? (float) $get('count_remainder_width') : null,
+        );
+
+        $selisih = $total - (float) $get('system_qty');
+        $arah = match (true) {
+            abs($selisih) < 0.0001 => 'cocok',
+            $selisih > 0 => 'lebih '.$barang->formatBase($selisih),
+            default => 'kurang '.$barang->formatBase(abs($selisih)),
+        };
+
+        return $barang->formatBase($total).'  ·  '.$arah;
     }
 
     private static function barisLabel(array $state): string
     {
-        $barang = ProductionItem::find($state['production_item_id'] ?? null);
+        $barang = self::barang($state['production_item_id'] ?? null);
 
         if (! $barang) {
             return 'Baris baru';
         }
 
-        $selisih = (float) ($state['physical_qty'] ?? 0) - (float) ($state['system_qty'] ?? 0);
+        $total = $barang->fromCount(
+            (float) ($state['count_whole'] ?? 0),
+            $state['count_remainder'] ?? null,
+            $state['count_remainder_width'] ?? null,
+        );
 
-        return $barang->name.' — '.($selisih == 0.0
+        $rincian = $barang->countLabel(
+            $state['count_whole'] ?? null,
+            $state['count_remainder'] ?? null,
+            $state['count_remainder_width'] ?? null,
+        );
+
+        $selisih = $total - (float) ($state['system_qty'] ?? 0);
+
+        return $barang->name.' — '.$rincian.' ('.($selisih == 0.0
             ? 'cocok'
-            : ($selisih > 0 ? 'lebih ' : 'kurang ').$barang->formatBase(abs($selisih)));
+            : ($selisih > 0 ? 'lebih ' : 'kurang ').$barang->formatBase(abs($selisih))).')';
     }
 }

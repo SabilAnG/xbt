@@ -315,6 +315,90 @@ class ProductionItem extends Model
         return (float) $this->length_mm * (float) $this->width_mm;
     }
 
+    // ------------------------------------------------- cara orang menghitung
+
+    /**
+     * Satuan yang enak dipakai menyebut SISA, berikut nilainya dalam satuan
+     * pakai. Null untuk bentuk yang tidak mengenal sisa — baut tidak punya
+     * "setengah baut" — dan untuk lembaran, yang sisanya berupa potongan
+     * berukuran, bukan satu angka.
+     *
+     * @return array{0: string, 1: float}|null
+     */
+    public function remainderUnit(): ?array
+    {
+        return match ($this->shape) {
+            'linear' => ['m', 1000.0],
+            'weight' => ['gram', 1.0],
+            'volume' => ['ml', 1.0],
+            default => null,
+        };
+    }
+
+    /**
+     * Hasil hitung fisik dari cara orang menghitungnya: berapa satuan beli
+     * yang utuh, ditambah sisanya.
+     *
+     *   pipa  : 4 batang + sisa 3 m          -> 4 x 6.000 + 3.000 = 27.000 mm
+     *   plat  : 3 lembar + potongan 1200x800 -> 3 x 2.880.000 + 960.000 mm²
+     *   baut  : 40 pcs                       -> 40
+     */
+    public function fromCount(?float $utuh, ?float $sisa = null, ?float $sisaLebar = null): float
+    {
+        $total = (float) $utuh * $this->basePerUnit();
+
+        if ($this->shape === 'sheet') {
+            return $total + ((float) $sisa * (float) $sisaLebar);
+        }
+
+        if ($satuan = $this->remainderUnit()) {
+            return $total + ((float) $sisa * $satuan[1]);
+        }
+
+        return $total;
+    }
+
+    /**
+     * Kebalikannya, untuk membuka kembali nota yang sudah diisi.
+     *
+     * Lembaran tidak bisa dibalik: banyak pasangan panjang x lebar memberi luas
+     * yang sama. Karena itu rinciannya disimpan apa adanya, dan ini hanya
+     * dipakai sebagai dugaan awal bila rincian itu belum ada.
+     *
+     * @return array{utuh: float, sisa: float}
+     */
+    public function splitCount(float $base): array
+    {
+        $per = $this->basePerUnit();
+        $utuh = $per > 0 ? floor($base / $per) : 0.0;
+        $sisaBase = $base - ($utuh * $per);
+        $faktor = $this->remainderUnit()[1] ?? 1.0;
+
+        return [
+            'utuh' => $utuh,
+            'sisa' => $faktor > 0 ? round($sisaBase / $faktor, 3) : $sisaBase,
+        ];
+    }
+
+    /** "4 batang + 3 m" — ringkasan cara menghitungnya, untuk dibaca ulang. */
+    public function countLabel(?float $utuh, ?float $sisa = null, ?float $sisaLebar = null): string
+    {
+        $trim = fn ($n) => rtrim(rtrim(number_format((float) $n, 2, ',', '.'), '0'), ',');
+        $bagian = [];
+
+        if ((float) $utuh > 0) {
+            $bagian[] = $trim($utuh).' '.($this->unit ?: 'pcs');
+        }
+
+        if ($this->shape === 'sheet' && (float) $sisa > 0 && (float) $sisaLebar > 0) {
+            $bagian[] = 'potongan '.$trim($sisa).' x '.$trim($sisaLebar).' mm';
+        } elseif (($satuan = $this->remainderUnit()) && (float) $sisa > 0) {
+            $bagian[] = 'sisa '.$trim($sisa).' '.$satuan[0];
+        }
+
+        return $bagian === [] ? '—' : implode(' + ', $bagian);
+    }
+
     // ------------------------------------------------------------- memotong
 
     public static function kerf(): float

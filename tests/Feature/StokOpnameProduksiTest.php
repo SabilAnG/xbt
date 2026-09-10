@@ -152,6 +152,86 @@ class StokOpnameProduksiTest extends TestCase
         $this->stok->postOpname($this->sesi());
     }
 
+    // ------------------------------------------------ cara orang menghitung
+
+    /**
+     * Contoh nyata dari gudang: 5 batang, empat utuh dan satu tinggal 3 meter.
+     * Orang menghitung begitu; sistem yang mengalikan.
+     */
+    public function test_hitung_pipa_diisi_per_batang_dan_sisanya(): void
+    {
+        $pipa = $this->pipa();   // 1 batang = 6.000 mm
+
+        $this->assertSame(27_000.0, $pipa->fromCount(utuh: 4, sisa: 3));
+        $this->assertSame('4 batang + sisa 3 m', $pipa->countLabel(4, 3));
+
+        // Tanpa sisa: empat batang utuh saja.
+        $this->assertSame(24_000.0, $pipa->fromCount(utuh: 4));
+    }
+
+    public function test_hitung_plat_diisi_per_lembar_dan_potongan_sisa(): void
+    {
+        $plat = $this->plat();   // 1 lembar 1.200 x 2.400 = 2.880.000 mm²
+
+        // 3 lembar utuh + satu potongan 1.200 x 800.
+        $this->assertSame(9_600_000.0, $plat->fromCount(utuh: 3, sisa: 1_200, sisaLebar: 800));
+        $this->assertSame('3 lembar + potongan 1.200 x 800 mm', $plat->countLabel(3, 1_200, 800));
+    }
+
+    public function test_barang_satuan_tidak_mengenal_sisa(): void
+    {
+        $baut = ProductionItem::create([
+            'sku' => 'BAUT-01', 'name' => 'Baut M8', 'shape' => 'count',
+            'unit' => 'pcs', 'cost_price' => 1_500,
+        ]);
+
+        $this->assertNull($baut->remainderUnit());
+        $this->assertSame(40.0, $baut->fromCount(utuh: 40, sisa: 99));
+        $this->assertSame('40 pcs', $baut->countLabel(40, 99));
+    }
+
+    /**
+     * Hasil tidak pernah diketik terpisah dari caranya — kalau bisa, keduanya
+     * akan berselisih dan tidak ada yang tahu mana yang benar.
+     */
+    public function test_hasil_diturunkan_dari_cara_menghitung(): void
+    {
+        $pipa = $this->pipa();
+        $opname = $this->sesi();
+
+        $baris = ProductionItemOpnameItem::create([
+            'production_item_opname_id' => $opname->id,
+            'production_item_id' => $pipa->id,
+            'system_qty' => 30_000,
+            'count_whole' => 4,
+            'count_remainder' => 3,
+        ]);
+
+        $this->assertSame(27_000.0, (float) $baris->refresh()->physical_qty);
+        $this->assertSame(-3_000.0, (float) $baris->difference);
+        $this->assertSame('4 batang + sisa 3 m', $baris->countLabel());
+    }
+
+    public function test_pembukuan_memakai_hasil_dari_cara_menghitung(): void
+    {
+        $pipa = $this->pipa();
+        $opname = $this->sesi();
+
+        ProductionItemOpnameItem::create([
+            'production_item_opname_id' => $opname->id,
+            'production_item_id' => $pipa->id,
+            'system_qty' => 0,
+            'count_whole' => 4,
+            'count_remainder' => 3,
+        ]);
+
+        $this->stok->postOpname($opname);
+
+        // 4 x 6 m + 3 m = 27 m masuk sebagai stok awal.
+        $this->assertSame(27_000.0, (float) $pipa->refresh()->stock);
+        $this->assertSame('27 m', $pipa->displayStock());
+    }
+
     // --------------------------------------------------------- per gudang
 
     public function test_stok_dihitung_terpisah_tiap_gudang(): void
@@ -297,9 +377,12 @@ class StokOpnameProduksiTest extends TestCase
 
         Livewire::test(CreateProductionItemOpname::class)
             ->assertSuccessful()
-            ->assertSee('Jenis Barang')
+            ->assertSee('Gudang yang dihitung')
+            ->assertSee('Jenis')
             ->assertSee('Catatan Sistem')
-            ->assertSee('Hitung Fisik');
+            // Diisi per satuan beli, bukan dalam satuan pakai.
+            ->assertSee('Utuh')
+            ->assertSee('Hitung fisik');
     }
 
     // --------------------------------------------------------------- fixture
@@ -313,6 +396,20 @@ class StokOpnameProduksiTest extends TestCase
             'unit' => 'batang',
             'length_mm' => 6_000,
             'cost_price' => 90_000,     // -> Rp15 per mm
+        ]);
+    }
+
+    private function plat(): ProductionItem
+    {
+        return ProductionItem::create([
+            'sku' => sprintf('PLT-%03d', ++$this->urut),
+            'name' => 'Plat SS 304 0,8mm #'.$this->urut,
+            'shape' => 'sheet',
+            'unit' => 'lembar',
+            'length_mm' => 1_200,
+            'width_mm' => 2_400,
+            'thickness_mm' => 0.8,
+            'cost_price' => 500_000,
         ]);
     }
 
