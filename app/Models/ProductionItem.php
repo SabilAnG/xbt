@@ -557,24 +557,35 @@ class ProductionItem extends Model
         return '1 '.($this->unit ?: 'unit').' = '.$this->formatBase($this->basePerUnit());
     }
 
-    /** Ringkasan ukuran fisiknya, mis. "Ø28 x 6000 mm, tebal 1,2". */
+    /**
+     * Ringkasan ukuran fisiknya, ditulis kembali dalam satuan yang dipakai
+     * mengetiknya — orang yang memasukkan 1,5" tidak mengenali "Ø38,1".
+     *
+     * Mis. "Ø28, 6.000 mm, tebal 1,2 mm" atau "Ø1,5", 236,22"".
+     */
     public function displayDimensions(): string
     {
-        $trim = fn ($n) => rtrim(rtrim(number_format((float) $n, 2, ',', '.'), '0'), ',');
+        $satuan = $this->size_unit ?: 'mm';
+        $lambang = $this->sizeUnitSuffix();
+
+        $trim = fn ($mm) => rtrim(rtrim(
+            number_format(self::fromMm((float) $mm, $satuan), 2, ',', '.'), '0'
+        ), ',');
+
         $bagian = [];
 
         if ((float) $this->diameter_mm > 0) {
-            $bagian[] = 'Ø'.$trim($this->diameter_mm);
+            $bagian[] = 'Ø'.$trim($this->diameter_mm).$lambang;
         }
 
         if ((float) $this->length_mm > 0 && (float) $this->width_mm > 0) {
-            $bagian[] = $trim($this->length_mm).' x '.$trim($this->width_mm).' mm';
+            $bagian[] = $trim($this->length_mm).' x '.$trim($this->width_mm).' '.$lambang;
         } elseif ((float) $this->length_mm > 0) {
-            $bagian[] = $trim($this->length_mm).' mm';
+            $bagian[] = $trim($this->length_mm).' '.$lambang;
         }
 
         if ((float) $this->thickness_mm > 0) {
-            $bagian[] = 'tebal '.$trim($this->thickness_mm);
+            $bagian[] = 'tebal '.$trim($this->thickness_mm).' '.$lambang;
         }
 
         return $bagian === [] ? '—' : implode(', ', $bagian);

@@ -151,12 +151,17 @@ class ProductionItemForm
     {
         $bentuk = fn (string ...$tipe) => fn (callable $get) => in_array($get('shape'), $tipe, true);
 
+        // Bentuk berdimensi WAJIB berukuran — tanpa itu konversi satuan tidak
+        // bisa dihitung. Yang satuan (baut, emblem) tidak: ukurannya cuma
+        // keterangan, jadi ditanyakan hanya bila memang mau dicatat.
+        $adaUkuran = fn (callable $get) => $get('shape') !== 'count' || (bool) $get('pakai_ukuran');
+
         return [
             Select::make('shape')
                 ->label('Bentuk')
                 ->options(ProductionItem::SHAPES)
                 ->default('count')->required()->live()
-                ->helperText('Menentukan ukuran mana yang berlaku.'),
+                ->helperText('Menentukan ukuran mana yang berlaku, dan bagaimana satuan belinya dikonversi.'),
 
             TextInput::make('unit')
                 ->label('Satuan Beli')->required()->default('pcs')->maxLength(255)
@@ -166,11 +171,25 @@ class ProductionItemForm
                 ->label('Harga per Satuan Beli')
                 ->numeric()->prefix('Rp')->default(0)->required()->live(onBlur: true),
 
+            // Tidak disimpan: keadaannya diturunkan dari ada tidaknya ukuran
+            // yang sudah terisi, jadi tidak perlu kolom sendiri.
+            Toggle::make('pakai_ukuran')
+                ->label('Catat ukurannya juga')
+                ->dehydrated(false)->live()
+                ->visible($bentuk('count'))
+                ->helperText('Nyalakan untuk barang satuan yang ukurannya perlu dicatat, seperti DB killer Ø28 atau perforated core 30 x 300.')
+                ->afterStateHydrated(function (callable $get, callable $set) {
+                    $terisi = collect(self::MEDAN_UKURAN)
+                        ->contains(fn (string $medan) => filled($get($medan)));
+
+                    $set('pakai_ukuran', $terisi);
+                }),
+
             Select::make('size_unit')
                 ->label('Satuan ukuran')
                 ->options(ProductionItem::SIZE_UNIT_LABELS)
                 ->default('mm')->required()->live()
-                ->visible($bentuk('linear', 'sheet', 'count'))
+                ->visible(fn (callable $get) => $adaUkuran($get) && $get('shape') !== 'weight' && $get('shape') !== 'volume')
                 ->helperText('Cara Anda menyebut ukurannya. Disimpan tetap dalam mm, jadi perhitungan tidak ikut berubah.')
                 ->afterStateUpdated(function ($state, $old, callable $get, callable $set) {
                     // Angka di layar dinyatakan ulang dalam satuan baru; ukuran
@@ -189,13 +208,19 @@ class ProductionItemForm
                 }),
 
             TextInput::make('length_mm')
-                ->label(fn (callable $get) => $get('shape') === 'sheet' ? 'Panjang lembar' : 'Panjang per batang')
+                ->label(fn (callable $get) => match ($get('shape')) {
+                    'sheet' => 'Panjang lembar',
+                    'linear' => 'Panjang per batang',
+                    default => 'Panjang',
+                })
                 ->numeric()->minValue(0)->live(onBlur: true)
                 ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
                 ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
                 ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
+                // Wajib hanya untuk yang konversinya bergantung padanya.
                 ->required($bentuk('linear', 'sheet'))
-                ->visible($bentuk('linear', 'sheet')),
+                ->visible(fn (callable $get) => in_array($get('shape'), ['linear', 'sheet'], true)
+                    || ($get('shape') === 'count' && (bool) $get('pakai_ukuran'))),
 
             TextInput::make('width_mm')
                 ->label('Lebar lembar')
@@ -226,7 +251,8 @@ class ProductionItemForm
                 ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
                 ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
                 ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                ->visible($bentuk('linear', 'count'))
+                ->visible(fn (callable $get) => $get('shape') === 'linear'
+                    || ($get('shape') === 'count' && (bool) $get('pakai_ukuran')))
                 ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
 
             TextInput::make('thickness_mm')
@@ -235,7 +261,8 @@ class ProductionItemForm
                 ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
                 ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
                 ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
-                ->visible($bentuk('linear', 'sheet'))
+                ->visible(fn (callable $get) => in_array($get('shape'), ['linear', 'sheet'], true)
+                    || ($get('shape') === 'count' && (bool) $get('pakai_ukuran')))
                 ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
 
             Placeholder::make('konversi')

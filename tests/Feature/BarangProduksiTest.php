@@ -157,6 +157,44 @@ class BarangProduksiTest extends TestCase
         $this->assertEqualsWithDelta(6_000.0, (float) $pipa->length_mm, 1.0);
     }
 
+    /**
+     * Baut dan emblem tidak punya diameter yang perlu dicatat. Menanyakannya
+     * hanya menambah isian yang dilewati orang, dan isian yang dilewati
+     * lama-lama membuat form terasa boleh diabaikan.
+     */
+    public function test_barang_satuan_bisa_dibuat_tanpa_ukuran_sama_sekali(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateProductionItem::class)
+            ->fillForm([
+                'name' => 'Baut M8 x 20',
+                'sku' => 'BAUT-M8',
+                'shape' => 'count',
+                'unit' => 'pcs',
+                'cost_price' => 1_500,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $baut = ProductionItem::where('sku', 'BAUT-M8')->sole();
+
+        $this->assertSame('—', $baut->displayDimensions());
+        $this->assertSame(1.0, $baut->basePerUnit());
+        $this->assertSame(1_500.0, $baut->basePrice());
+        $this->assertSame('1 pcs', $baut->conversionLabel());
+    }
+
+    /** Yang mengetik 1,5" tidak mengenali "Ø38,1". */
+    public function test_ukuran_ditampilkan_dalam_satuan_yang_dipakai_mengetiknya(): void
+    {
+        $inch = $this->pipa(['size_unit' => 'inch', 'diameter_mm' => 38.1]);
+        $this->assertStringContainsString('Ø1,5"', $inch->displayDimensions());
+
+        $mm = $this->pipa(['size_unit' => 'mm', 'diameter_mm' => 28]);
+        $this->assertStringContainsString('Ø28mm', $mm->displayDimensions());
+    }
+
     // ------------------------------------------------------------ memotong
 
     public function test_potong_batang_menghitung_muat_dan_sisa_ujungnya(): void
