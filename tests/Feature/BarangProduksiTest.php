@@ -83,6 +83,80 @@ class BarangProduksiTest extends TestCase
         $this->assertSame(90_000.0, $belum->basePrice());
     }
 
+    // ------------------------------------------------------- satuan ukuran
+
+    public function test_ukuran_dikonversi_dari_satuan_yang_dipilih(): void
+    {
+        $this->assertSame(6_000.0, ProductionItem::toMm(6, 'm'));
+        $this->assertSame(600.0, ProductionItem::toMm(60, 'cm'));
+        $this->assertSame(28.0, ProductionItem::toMm(28, 'mm'));
+
+        // Inch memang tidak bulat dalam biner — 1,5 x 25,4 = 38,09999...
+        // Kolomnya desimal, jadi yang tersimpan tetap 38,1; di sini cukup
+        // dipastikan hitungannya benar, bukan representasi floatnya.
+        $this->assertEqualsWithDelta(38.1, ProductionItem::toMm(1.5, 'inch'), 0.0001);
+
+        // Bolak-balik harus kembali ke angka semula.
+        $this->assertEqualsWithDelta(1.5, ProductionItem::fromMm(38.1, 'inch'), 0.0001);
+        $this->assertSame(6.0, ProductionItem::fromMm(6_000, 'm'));
+    }
+
+    /** Satuan yang tidak dikenal tidak boleh diam-diam mengubah angka. */
+    public function test_satuan_kosong_diperlakukan_sebagai_milimeter(): void
+    {
+        $this->assertSame(500.0, ProductionItem::toMm(500, null));
+        $this->assertSame(500.0, ProductionItem::fromMm(500, 'entah'));
+    }
+
+    public function test_mengetik_ukuran_dalam_meter_tersimpan_sebagai_milimeter(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateProductionItem::class)
+            ->fillForm([
+                'name' => 'Pipa 6 meter',
+                'sku' => 'PIP-METER',
+                'shape' => 'linear',
+                'unit' => 'batang',
+                'size_unit' => 'm',
+                'length_mm' => 6,
+                'cost_price' => 90_000,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $pipa = ProductionItem::where('sku', 'PIP-METER')->sole();
+
+        // Diketik 6 meter, tersimpan 6.000 mm — dan harga per mm ikut benar.
+        $this->assertSame(6_000.0, (float) $pipa->length_mm);
+        $this->assertSame('m', $pipa->size_unit);
+        $this->assertSame(15.0, $pipa->basePrice());
+    }
+
+    public function test_mengetik_diameter_dalam_inch_tersimpan_sebagai_milimeter(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateProductionItem::class)
+            ->fillForm([
+                'name' => 'Pipa 1,5 inch',
+                'sku' => 'PIP-INCH',
+                'shape' => 'linear',
+                'unit' => 'batang',
+                'size_unit' => 'inch',
+                'length_mm' => 236.22,   // ~6 m dalam inch
+                'diameter_mm' => 1.5,
+                'cost_price' => 90_000,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $pipa = ProductionItem::where('sku', 'PIP-INCH')->sole();
+
+        $this->assertSame(38.1, (float) $pipa->diameter_mm);
+        $this->assertEqualsWithDelta(6_000.0, (float) $pipa->length_mm, 1.0);
+    }
+
     // ------------------------------------------------------------ memotong
 
     public function test_potong_batang_menghitung_muat_dan_sisa_ujungnya(): void

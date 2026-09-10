@@ -23,6 +23,9 @@ use Illuminate\Support\Str;
  */
 class ProductionItemForm
 {
+    /** Isian yang mengikuti satuan ukuran pilihan. */
+    private const MEDAN_UKURAN = ['length_mm', 'width_mm', 'diameter_mm', 'thickness_mm'];
+
     public static function configure(Schema $schema): Schema
     {
         $bentuk = fn (string ...$tipe) => fn (callable $get) => in_array($get('shape'), $tipe, true);
@@ -94,15 +97,43 @@ class ProductionItemForm
                         ->label('Harga per Satuan Beli')
                         ->numeric()->prefix('Rp')->default(0)->required()->live(onBlur: true),
 
+                    Select::make('size_unit')
+                        ->label('Satuan ukuran')
+                        ->options(ProductionItem::SIZE_UNIT_LABELS)
+                        ->default('mm')->required()->live()
+                        ->visible($bentuk('linear', 'sheet', 'count'))
+                        ->helperText('Cara Anda menyebut ukurannya. Disimpan tetap dalam mm, jadi perhitungan tidak ikut berubah.')
+                        ->afterStateUpdated(function ($state, $old, callable $get, callable $set) {
+                            // Angka di layar dinyatakan ulang dalam satuan baru;
+                            // ukuran fisiknya tetap sama. 6.000 mm jadi 600 cm,
+                            // bukan tiba-tiba berarti 6.000 cm.
+                            foreach (self::MEDAN_UKURAN as $medan) {
+                                $nilai = $get($medan);
+
+                                if ($nilai === null || $nilai === '') {
+                                    continue;
+                                }
+
+                                $mm = ProductionItem::toMm((float) $nilai, $old);
+                                $set($medan, self::rapikan(ProductionItem::fromMm($mm, $state)));
+                            }
+                        }),
+
                     TextInput::make('length_mm')
-                        ->label(fn (callable $get) => $get('shape') === 'sheet' ? 'Panjang lembar (mm)' : 'Panjang per batang (mm)')
+                        ->label(fn (callable $get) => $get('shape') === 'sheet' ? 'Panjang lembar' : 'Panjang per batang')
                         ->numeric()->minValue(0)->live(onBlur: true)
+                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
                         ->required($bentuk('linear', 'sheet'))
                         ->visible($bentuk('linear', 'sheet')),
 
                     TextInput::make('width_mm')
-                        ->label('Lebar lembar (mm)')
+                        ->label('Lebar lembar')
                         ->numeric()->minValue(0)->live(onBlur: true)
+                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
                         ->required($bentuk('sheet'))
                         ->visible($bentuk('sheet')),
 
@@ -121,14 +152,20 @@ class ProductionItemForm
                         ->helperText('1 liter = 1000.'),
 
                     TextInput::make('diameter_mm')
-                        ->label('Diameter (mm)')
+                        ->label('Diameter')
                         ->numeric()->minValue(0)
+                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
                         ->visible($bentuk('linear', 'count'))
                         ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
 
                     TextInput::make('thickness_mm')
-                        ->label('Tebal (mm)')
+                        ->label('Tebal')
                         ->numeric()->minValue(0)
+                        ->suffix(fn (callable $get) => self::lambang($get('size_unit')))
+                        ->formatStateUsing(fn ($state, callable $get) => self::keSatuan($state, $get('size_unit')))
+                        ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
                         ->visible($bentuk('linear', 'sheet'))
                         ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
 
@@ -191,17 +228,53 @@ class ProductionItemForm
         ];
     }
 
+    // ------------------------------------------------------- satuan ukuran
+
+    /** Lambang singkat untuk imbuhan isian. */
+    private static function lambang(?string $satuan): string
+    {
+        return $satuan === 'inch' ? '"' : ($satuan ?: 'mm');
+    }
+
+    /** mm yang tersimpan -> angka dalam satuan pilihan, untuk ditampilkan. */
+    private static function keSatuan(mixed $state, ?string $satuan): mixed
+    {
+        return ($state === null || $state === '')
+            ? $state
+            : self::rapikan(ProductionItem::fromMm((float) $state, $satuan));
+    }
+
+    /** Angka dalam satuan pilihan -> mm, untuk disimpan. */
+    private static function keMm(mixed $state, ?string $satuan): ?float
+    {
+        return ($state === null || $state === '')
+            ? null
+            : ProductionItem::toMm((float) $state, $satuan);
+    }
+
+    /**
+     * Buang ekor pecahan yang muncul dari pembagian, tanpa mengorbankan
+     * ketelitian inch: 1/2" = 12,7 mm harus tetap utuh.
+     */
+    private static function rapikan(float $n): float
+    {
+        return round($n, 4);
+    }
+
     /**
      * Konversi dan harga turunannya, dihitung dari isian yang sedang diketik.
      * Salah ketik satu nol ketahuan di sini, bukan setelah HPP dipakai.
      */
     private static function previewKonversi(callable $get): string
     {
+        $satuan = $get('size_unit');
+
         $barang = new ProductionItem([
             'shape' => $get('shape') ?: 'count',
             'unit' => $get('unit') ?: 'pcs',
-            'length_mm' => $get('length_mm') ?: 0,
-            'width_mm' => $get('width_mm') ?: 0,
+            // Isian ada dalam satuan pilihan; hitungannya selalu mm.
+            'length_mm' => ProductionItem::toMm((float) ($get('length_mm') ?: 0), $satuan),
+            'width_mm' => ProductionItem::toMm((float) ($get('width_mm') ?: 0), $satuan),
             'weight_gram' => $get('weight_gram') ?: 0,
             'volume_ml' => $get('volume_ml') ?: 0,
             'cost_price' => $get('cost_price') ?: 0,

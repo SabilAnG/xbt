@@ -55,6 +55,27 @@ class ProductionItem extends Model
     /** Peran yang keberadaannya wajib untuk produk bisa jadi. */
     public const ROLES_WAJIB = ['utama', 'aksesoris_utama'];
 
+    /**
+     * Satuan yang dipakai saat mengetik ukuran, berikut nilainya dalam mm.
+     *
+     * Pipa disebut orang bengkel dalam inch, plat dalam mm, panjang batang
+     * dalam meter. Ukurannya tetap DISIMPAN dalam mm — ini hanya mengatur cara
+     * mengetiknya, supaya tidak ada perhitungan yang perlu tahu soal ini.
+     */
+    public const SIZE_UNITS = [
+        'mm' => 1.0,
+        'cm' => 10.0,
+        'm' => 1000.0,
+        'inch' => 25.4,
+    ];
+
+    public const SIZE_UNIT_LABELS = [
+        'mm' => 'Milimeter (mm)',
+        'cm' => 'Sentimeter (cm)',
+        'm' => 'Meter (m)',
+        'inch' => 'Inch (")',
+    ];
+
     /** Bentuknya menentukan ukuran mana yang berlaku dan bagaimana dikonversi. */
     public const SHAPES = [
         'linear' => 'Batangan (pipa, as, strip)',
@@ -66,7 +87,7 @@ class ProductionItem extends Model
 
     protected $fillable = [
         'sku', 'name', 'production_item_category_id',
-        'source', 'role', 'shape', 'unit',
+        'source', 'role', 'shape', 'unit', 'size_unit',
         'length_mm', 'width_mm', 'diameter_mm', 'thickness_mm', 'weight_gram', 'volume_ml',
         'cost_price', 'stock', 'min_stock', 'min_reusable',
         'notes', 'is_active',
@@ -82,6 +103,7 @@ class ProductionItem extends Model
         'role' => 'utama',
         'shape' => 'count',
         'unit' => 'pcs',
+        'size_unit' => 'mm',
     ];
 
     protected function casts(): array
@@ -139,6 +161,31 @@ class ProductionItem extends Model
     public function displayShape(): string
     {
         return self::SHAPES[$this->shape] ?? $this->shape;
+    }
+
+    // -------------------------------------------------- satuan saat mengetik
+
+    /** Angka yang diketik dalam satuan pilihan -> mm untuk disimpan. */
+    public static function toMm(float $nilai, ?string $satuan): float
+    {
+        return $nilai * (self::SIZE_UNITS[$satuan ?? 'mm'] ?? 1.0);
+    }
+
+    /** mm yang tersimpan -> angka dalam satuan pilihan untuk ditampilkan. */
+    public static function fromMm(float $mm, ?string $satuan): float
+    {
+        $faktor = self::SIZE_UNITS[$satuan ?? 'mm'] ?? 1.0;
+
+        return $faktor > 0 ? $mm / $faktor : $mm;
+    }
+
+    /** Lambang singkatnya untuk imbuhan isian: mm, cm, m, ". */
+    public function sizeUnitSuffix(): string
+    {
+        return match ($this->size_unit) {
+            'inch' => '"',
+            default => (string) ($this->size_unit ?: 'mm'),
+        };
     }
 
     // -------------------------------------------------------- konversi satuan
