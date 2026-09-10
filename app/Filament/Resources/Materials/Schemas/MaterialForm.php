@@ -28,9 +28,22 @@ class MaterialForm
                     Select::make('material_category_id')
                         ->label('Kategori')
                         ->relationship('category', 'name')
-                        ->searchable()->preload(),
+                        ->searchable()->preload()
+                        ->helperText('Jenis bahannya: Pipa, Plat, Hardware.'),
 
                     Toggle::make('is_active')->label('Aktif')->default(true),
+
+                    Select::make('source')
+                        ->label('Didapat dari')
+                        ->options(Material::SOURCES)
+                        ->default('beli')->required()
+                        ->helperText('Cone dan perforated core bisa ditebus di toko maupun dibuat sendiri — pilih yang ketiga bila keduanya mungkin.'),
+
+                    Select::make('role')
+                        ->label('Perannya di produk')
+                        ->options(Material::ROLES)
+                        ->default('utama')->required()
+                        ->helperText('Bahan utama menempel jadi badan knalpot; aksesoris seperti baut dan pegas; penolong seperti kawat las dan amplas yang habis dipakai tapi tidak menempel.'),
                 ]),
 
             Section::make('Satuan & Konversi')

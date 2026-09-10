@@ -415,6 +415,14 @@ class FormulaForm
 
             TextInput::make('name')->label('Nama Bahan')->required()->maxLength(255),
 
+            Select::make('role')
+                ->label('Perannya di produk')
+                ->options(Material::ROLES)->default('utama')->required(),
+
+            Select::make('source')
+                ->label('Didapat dari')
+                ->options(Material::SOURCES)->default('beli')->required(),
+
             Select::make('dimension_type')
                 ->label('Tipe Bahan')
                 ->options(Material::DIMENSION_TYPES)

@@ -25,6 +25,28 @@ class Material extends Model
     /** Lebar mata potong bawaan, dipakai bila belum diatur di pengaturan. */
     public const DEFAULT_KERF = 3.0;
 
+    /**
+     * Didapat dari mana. Menentukan apakah kekurangannya jadi daftar belanja
+     * atau jadwal kerja — bahan yang bisa dua-duanya menyerahkan pilihan itu
+     * ke orang, bukan ke sistem.
+     */
+    public const SOURCES = [
+        'beli' => 'Dibeli',
+        'produksi' => 'Dibuat sendiri',
+        'beli_produksi' => 'Dibeli atau dibuat sendiri',
+    ];
+
+    /**
+     * Perannya di produk jadi. Sumbu yang berbeda dari kategori: kategori
+     * memuat JENIS bahan (Pipa, Plat, Hardware), ini memuat untuk apa ia
+     * dipakai.
+     */
+    public const ROLES = [
+        'utama' => 'Bahan Utama',
+        'aksesoris' => 'Aksesoris',
+        'penolong' => 'Bahan Penolong',
+    ];
+
     public const DIMENSION_TYPES = [
         'linear' => 'Linear (pipa, batangan)',
         'sheet' => 'Lembaran (plat)',
@@ -34,7 +56,7 @@ class Material extends Model
     ];
 
     protected $fillable = [
-        'sku', 'name', 'material_category_id', 'dimension_type', 'unit',
+        'sku', 'name', 'material_category_id', 'source', 'role', 'dimension_type', 'unit',
         'length_mm', 'sheet_length_mm', 'sheet_width_mm', 'weight_gram', 'volume_ml',
         'diameter_mm', 'thickness_mm',
         'cost_price', 'stock', 'min_stock', 'min_reusable', 'notes', 'is_active',
@@ -63,6 +85,30 @@ class Material extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(MaterialCategory::class, 'material_category_id');
+    }
+
+    // ----------------------------------------------------- sumber dan peran
+
+    /** Kekurangannya bisa ditutup dengan membeli. */
+    public function bisaDibeli(): bool
+    {
+        return $this->source !== 'produksi';
+    }
+
+    /** Kekurangannya bisa ditutup dengan membuat sendiri. */
+    public function bisaDiproduksi(): bool
+    {
+        return $this->source !== 'beli';
+    }
+
+    public function displaySource(): string
+    {
+        return self::SOURCES[$this->source] ?? $this->source;
+    }
+
+    public function displayRole(): string
+    {
+        return self::ROLES[$this->role] ?? $this->role;
     }
 
     public function movements(): HasMany

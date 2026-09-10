@@ -37,6 +37,26 @@ class MaterialsTable
                 TextColumn::make('name')->label('Bahan')->searchable()->sortable()->wrap()
                     ->description(fn (Material $record) => $record->category?->name),
 
+                TextColumn::make('role')
+                    ->label('Peran')
+                    ->badge()->toggleable()
+                    ->formatStateUsing(fn (Material $record) => $record->displayRole())
+                    ->color(fn (string $state) => match ($state) {
+                        'utama' => 'primary',
+                        'aksesoris' => 'info',
+                        default => 'gray',
+                    }),
+
+                TextColumn::make('source')
+                    ->label('Didapat dari')
+                    ->badge()->toggleable()
+                    ->formatStateUsing(fn (Material $record) => $record->displaySource())
+                    ->color(fn (string $state) => match ($state) {
+                        'produksi' => 'warning',
+                        'beli_produksi' => 'success',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('dimension_type')
                     ->label('Tipe')
                     ->badge()
@@ -105,6 +125,12 @@ class MaterialsTable
 
                 SelectFilter::make('dimension_type')->label('Tipe')
                     ->options(Material::DIMENSION_TYPES),
+
+                SelectFilter::make('role')->label('Peran')
+                    ->options(Material::ROLES),
+
+                SelectFilter::make('source')->label('Didapat dari')
+                    ->options(Material::SOURCES),
 
                 Filter::make('menipis')
                     ->label('Stok menipis / habis')
