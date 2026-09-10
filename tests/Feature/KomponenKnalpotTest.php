@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Filament\Resources\ExhaustComponents\Pages\IsiBagian;
 use App\Filament\Resources\ExhaustComponents\Pages\ListExhaustComponents;
 use App\Models\ExhaustComponent;
-use App\Models\ProductionItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -50,40 +49,16 @@ class KomponenKnalpotTest extends TestCase
     }
 
     /**
-     * Bagian induk memang tidak dibuat dari apa pun. Membedakannya dari
-     * komponen yang bahannya belum diisi itu penting — yang kedua berarti ada
-     * pekerjaan yang belum selesai.
+     * Komponen adalah master murni: apa saja bagian penyusunnya. Bahan dan
+     * ukurannya berbeda tiap model motor, jadi tempatnya di formula — bukan di
+     * sini, yang kalau diisi harus digandakan per model.
      */
-    public function test_bagian_tanpa_bahan_berbeda_artinya_dari_komponen_yang_belum_diisi(): void
+    public function test_komponen_tidak_menyimpan_bahan_baku(): void
     {
-        $header = ExhaustComponent::where('name', 'Header')->sole();
         $p1 = ExhaustComponent::where('name', 'P1')->sole();
 
-        $this->assertSame('—', $header->displayMaterial());
-        $this->assertSame('Belum dipilih', $p1->displayMaterial());
-
-        // Hanya komponen yang terhitung belum selesai, bukan bagian induknya.
-        $belum = ExhaustComponent::tanpaBahan()->pluck('name');
-        $this->assertContains('P1', $belum);
-        $this->assertNotContains('Header', $belum);
-    }
-
-    public function test_komponen_bisa_menunjuk_bahan_bakunya(): void
-    {
-        $pipa = ProductionItem::create([
-            'sku' => 'PIP-28',
-            'name' => 'Pipa SS 201 Ø28',
-            'shape' => 'linear',
-            'unit' => 'batang',
-            'length_mm' => 6_000,
-            'cost_price' => 90_000,
-        ]);
-
-        $p1 = ExhaustComponent::where('name', 'P1')->sole();
-        $p1->update(['production_item_id' => $pipa->id]);
-
-        $this->assertSame('Pipa SS 201 Ø28', $p1->refresh()->displayMaterial());
-        $this->assertNotContains('P1', ExhaustComponent::tanpaBahan()->pluck('name'));
+        $this->assertArrayNotHasKey('production_item_id', $p1->getAttributes());
+        $this->assertNotContains('production_item_id', $p1->getFillable());
     }
 
     public function test_komponen_baru_bisa_ditambahkan_ke_bagian_yang_ada(): void

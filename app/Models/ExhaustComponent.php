@@ -11,14 +11,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Satu bagian penyusun knalpot.
  *
  * Bertingkat lewat dirinya sendiri: Header dan Silincer adalah bagian induk,
- * P1 dan Tabung Silincer anaknya. Yang punya induk itulah yang benar-benar
- * dibuat dari bahan; induknya hanya wadah.
+ * P1 dan Tabung Silincer anaknya.
+ *
+ * Ini murni daftar — apa saja bagian yang menyusun sebuah knalpot. Bahan apa
+ * yang dipakai, berapa banyak, dan berukuran berapa sengaja tidak ada di sini:
+ * semuanya berbeda tiap model motor dan menjadi isi formula. Menaruhnya di
+ * sini berarti menggandakan daftar ini untuk tiap model.
  */
 class ExhaustComponent extends Model
 {
     protected $fillable = [
-        'parent_id', 'name', 'code', 'production_item_id',
-        'notes', 'is_active', 'sort_order',
+        'parent_id', 'name', 'code', 'notes', 'is_active', 'sort_order',
     ];
 
     protected function casts(): array
@@ -38,15 +41,9 @@ class ExhaustComponent extends Model
         return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order');
     }
 
-    /** Bahan baku pembentuknya. */
-    public function item(): BelongsTo
-    {
-        return $this->belongsTo(ProductionItem::class, 'production_item_id');
-    }
-
     // ------------------------------------------------------------- tingkatan
 
-    /** Bagian induk seperti Header dan Silincer — wadah, bukan barang. */
+    /** Bagian induk seperti Header dan Silincer — wadah, bukan komponen. */
     public function isBagian(): bool
     {
         return $this->parent_id === null;
@@ -68,27 +65,5 @@ class ExhaustComponent extends Model
         return $this->parent
             ? $this->parent->name.' / '.$this->name
             : $this->name;
-    }
-
-    /**
-     * Bahan bakunya, atau keterangan kenapa tidak ada.
-     *
-     * Bagian induk memang tidak dibuat dari apa pun; membedakannya dari
-     * komponen yang bahannya belum diisi itu penting, karena yang kedua
-     * berarti ada pekerjaan yang belum selesai.
-     */
-    public function displayMaterial(): string
-    {
-        if ($this->isBagian()) {
-            return '—';
-        }
-
-        return $this->item?->name ?? 'Belum dipilih';
-    }
-
-    /** Komponen yang bahannya belum ditentukan. */
-    public function scopeTanpaBahan(Builder $query): Builder
-    {
-        return $query->whereNotNull('parent_id')->whereNull('production_item_id');
     }
 }

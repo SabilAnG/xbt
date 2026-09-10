@@ -43,9 +43,6 @@ class ExhaustComponentsTable
                         ->getStateUsing(fn (ExhaustComponent $r) => self::ringkasIsi($r))
                         ->weight('medium'),
 
-                    TextColumn::make('belum')
-                        ->getStateUsing(fn (ExhaustComponent $r) => self::ringkasBelum($r))
-                        ->color('warning')->size('sm'),
                 ])->space(2),
             ])
             ->recordActions([
@@ -65,14 +62,6 @@ class ExhaustComponentsTable
         $jumlah = $bagian->children_count ?? $bagian->children()->count();
 
         return $jumlah === 0 ? 'Belum ada komponen' : $jumlah.' komponen';
-    }
-
-    /** Sisa pekerjaan yang paling sering dicari: bahan yang belum ditentukan. */
-    private static function ringkasBelum(ExhaustComponent $bagian): ?string
-    {
-        $belum = $bagian->children()->whereNull('production_item_id')->count();
-
-        return $belum > 0 ? $belum.' belum ada bahan bakunya' : null;
     }
 
     private static function penjagaHapus(): callable

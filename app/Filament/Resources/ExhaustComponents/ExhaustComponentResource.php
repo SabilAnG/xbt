@@ -34,19 +34,6 @@ class ExhaustComponentResource extends Resource
         return 'Produksi';
     }
 
-    /** Komponen yang bahan bakunya belum dipilih — pekerjaan yang belum selesai. */
-    public static function getNavigationBadge(): ?string
-    {
-        $belum = static::getModel()::query()->tanpaBahan()->where('is_active', true)->count();
-
-        return $belum > 0 ? (string) $belum : null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'warning';
-    }
-
     public static function form(Schema $schema): Schema
     {
         return ExhaustComponentForm::configure($schema);

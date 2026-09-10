@@ -10,7 +10,6 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -45,40 +44,27 @@ class IsiBagian extends Page implements HasTable
     {
         $jumlah = $this->record->children()->count();
 
-        if ($jumlah === 0) {
-            return 'Bagian ini belum berisi komponen.';
-        }
-
-        $belum = $this->record->children()->whereNull('production_item_id')->count();
-
-        return $belum > 0
-            ? $jumlah.' komponen · '.$belum.' belum ada bahan bakunya'
-            : $jumlah.' komponen · bahan bakunya sudah lengkap';
+        return $jumlah === 0
+            ? 'Bagian ini belum berisi komponen.'
+            : $jumlah.' komponen · bahan dan ukurannya diisi nanti di formula';
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->query(fn (): Builder => ExhaustComponent::query()
-                ->with('item')
                 ->where('parent_id', $this->record->id))
             ->defaultSort('sort_order')
             ->paginated(false)
+            ->reorderable('sort_order')
             ->columns([
                 TextColumn::make('name')
                     ->label('Komponen')->searchable()->sortable()->weight('medium')
                     ->description(fn (ExhaustComponent $r) => $r->code),
 
-                TextColumn::make('bahan')
-                    ->label('Bahan Baku')
-                    ->getStateUsing(fn (ExhaustComponent $r) => $r->displayMaterial())
-                    ->color(fn (ExhaustComponent $r) => $r->item === null ? 'danger' : null)
-                    ->weight(fn (ExhaustComponent $r) => $r->item === null ? 'medium' : null)
-                    ->description(fn (ExhaustComponent $r) => $r->item?->conversionLabel()),
-
-                TextColumn::make('item.stock')
-                    ->label('Stok bahan')->alignRight()->toggleable()
-                    ->getStateUsing(fn (ExhaustComponent $r) => $r->item?->displayStock() ?? '—'),
+                TextColumn::make('notes')
+                    ->label('Catatan')->wrap()->color('gray')
+                    ->placeholder('—'),
 
                 TextColumn::make('sort_order')
                     ->label('Urutan')->alignCenter()
@@ -86,14 +72,9 @@ class IsiBagian extends Page implements HasTable
 
                 IconColumn::make('is_active')->label('Aktif')->boolean()->toggleable(),
             ])
-            ->filters([
-                Filter::make('tanpa_bahan')
-                    ->label('Bahan bakunya belum dipilih')
-                    ->query(fn (Builder $query) => $query->whereNull('production_item_id')),
-            ])
             ->recordUrl(fn (ExhaustComponent $record) => ExhaustComponentResource::getUrl('edit', ['record' => $record]))
             ->emptyStateHeading('Belum ada komponen di bagian ini')
-            ->emptyStateDescription('Tambahkan komponennya, lalu pasangkan bahan bakunya.')
+            ->emptyStateDescription('Daftarkan bagian-bagiannya; bahan dan ukurannya menyusul di formula.')
             ->emptyStateIcon('heroicon-o-puzzle-piece');
     }
 
