@@ -138,11 +138,31 @@ class FormulaMaterial extends Model
     }
 
     /**
+     * Jatah batang yang habis karena satu potong.
+     *
+     * Dari batang 6 m yang hanya menghasilkan 7 potong 800 mm, tiap potong
+     * menanggung 857 mm — bukan 800 mm. Ujung 382 mm itu ikut terbeli dan
+     * tidak kembali.
+     *
+     * Yang dibebankan sengaja jatah per potong, bukan batang utuh yang dibeli:
+     * sisa batang kembali jadi stok dan akan dipakai batch berikutnya, jadi
+     * membebankannya sekarang berarti menghitungnya dua kali.
+     */
+    private function barAllocationPerPiece(): ?float
+    {
+        if (! $n = $this->barNesting()) {
+            return null;
+        }
+
+        return (float) $this->material->length_mm / $n['muat'];
+    }
+
+    /**
      * Kebutuhan nyata termasuk susut.
      *
-     * Untuk plat dengan nesting, yang dibebankan bukan luas potongannya
-     * melainkan jatah lembaran per potongan — sisa lembaran yang tidak terpakai
-     * tetap uang yang sudah dikeluarkan.
+     * Baik plat maupun batangan dibebani jatah satuan belinya, bukan ukuran
+     * potongannya — sisa yang tidak bisa dipakai lagi tetap uang yang sudah
+     * dikeluarkan.
      */
     public function effectiveQty(): float
     {
@@ -150,6 +170,8 @@ class FormulaMaterial extends Model
 
         if ($n = $this->nesting()) {
             $qty = $n['area_per_potong'] * max((float) $this->piece_count, 0);
+        } elseif ($jatah = $this->barAllocationPerPiece()) {
+            $qty = $jatah * max((float) $this->piece_count, 0);
         }
 
         return $qty * (1 + ((float) $this->waste_percent / 100));
@@ -199,13 +221,13 @@ class FormulaMaterial extends Model
         );
     }
 
-    /** Berapa rupiah yang hilang jadi sisa potong lembaran. */
+    /**
+     * Berapa rupiah yang hilang jadi sisa potong — sudut lembaran maupun ujung
+     * batang. Selisih jatah dan luas bersihnya nol bila bahannya tidak dipotong,
+     * jadi tidak perlu dijaga dengan syarat tambahan.
+     */
     public function nestingWasteCost(): float
     {
-        if (! $this->nesting()) {
-            return 0.0;
-        }
-
         return ($this->effectiveQty() - $this->netQty()) * ($this->material?->basePrice() ?? 0);
     }
 

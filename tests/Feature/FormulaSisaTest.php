@@ -62,17 +62,20 @@ class FormulaSisaTest extends TestCase
         // --- kebutuhan untuk 5 pcs ---
         $butuh = $formula->requirementFor(5);
 
+        // Yang dibebankan jatah batang, bukan panjang potongannya: satu batang
+        // hanya menghasilkan 7 potong, jadi tiap potong menanggung 6.000/7 =
+        // 857,14 mm. Dua potong per resep = 1.714,29 mm, dikali 5 batch.
         $this->assertSame(5.0, $butuh['batch']);
-        $this->assertSame(8_000.0, $butuh['baris'][0]['butuh']);      // 1.600 x 5
-        $this->assertSame('8 m', $butuh['baris'][0]['butuh_label']);
-        $this->assertSame(120_000.0, $butuh['biaya_bahan']);          // 8.000 mm x Rp15
+        $this->assertEqualsWithDelta(8_571.43, $butuh['baris'][0]['butuh'], 0.01);
+        $this->assertSame('8,57 m', $butuh['baris'][0]['butuh_label']);
+        $this->assertEqualsWithDelta(128_571.43, $butuh['biaya_bahan'], 0.01);
 
         // --- HPP per unit ---
-        // bahan 1.600 x 15 = 24.000; jasa 20 menit @ 25.000/jam = 8.333,33
-        $this->assertEqualsWithDelta(24_000.0, $formula->materialCost(), 0.01);
+        // bahan 1.714,29 x Rp15 = 25.714,29; jasa 20 menit @ 25.000/jam = 8.333,33
+        $this->assertEqualsWithDelta(25_714.29, $formula->materialCost(), 0.01);
         $this->assertEqualsWithDelta(8_333.33, $formula->serviceCost(), 0.01);
         $this->assertEqualsWithDelta(0.0, $formula->overheadCost(), 0.01);
-        $this->assertEqualsWithDelta(32_333.33, $formula->hppPerUnit(), 0.01);
+        $this->assertEqualsWithDelta(34_047.62, $formula->hppPerUnit(), 0.01);
     }
 
     // ------------------------------------------------------------ sisa & sampah
@@ -108,13 +111,14 @@ class FormulaSisaTest extends TestCase
 
         $r = $formula->refresh()->wasteFor(5)['baris'][0];
 
-        // Butuh 8.000 mm, harus beli 2 batang (12.000 mm), sisa 4.000 mm.
+        // Menempel di produk 8.000 mm, ujung batang yang dibebankan 571,43 mm,
+        // beli 2 batang (12.000 mm), sisanya 3.428,57 mm kembali jadi stok.
         $this->assertSame(8_000.0, $r['bersih']);
-        $this->assertSame(0.0, $r['susut']);
+        $this->assertEqualsWithDelta(571.43, $r['susut'], 0.01);
         $this->assertSame(2.0, $r['beli']);
         $this->assertSame(12_000.0, $r['dibeli']);
-        $this->assertSame(4_000.0, $r['sisa']);
-        $this->assertTrue($r['sisa_berguna'], 'Sisa 4 m di atas batas 300 mm, seharusnya kembali jadi stok.');
+        $this->assertEqualsWithDelta(3_428.57, $r['sisa'], 0.01);
+        $this->assertTrue($r['sisa_berguna'], 'Sisa 3,4 m di atas batas 300 mm, seharusnya kembali jadi stok.');
         $this->assertStringContainsString('7 potong', $r['potong']);
     }
 
@@ -127,10 +131,14 @@ class FormulaSisaTest extends TestCase
         $hasil = $formula->refresh()->wasteFor(5);
         $r = $hasil['baris'][0];
 
-        $this->assertSame(4_000.0, $r['sisa']);
-        $this->assertFalse($r['sisa_berguna'], 'Sisa 4 m di bawah batas 5 m, seharusnya dihitung sampah.');
-        $this->assertEqualsWithDelta(60_000.0, $hasil['rp_sisa_terbuang'], 0.01);  // 4.000 mm x Rp15
+        $this->assertEqualsWithDelta(3_428.57, $r['sisa'], 0.01);
+        $this->assertFalse($r['sisa_berguna'], 'Sisa 3,4 m di bawah batas 5 m, seharusnya dihitung sampah.');
+        $this->assertEqualsWithDelta(51_428.57, $hasil['rp_sisa_terbuang'], 0.01);  // 3.428,57 mm x Rp15
         $this->assertEqualsWithDelta(0.0, $hasil['rp_sisa_berguna'], 0.01);
+
+        // Ujung batang yang dibebankan plus sisa yang dibuang: seluruh 4.000 mm
+        // yang tidak menempel di produk, berapa pun cara membaginya.
+        $this->assertEqualsWithDelta(8_571.43, $hasil['rp_susut'], 0.01);
         $this->assertEqualsWithDelta(60_000.0, $hasil['rp_sampah'], 0.01);
     }
 
