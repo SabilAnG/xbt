@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemMovement;
 use App\Models\ProductionItemOpname;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -13,9 +14,13 @@ use RuntimeException;
  *
  * Nota berstatus draft tidak menyentuh apa pun — angka baru nyata setelah
  * dibukukan. Membatalkannya menghapus jejak dokumen itu lalu menghitung ulang
- * stok dari baris yang tersisa; menghitung ulang lebih aman daripada menulis
- * mutasi kebalikan, karena hasilnya tetap benar walau ada dokumen lain yang
- * dibukukan sesudahnya.
+ * dari baris yang tersisa; menghitung ulang lebih aman daripada menulis mutasi
+ * kebalikan, karena hasilnya tetap benar walau ada dokumen lain yang dibukukan
+ * sesudahnya.
+ *
+ * Sejak ada gudang, tiap baris kartu menyebut gudangnya, dan stok punya dua
+ * wajah: total di barang, rincian per gudang. Keduanya sama-sama diturunkan
+ * dari kartu yang sama, jadi tidak bisa berselisih.
  */
 class ProductionStockService
 {
@@ -25,7 +30,11 @@ class ProductionStockService
             throw new RuntimeException('Stok opname ini sudah dibukukan.');
         }
 
-        $opname->loadMissing('items.item');
+        $opname->loadMissing(['items.item', 'warehouse']);
+
+        if (! $opname->warehouse) {
+            throw new RuntimeException('Pilih gudang yang dihitung dulu — koreksi stok harus tahu masuk ke gudang mana.');
+        }
 
         if ($opname->items->isEmpty()) {
             throw new RuntimeException('Tidak bisa membukukan opname tanpa baris barang.');
@@ -36,17 +45,18 @@ class ProductionStockService
                 $selisih = (float) $baris->difference;
 
                 // Cocok dengan catatan: tidak ada yang perlu dikoreksi, dan
-                // tidak perlu meninggalkan baris kartu stok yang kosong makna.
+                // tidak perlu meninggalkan baris kartu yang kosong makna.
                 if (abs($selisih) < 0.0001) {
                     continue;
                 }
 
                 $this->catat(
                     item: $baris->item,
+                    gudang: $opname->warehouse,
                     selisih: $selisih,
                     source: $opname,
                     movedAt: $opname->opname_date,
-                    notes: 'Stok opname '.$opname->opname_number,
+                    notes: 'Stok opname '.$opname->opname_number.' — '.$opname->warehouse->name,
                 );
             }
 
@@ -64,24 +74,26 @@ class ProductionStockService
 
     /**
      * Tulis satu baris kartu stok. Selisih positif menambah, negatif mengurangi.
+     *
+     * `balance_after` adalah saldo GUDANG itu sesudah baris ini, bukan total
+     * seluruh gudang — kartu stok dibaca orang yang sedang berdiri di satu
+     * gudang, dan saldo total tidak menjawab pertanyaannya.
      */
     private function catat(
         ProductionItem $item,
+        Warehouse $gudang,
         float $selisih,
         object $source,
         mixed $movedAt,
         ?string $notes = null,
     ): void {
-        $masuk = max($selisih, 0.0);
-        $keluar = max(-$selisih, 0.0);
-        $saldo = (float) $item->stock + $selisih;
-
         ProductionItemMovement::create([
             'production_item_id' => $item->id,
+            'warehouse_id' => $gudang->id,
             'type' => 'opname',
-            'qty_in' => $masuk,
-            'qty_out' => $keluar,
-            'balance_after' => $saldo,
+            'qty_in' => max($selisih, 0.0),
+            'qty_out' => max(-$selisih, 0.0),
+            'balance_after' => $item->stockIn($gudang->id) + $selisih,
             'unit_cost' => $item->basePrice(),
             'source_type' => $source::class,
             'source_id' => $source->id,
@@ -89,7 +101,9 @@ class ProductionStockService
             'notes' => $notes,
         ]);
 
-        $item->forceFill(['stock' => $saldo])->save();
+        // Total dan rinciannya sama-sama diturunkan ulang dari kartu, supaya
+        // tidak ada jalan bagi keduanya untuk berselisih.
+        $item->recalculateStock();
     }
 
     /** Hapus jejak sebuah dokumen, lalu hitung ulang stok yang terdampak. */

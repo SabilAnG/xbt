@@ -23,7 +23,7 @@ class ProductionItemMovement extends Model
     ];
 
     protected $fillable = [
-        'production_item_id', 'type',
+        'production_item_id', 'warehouse_id', 'type',
         'qty_in', 'qty_out', 'balance_after', 'unit_cost',
         'source_type', 'source_id', 'moved_at', 'notes',
     ];
@@ -42,6 +42,11 @@ class ProductionItemMovement extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(ProductionItem::class, 'production_item_id');
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     public function source(): MorphTo

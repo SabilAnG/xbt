@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -16,7 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ProductionItemCategory extends Model
 {
     protected $fillable = [
-        'name', 'slug', 'source', 'role', 'description', 'is_active', 'sort_order',
+        'name', 'slug', 'source', 'role', 'default_warehouse_id',
+        'description', 'is_active', 'sort_order',
     ];
 
     /** Disamakan dengan bawaan kolomnya — lihat catatan di ProductionItem. */
@@ -33,6 +35,12 @@ class ProductionItemCategory extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ProductionItem::class);
+    }
+
+    /** Gudang tempat barang jenis ini biasanya disimpan. */
+    public function defaultWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'default_warehouse_id');
     }
 
     public function displaySource(): string

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ProductionItemCategories\Schemas;
 
 use App\Models\ProductionItem;
+use App\Models\Warehouse;
 use App\Support\MasterDataForm;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
@@ -29,6 +30,14 @@ class ProductionItemCategoryForm
                     ->options(ProductionItem::SOURCES)
                     ->default('beli')->required()
                     ->helperText('Pilih yang ketiga bila jenis ini bisa ditebus di toko maupun dibuat sendiri, seperti cone dan perforated core.'),
+
+                Select::make('default_warehouse_id')
+                    ->label('Gudang bawaan')
+                    ->options(fn () => Warehouse::query()
+                        ->where('is_active', true)->orderBy('sort_order')->pluck('name', 'id'))
+                    ->searchable()
+                    ->default(fn () => Warehouse::where('type', 'bahan_mentah')->value('id'))
+                    ->helperText('Tempat barang jenis ini biasanya disimpan. Dipakai sebagai isian awal saat opname dan pembelian — bukan pagar, masih bisa diubah.'),
             ],
         );
     }

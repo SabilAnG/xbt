@@ -134,8 +134,13 @@ class ProductionItem extends Model
         return $this->hasMany(ProductionItemMovement::class)->orderByDesc('moved_at');
     }
 
+    public function stocks(): HasMany
+    {
+        return $this->hasMany(ProductionItemStock::class);
+    }
+
     /**
-     * Stok sesungguhnya menurut kartu stok.
+     * Stok sesungguhnya menurut kartu stok — seluruh gudang.
      *
      * Kolom `stock` hanya cache; ini yang menentukan. Dipakai setiap kali
      * pembukuan dibatalkan, karena menghitung ulang tetap benar walau ada
@@ -147,8 +152,47 @@ class ProductionItem extends Model
             - (float) $this->movements()->sum('qty_out');
     }
 
+    /** Stok menurut kartu stok, dibatasi satu gudang. */
+    public function computedStockIn(int $warehouseId): float
+    {
+        $baris = $this->movements()->where('warehouse_id', $warehouseId);
+
+        return (float) (clone $baris)->sum('qty_in') - (float) (clone $baris)->sum('qty_out');
+    }
+
+    /** Stok tercatat di satu gudang, dari tabel rincian. */
+    public function stockIn(int $warehouseId): float
+    {
+        return (float) $this->stocks()->where('warehouse_id', $warehouseId)->value('qty');
+    }
+
+    /**
+     * Hitung ulang total dan rinciannya dari kartu stok.
+     *
+     * Keduanya diturunkan dari sumber yang sama, jadi tidak bisa berselisih.
+     */
     public function recalculateStock(): void
     {
+        $perGudang = $this->movements()
+            ->selectRaw('warehouse_id, SUM(qty_in) - SUM(qty_out) AS saldo')
+            ->groupBy('warehouse_id')
+            ->pluck('saldo', 'warehouse_id');
+
+        foreach ($perGudang as $gudangId => $saldo) {
+            if ($gudangId === null) {
+                continue;
+            }
+
+            ProductionItemStock::updateOrCreate(
+                ['production_item_id' => $this->id, 'warehouse_id' => $gudangId],
+                ['qty' => (float) $saldo],
+            );
+        }
+
+        // Gudang yang mutasinya habis terhapus harus ikut dinolkan, bukan
+        // ditinggal memegang angka lama.
+        $this->stocks()->whereNotIn('warehouse_id', $perGudang->keys()->all())->update(['qty' => 0]);
+
         $this->forceFill(['stock' => $this->computedStock()])->save();
     }
 

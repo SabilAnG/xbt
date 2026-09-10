@@ -6,6 +6,7 @@ use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemCategory;
 use App\Models\ProductionItemOpname;
+use App\Models\Warehouse;
 use App\Services\DocumentNumber;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -42,6 +43,18 @@ class ProductionItemOpnameForm
                     DatePicker::make('opname_date')
                         ->label('Tanggal')->required()->default(now())
                         ->disabled($terkunci),
+
+                    // Satu sesi menghitung satu gudang. Kalau dicampur,
+                    // "catatan sistem" jadi ambigu.
+                    Select::make('warehouse_id')
+                        ->label('Gudang yang dihitung')
+                        ->options(fn () => Warehouse::query()
+                            ->where('is_active', true)->orderBy('sort_order')->pluck('name', 'id'))
+                        ->required()->searchable()->live()
+                        ->default(fn () => Warehouse::where('type', 'bahan_mentah')->value('id'))
+                        ->disabled($terkunci)
+                        ->helperText('Catatan sistem tiap baris diambil dari stok di gudang ini.')
+                        ->afterStateUpdated(fn (callable $set) => $set('items', [])),
 
                     TextInput::make('counted_by')
                         ->label('Dihitung oleh')->maxLength(255)
@@ -93,16 +106,22 @@ class ProductionItemOpnameForm
                                     $barang = ProductionItem::create($data);
 
                                     $set('jenis_id', $barang->production_item_category_id);
-                                    $set('system_qty', (float) $barang->stock);
+                                    // Barang baru: belum ada stok di gudang mana pun.
+                                    $set('system_qty', 0);
 
                                     return $barang->getKey();
                                 })
-                                ->afterStateUpdated(function ($state, callable $set) {
+                                ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                     // Catatan sistem dibekukan saat barang dipilih,
                                     // supaya selisihnya tetap bercerita walau stok
-                                    // bergerak sebelum notanya dibukukan.
+                                    // bergerak sebelum notanya dibukukan. Yang
+                                    // dibaca stok DI GUDANG SESI INI, bukan totalnya.
                                     $barang = ProductionItem::find($state);
-                                    $set('system_qty', $barang ? (float) $barang->stock : 0);
+                                    $gudang = (int) $get('../../warehouse_id');
+
+                                    $set('system_qty', $barang && $gudang
+                                        ? $barang->stockIn($gudang)
+                                        : 0);
                                 }),
 
                             TextInput::make('system_qty')

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -20,7 +21,8 @@ class ProductionItemOpname extends Model
     ];
 
     protected $fillable = [
-        'opname_number', 'opname_date', 'counted_by', 'status', 'posted_at', 'notes',
+        'opname_number', 'opname_date', 'warehouse_id', 'counted_by',
+        'status', 'posted_at', 'notes',
     ];
 
     protected function casts(): array
@@ -36,6 +38,18 @@ class ProductionItemOpname extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ProductionItemOpnameItem::class, 'production_item_opname_id');
+    }
+
+    /**
+     * Satu sesi menghitung satu gudang.
+     *
+     * Kalau satu nota mencampur gudang, "catatan sistem" jadi ambigu — dan
+     * orang yang berdiri di gudang bahan mentah tidak seharusnya melihat baris
+     * gudang finish good di kertasnya.
+     */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     public function movements(): MorphMany

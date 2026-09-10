@@ -9,6 +9,7 @@ use App\Models\ProductionItemMovement;
 use App\Models\ProductionItemOpname;
 use App\Models\ProductionItemOpnameItem;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\ProductionStockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -150,6 +151,92 @@ class StokOpnameProduksiTest extends TestCase
         $this->stok->postOpname($this->sesi());
     }
 
+    // --------------------------------------------------------- per gudang
+
+    public function test_stok_dihitung_terpisah_tiap_gudang(): void
+    {
+        $pipa = $this->pipa();
+        $mentah = $this->gudang('BM');
+        $sisa = $this->gudang('BS');
+
+        // 12 m batang utuh di gudang bahan mentah.
+        $a = $this->sesi($mentah);
+        $this->baris($a, $pipa, sistem: 0, fisik: 12_000);
+        $this->stok->postOpname($a);
+
+        // 1,5 m sisa potong yang masih layak, dikumpulkan di gudang bahan sisa.
+        $b = $this->sesi($sisa);
+        $this->baris($b, $pipa, sistem: 0, fisik: 1_500);
+        $this->stok->postOpname($b);
+
+        $pipa->refresh();
+
+        $this->assertSame(12_000.0, $pipa->stockIn($mentah->id));
+        $this->assertSame(1_500.0, $pipa->stockIn($sisa->id));
+
+        // Kolom stok di barang adalah TOTAL seluruh gudang.
+        $this->assertSame(13_500.0, (float) $pipa->stock);
+        $this->assertSame(13_500.0, $pipa->computedStock());
+    }
+
+    public function test_kartu_stok_menyebut_gudang_dan_saldo_gudang_itu(): void
+    {
+        $pipa = $this->pipa();
+        $sisa = $this->gudang('BS');
+
+        $opname = $this->sesi($sisa);
+        $this->baris($opname, $pipa, sistem: 0, fisik: 1_500);
+        $this->stok->postOpname($opname);
+
+        $mutasi = ProductionItemMovement::sole();
+
+        $this->assertSame($sisa->id, $mutasi->warehouse_id);
+        // Saldo yang dicatat adalah saldo GUDANG itu, bukan total seluruh gudang.
+        $this->assertSame(1_500.0, (float) $mutasi->balance_after);
+        $this->assertStringContainsString('Gudang Bahan Sisa', $mutasi->notes);
+    }
+
+    public function test_koreksi_hanya_menyentuh_gudang_yang_dihitung(): void
+    {
+        $pipa = $this->pipa();
+        $mentah = $this->gudang('BM');
+        $sisa = $this->gudang('BS');
+
+        $this->stok->postOpname(tap($this->sesi($mentah), fn ($o) => $this->baris($o, $pipa, 0, 12_000)));
+        $this->stok->postOpname(tap($this->sesi($sisa), fn ($o) => $this->baris($o, $pipa, 0, 1_500)));
+
+        // Hitung ulang gudang bahan sisa: ternyata tinggal 900 mm.
+        $koreksi = $this->sesi($sisa);
+        $this->baris($koreksi, $pipa, sistem: 1_500, fisik: 900);
+        $this->stok->postOpname($koreksi);
+
+        $pipa->refresh();
+
+        $this->assertSame(900.0, $pipa->stockIn($sisa->id));
+        $this->assertSame(12_000.0, $pipa->stockIn($mentah->id), 'Gudang lain tidak boleh ikut berubah.');
+        $this->assertSame(12_900.0, (float) $pipa->stock);
+    }
+
+    public function test_opname_tanpa_gudang_ditolak(): void
+    {
+        $pipa = $this->pipa();
+
+        $opname = ProductionItemOpname::create([
+            'opname_number' => 'SOP-TANPA-GUDANG',
+            'opname_date' => now(),
+        ]);
+        $this->baris($opname, $pipa, sistem: 0, fisik: 5_000);
+
+        $this->expectException(RuntimeException::class);
+
+        try {
+            $this->stok->postOpname($opname);
+        } finally {
+            $this->assertSame(0.0, (float) $pipa->refresh()->stock);
+            $this->assertSame(0, ProductionItemMovement::count());
+        }
+    }
+
     // ------------------------------------------- mengisi master dari opname
 
     /**
@@ -203,13 +290,19 @@ class StokOpnameProduksiTest extends TestCase
         ]);
     }
 
-    private function sesi(): ProductionItemOpname
+    private function sesi(?Warehouse $gudang = null): ProductionItemOpname
     {
         return ProductionItemOpname::create([
             'opname_number' => sprintf('SOP-%03d', ++$this->urut),
             'opname_date' => now(),
+            'warehouse_id' => ($gudang ?? $this->gudang('BM'))->id,
             'counted_by' => 'Budi',
         ]);
+    }
+
+    private function gudang(string $kode): Warehouse
+    {
+        return Warehouse::where('code', $kode)->sole();
     }
 
     private function baris(
