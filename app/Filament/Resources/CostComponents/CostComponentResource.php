@@ -20,7 +20,7 @@ class CostComponentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyDollar;
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 150;
 
     protected static ?string $modelLabel = 'Komponen Biaya';
 
@@ -28,7 +28,7 @@ class CostComponentResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema

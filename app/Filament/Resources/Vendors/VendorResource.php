@@ -20,7 +20,7 @@ class VendorResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 110;
 
     protected static ?string $modelLabel = 'Vendor';
 
@@ -28,7 +28,7 @@ class VendorResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema

@@ -20,7 +20,7 @@ class RackResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 140;
 
     protected static ?string $modelLabel = 'Rak';
 
@@ -28,7 +28,7 @@ class RackResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema

@@ -20,7 +20,7 @@ class MachineResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog8Tooth;
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 160;
 
     protected static ?string $modelLabel = 'Mesin';
 
@@ -30,7 +30,7 @@ class MachineResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema

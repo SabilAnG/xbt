@@ -34,7 +34,7 @@ class PengaturanProduksi extends Page implements HasForms
 
     protected static ?string $title = 'Pengaturan Produksi';
 
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 190;
 
     protected string $view = 'filament.pages.pengaturan-produksi';
 
@@ -51,7 +51,7 @@ class PengaturanProduksi extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public function mount(): void

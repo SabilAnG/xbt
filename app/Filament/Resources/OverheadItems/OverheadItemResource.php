@@ -20,7 +20,7 @@ class OverheadItemResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static ?int $navigationSort = 70;
+    protected static ?int $navigationSort = 170;
 
     protected static ?string $modelLabel = 'Overhead Bulanan';
 
@@ -30,7 +30,7 @@ class OverheadItemResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema

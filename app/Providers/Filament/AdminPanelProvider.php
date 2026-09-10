@@ -69,7 +69,9 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Produksi')->icon('heroicon-o-wrench-screwdriver'),
                 NavigationGroup::make('Aset')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Master Data')->icon('heroicon-o-rectangle-stack')->collapsed(),
-                NavigationGroup::make('Master Produksi')->icon('heroicon-o-cube-transparent')->collapsed(),
+                // Data acuan produksi dulu berdiri sendiri sebagai "Master
+                // Produksi". Sekarang menyatu di grup Produksi, diurutkan mulai
+                // dari 110 supaya tetap berada di bawah menu harian.
                 NavigationGroup::make('Toko Online')->icon('heroicon-o-globe-alt')->collapsed(),
                 NavigationGroup::make('Website')->icon('heroicon-o-cog-6-tooth')->collapsed(),
             ])

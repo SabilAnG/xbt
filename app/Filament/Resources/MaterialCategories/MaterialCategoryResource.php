@@ -20,7 +20,7 @@ class MaterialCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 120;
 
     protected static ?string $modelLabel = 'Kategori Bahan';
 
@@ -28,7 +28,7 @@ class MaterialCategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Master Produksi';
+        return 'Produksi';
     }
 
     public static function form(Schema $schema): Schema
