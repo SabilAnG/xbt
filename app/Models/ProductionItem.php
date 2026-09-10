@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Satu barang di gudang produksi.
@@ -126,6 +127,29 @@ class ProductionItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductionItemCategory::class, 'production_item_category_id');
+    }
+
+    public function movements(): HasMany
+    {
+        return $this->hasMany(ProductionItemMovement::class)->orderByDesc('moved_at');
+    }
+
+    /**
+     * Stok sesungguhnya menurut kartu stok.
+     *
+     * Kolom `stock` hanya cache; ini yang menentukan. Dipakai setiap kali
+     * pembukuan dibatalkan, karena menghitung ulang tetap benar walau ada
+     * dokumen lain yang dibukukan sesudahnya.
+     */
+    public function computedStock(): float
+    {
+        return (float) $this->movements()->sum('qty_in')
+            - (float) $this->movements()->sum('qty_out');
+    }
+
+    public function recalculateStock(): void
+    {
+        $this->forceFill(['stock' => $this->computedStock()])->save();
     }
 
     // ----------------------------------------------------- sumber dan peran
