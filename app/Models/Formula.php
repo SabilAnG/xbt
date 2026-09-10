@@ -359,6 +359,110 @@ class Formula extends Model
         ];
     }
 
+    // -------------------------------------------------------- sisa dan sampah
+
+    /**
+     * Ke mana bahan yang dibeli itu pergi, bila formula dijalankan untuk
+     * sejumlah unit.
+     *
+     * Tiga angka dipisahkan karena artinya berbeda bagi uang bengkel:
+     *
+     *   bersih — benar-benar menempel di produk
+     *   susut  — hilang saat dikerjakan: mata potong, trim, sudut plat.
+     *            Uang yang habis dan tidak kembali.
+     *   sisa   — bagian satuan beli yang belum tersentuh. Kembali jadi stok,
+     *            KECUALI potongannya sudah terlalu kecil untuk dipakai lagi —
+     *            itu ditentukan `min_reusable` di master bahan.
+     *
+     * Ketiganya menjumlah tepat menjadi yang dibeli, jadi angkanya bisa
+     * diperiksa sendiri: bersih + susut + sisa = dibeli.
+     *
+     * @return array{
+     *     baris: array<int, array<string, mixed>>,
+     *     rp_susut: float, rp_sisa_berguna: float, rp_sisa_terbuang: float, rp_sampah: float
+     * }
+     */
+    public function wasteFor(float $targetUnit): array
+    {
+        $this->loadMissing('materials.material');
+
+        $batch = $this->batchFor($targetUnit);
+        $baris = [];
+        $rpSusut = $rpBerguna = $rpTerbuang = 0.0;
+
+        foreach ($this->materials as $line) {
+            $m = $line->material;
+
+            if (! $m) {
+                continue;
+            }
+
+            $bersih = (float) $line->qty * $batch;
+            $dibebankan = $line->effectiveQty() * $batch;
+            $susut = max(0.0, $dibebankan - $bersih);
+
+            // Yang dibeli selalu satuan utuh — tidak ada toko yang menjual
+            // pipa per milimeter.
+            $beli = (float) ceil($m->toPurchase($dibebankan));
+            $dibeli = $m->toBase($beli);
+            $sisa = max(0.0, $dibeli - $dibebankan);
+            $berguna = $m->isReusable($sisa);
+
+            $harga = $m->basePrice();
+            $rpSusut += $susut * $harga;
+            $berguna
+                ? $rpBerguna += $sisa * $harga
+                : $rpTerbuang += $sisa * $harga;
+
+            $baris[] = [
+                'material' => $m,
+                'bagian' => FormulaMaterial::BOM_GROUPS[$line->bom_group] ?? $line->bom_group,
+                'bersih' => $bersih,
+                'bersih_label' => $m->formatBase($bersih),
+                'susut' => $susut,
+                'susut_label' => $m->formatBase($susut),
+                'dibebankan' => $dibebankan,
+                'dibebankan_label' => $m->formatBase($dibebankan),
+                'beli' => $beli,
+                'beli_label' => rtrim(rtrim(number_format($beli, 2, ',', '.'), '0'), ',').' '.$m->unit,
+                'dibeli' => $dibeli,
+                'dibeli_label' => $m->formatBase($dibeli),
+                'sisa' => $sisa,
+                'sisa_label' => $m->formatBase($sisa),
+                'sisa_berguna' => $berguna,
+                'potong' => $this->cuttingNote($line),
+                'rp_susut' => $susut * $harga,
+                'rp_sisa' => $sisa * $harga,
+            ];
+        }
+
+        return [
+            'baris' => $baris,
+            'rp_susut' => $rpSusut,
+            'rp_sisa_berguna' => $rpBerguna,
+            'rp_sisa_terbuang' => $rpTerbuang,
+            // Susut selalu terbuang; sisa hanya terbuang bila terlalu kecil.
+            'rp_sampah' => $rpSusut + $rpTerbuang,
+        ];
+    }
+
+    /** Penjelasan pola potong baris ini, kalau bahannya memang dipotong. */
+    private function cuttingNote(FormulaMaterial $line): ?string
+    {
+        if ($potong = $line->cuttingLabel()) {
+            return $potong;
+        }
+
+        if (! $line->nesting()) {
+            return null;
+        }
+
+        [$p, $l] = $line->pieceBox();
+        $luas = $line->computeQty() / max((float) $line->piece_count, 1);
+
+        return $line->material?->nestingLabel($p, $l, null, $luas);
+    }
+
     // ------------------------------------------------------------- kapasitas
 
     /**

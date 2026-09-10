@@ -37,7 +37,7 @@ class Material extends Model
         'sku', 'name', 'material_category_id', 'dimension_type', 'unit',
         'length_mm', 'sheet_length_mm', 'sheet_width_mm', 'weight_gram', 'volume_ml',
         'diameter_mm', 'thickness_mm',
-        'cost_price', 'stock', 'min_stock', 'notes', 'is_active',
+        'cost_price', 'stock', 'min_stock', 'min_reusable', 'notes', 'is_active',
     ];
 
     protected function casts(): array
@@ -53,6 +53,7 @@ class Material extends Model
             'cost_price' => 'decimal:2',
             'stock' => 'decimal:3',
             'min_stock' => 'decimal:3',
+            'min_reusable' => 'decimal:3',
             'is_active' => 'boolean',
         ];
     }
@@ -205,6 +206,50 @@ class Material extends Model
                 : 0.0,
             'muat_utuh' => $muat > 0,
         ];
+    }
+
+    /**
+     * Versi batangan dari nesting: berapa potong sepanjang $panjang yang muat
+     * dalam satu batang, dan berapa yang tersisa di ujungnya.
+     *
+     * Selama ini kebutuhan pipa dihitung dengan mengalikan panjang saja, seolah
+     * batang bisa dipotong tanpa sisa. Padahal dari batang 6 m, potongan 800 mm
+     * hanya dapat 7 buah — ujung 382 mm-nya tetap terbeli.
+     *
+     * @return array{muat: int, terpakai_per_batang: float, sisa_per_batang: float, muat_utuh: bool}
+     */
+    public function barNesting(float $panjang, ?float $kerf = null): array
+    {
+        $kerf ??= self::kerf();
+        $batang = (float) $this->length_mm;
+
+        if ($panjang <= 0 || $batang <= 0 || $panjang > $batang) {
+            return ['muat' => 0, 'terpakai_per_batang' => 0.0, 'sisa_per_batang' => 0.0, 'muat_utuh' => false];
+        }
+
+        // Potongan terakhir tidak butuh kerf di belakangnya.
+        $muat = (int) floor(($batang + $kerf) / ($panjang + $kerf));
+        $terpakai = ($muat * $panjang) + (($muat - 1) * $kerf);
+
+        return [
+            'muat' => $muat,
+            'terpakai_per_batang' => $terpakai,
+            'sisa_per_batang' => max(0.0, $batang - $terpakai),
+            'muat_utuh' => $muat > 0,
+        ];
+    }
+
+    /**
+     * Apakah sisa sebesar ini masih layak dipakai lagi.
+     *
+     * Batas nol berarti bengkel belum memutuskan; perlakukan semua sisa sebagai
+     * masih terpakai daripada diam-diam menyebutnya sampah.
+     */
+    public function isReusable(float $sisa): bool
+    {
+        $batas = (float) $this->min_reusable;
+
+        return $batas <= 0 ? $sisa > 0 : $sisa >= $batas;
     }
 
     /** "1 lembar muat 24 potong (6 x 4), sisa 8%" */

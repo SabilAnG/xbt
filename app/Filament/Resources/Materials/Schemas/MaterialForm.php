@@ -146,6 +146,11 @@ class MaterialForm
                         ->label('Stok minimum')
                         ->numeric()->default(0)->minValue(0)
                         ->helperText('Dalam satuan pakai juga — mis. pipa 12000 berarti 12 meter.'),
+
+                    TextInput::make('min_reusable')
+                        ->label('Sisa terkecil yang masih terpakai')
+                        ->numeric()->default(0)->minValue(0)
+                        ->helperText('Dalam satuan pakai. Sisa potong di bawah angka ini dihitung sebagai sampah, di atasnya kembali jadi stok. Mis. pipa 300 berarti potongan di bawah 30 cm dibuang. Kosongkan (0) bila semua sisa masih dianggap terpakai.'),
                 ]),
 
             Section::make('Catatan')

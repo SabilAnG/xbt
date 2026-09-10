@@ -144,6 +144,12 @@ class FormulaForm
                                 ->searchable()->required()
                                 ->columnSpan(['default' => 1, 'sm' => 2, 'md' => 5])
                                 ->live()
+                                // Menyusun resep sering menemukan bahan yang
+                                // belum terdaftar. Keluar ke Master Bahan lalu
+                                // kembali berarti kehilangan isian yang sedang
+                                // diketik, jadi bahannya dibuat di tempat.
+                                ->createOptionForm(fn () => self::bahanBaru())
+                                ->createOptionUsing(fn (array $data) => Material::create($data)->getKey())
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     // Mode input menyesuaikan bentuk bahannya.
                                     $m = Material::find($state);
@@ -258,6 +264,10 @@ class FormulaForm
                                 ->searchable()->required()
                                 ->columnSpan(['default' => 1, 'sm' => 2, 'md' => 5])
                                 ->live()
+                                // Alasan yang sama dengan bahan: proses baru
+                                // sering muncul justru saat resepnya disusun.
+                                ->createOptionForm(fn () => self::jasaBaru())
+                                ->createOptionUsing(fn (array $data) => CostComponent::create($data)->getKey())
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     // Menit standar dari master jadi titik awal;
                                     // tetap bisa diubah per formula.
@@ -379,6 +389,114 @@ class FormulaForm
                             ])])
                             : 'Simpan formula ini dulu untuk melihat perhitungannya.'),
                 ]),
+        ];
+    }
+
+    // ------------------------------------------------- buat sambil menyusun
+
+    /**
+     * Isian ringkas untuk membuat bahan tanpa meninggalkan layar formula.
+     *
+     * Hanya memuat yang membuat bahan bisa langsung dipakai menghitung:
+     * ukuran satuan belinya dan harganya. Kategori, stok minimum, dan catatan
+     * menyusul di Produksi > Stok Bahan — mengisi semuanya di sini akan
+     * mengubah kotak kecil ini jadi form penuh yang justru memutus alur.
+     *
+     * @return array<int, mixed>
+     */
+    private static function bahanBaru(): array
+    {
+        $wajibUkuran = fn (string $tipe) => fn (callable $get) => $get('dimension_type') === $tipe;
+
+        return [
+            TextInput::make('sku')
+                ->label('Kode / SKU')->required()->maxLength(255)
+                ->unique(table: 'materials', column: 'sku'),
+
+            TextInput::make('name')->label('Nama Bahan')->required()->maxLength(255),
+
+            Select::make('dimension_type')
+                ->label('Tipe Bahan')
+                ->options(Material::DIMENSION_TYPES)
+                ->default('count')->required()->live(),
+
+            TextInput::make('unit')
+                ->label('Satuan Beli')->required()->default('pcs')->maxLength(255)
+                ->helperText('Cara Anda membelinya: batang, lembar, kg, pcs.'),
+
+            TextInput::make('cost_price')
+                ->label('Harga per Satuan Beli')
+                ->numeric()->prefix('Rp')->default(0)->required(),
+
+            TextInput::make('length_mm')
+                ->label('Panjang per batang (mm)')->numeric()
+                ->required($wajibUkuran('linear'))->visible($wajibUkuran('linear')),
+
+            TextInput::make('sheet_length_mm')
+                ->label('Panjang lembar (mm)')->numeric()
+                ->required($wajibUkuran('sheet'))->visible($wajibUkuran('sheet')),
+
+            TextInput::make('sheet_width_mm')
+                ->label('Lebar lembar (mm)')->numeric()
+                ->required($wajibUkuran('sheet'))->visible($wajibUkuran('sheet')),
+
+            TextInput::make('weight_gram')
+                ->label('Berat per satuan beli (gram)')->numeric()
+                ->required($wajibUkuran('weight'))->visible($wajibUkuran('weight')),
+
+            TextInput::make('volume_ml')
+                ->label('Volume per satuan beli (ml)')->numeric()
+                ->required($wajibUkuran('volume'))->visible($wajibUkuran('volume')),
+
+            TextInput::make('min_reusable')
+                ->label('Sisa terkecil yang masih terpakai')
+                ->numeric()->default(0)->minValue(0)
+                ->helperText('Satuan pakai. Sisa potong di bawah angka ini dihitung sampah. Kosongkan bila semua sisa masih terpakai.'),
+        ];
+    }
+
+    /**
+     * Isian ringkas untuk membuat proses/jasa dari dalam formula.
+     *
+     * Slug diturunkan dari namanya supaya tidak ada isian teknis yang harus
+     * dipikirkan saat sedang menyusun resep.
+     *
+     * @return array<int, mixed>
+     */
+    private static function jasaBaru(): array
+    {
+        return [
+            TextInput::make('name')
+                ->label('Nama Proses')->required()->maxLength(255)
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug((string) $state))),
+
+            TextInput::make('slug')->required()->maxLength(255)
+                ->unique(table: 'cost_components', column: 'slug')
+                ->helperText('Terisi sendiri dari namanya.'),
+
+            Select::make('type')
+                ->label('Jenis')->options(CostComponent::TYPES)
+                ->default('tenaga_kerja')->required(),
+
+            Select::make('rate_type')
+                ->label('Cara Tarif')->options(CostComponent::RATE_TYPES)
+                ->default('per_hour')->required()->live(),
+
+            TextInput::make('unit')
+                ->label('Satuan Tarif')->required()->maxLength(255)
+                ->default(fn (callable $get) => $get('rate_type') === 'per_hour' ? 'jam' : 'unit'),
+
+            TextInput::make('rate')
+                ->label('Tarif')->numeric()->prefix('Rp')->default(0)->required()
+                ->helperText(fn (callable $get) => $get('rate_type') === 'per_hour'
+                    ? 'Rupiah per jam kerja.'
+                    : 'Rupiah sekali kerja (borongan).'),
+
+            TextInput::make('default_minutes')
+                ->label('Menit standar')->numeric()->default(0)->minValue(0)
+                ->visible(fn (callable $get) => $get('rate_type') === 'per_hour')
+                ->helperText('Titik awal saat proses ini dipakai di formula; masih bisa diubah per resep.'),
         ];
     }
 

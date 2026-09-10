@@ -113,6 +113,23 @@ class KalkulatorHpp extends Page implements HasForms
     }
 
     /**
+     * Ke mana bahan yang dibeli itu pergi: menempel di produk, hilang jadi
+     * susut, atau tersisa. Rumusnya dipakai bersama lewat Formula::wasteFor().
+     *
+     * @return array<string, mixed>
+     */
+    public function getSisaProperty(): array
+    {
+        $formula = $this->formula;
+
+        if (! $formula) {
+            return ['baris' => [], 'rp_susut' => 0, 'rp_sisa_berguna' => 0, 'rp_sisa_terbuang' => 0, 'rp_sampah' => 0];
+        }
+
+        return $formula->wasteFor(max((float) ($this->data['target_unit'] ?? 0), 0));
+    }
+
+    /**
      * Total biaya untuk target simulasi: bahan + kerja + mesin + overhead.
      *
      * @return array<string, float>

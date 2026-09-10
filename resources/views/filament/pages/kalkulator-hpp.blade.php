@@ -317,5 +317,91 @@
                 </div>
             @endif
         </x-filament::section>
+
+        {{-- Ke mana bahan yang dibeli itu pergi. Tiga kolomnya menjumlah tepat
+             menjadi "Beli", jadi angkanya bisa diperiksa sendiri. --}}
+        @php $sisa = $this->sisa; @endphp
+
+        <x-filament::section>
+            <x-slot name="heading">Sisa &amp; Sampah</x-slot>
+            <x-slot name="description">
+                Bahan yang dibeli selalu satuan utuh. Yang menempel di produk, yang hilang saat dikerjakan,
+                dan yang tersisa dijumlah tepat sama dengan yang dibeli.
+            </x-slot>
+
+            <div style="overflow-x:auto">
+                <table class="kalk-table">
+                    <thead>
+                        <tr>
+                            <th>Bahan</th>
+                            <th class="num">Beli</th>
+                            <th class="num">Menempel di produk</th>
+                            <th class="num">Susut</th>
+                            <th class="num">Sisa</th>
+                            <th>Sisa itu</th>
+                            <th class="num">Nilai terbuang</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($sisa['baris'] as $r)
+                            <tr>
+                                <td>
+                                    {{ $r['material']->name }}
+                                    @if ($r['potong'])
+                                        <div class="text-xs text-gray-500">{{ $r['potong'] }}</div>
+                                    @endif
+                                </td>
+                                <td class="num">
+                                    {{ $r['beli_label'] }}
+                                    <div class="text-xs text-gray-500">{{ $r['dibeli_label'] }}</div>
+                                </td>
+                                <td class="num">{{ $r['bersih_label'] }}</td>
+                                <td class="num text-danger-600">{{ $r['susut'] > 0 ? $r['susut_label'] : '—' }}</td>
+                                <td class="num">{{ $r['sisa'] > 0 ? $r['sisa_label'] : '—' }}</td>
+                                <td>
+                                    @if ($r['sisa'] <= 0)
+                                        <span class="text-xs text-gray-500">habis terpakai</span>
+                                    @elseif ($r['sisa_berguna'])
+                                        <span class="text-xs text-success-600">kembali jadi stok</span>
+                                    @else
+                                        <span class="text-xs text-danger-600">terlalu kecil — dibuang</span>
+                                    @endif
+                                </td>
+                                <td class="num">
+                                    {{ $rp($r['rp_susut'] + ($r['sisa_berguna'] ? 0 : $r['rp_sisa'])) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-gray-500">Formula ini belum berisi bahan.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6">Susut saat dikerjakan</td>
+                            <td class="num">{{ $rp($sisa['rp_susut']) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">Sisa yang terlalu kecil untuk dipakai lagi</td>
+                            <td class="num">{{ $rp($sisa['rp_sisa_terbuang']) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">Total terbuang</td>
+                            <td class="num text-danger-600">{{ $rp($sisa['rp_sampah']) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6">Sisa yang kembali jadi stok</td>
+                            <td class="num text-success-600">{{ $rp($sisa['rp_sisa_berguna']) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="mt-3 text-xs text-gray-500">
+                Batas "terlalu kecil" diatur per bahan lewat kolom <b>Sisa terkecil yang masih terpakai</b>
+                di Produksi &rarr; Stok Bahan. Selama masih 0, semua sisa dianggap kembali jadi stok.
+            </div>
+        </x-filament::section>
     @endif
 </x-filament-panels::page>

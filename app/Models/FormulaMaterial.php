@@ -161,6 +161,44 @@ class FormulaMaterial extends Model
         return (float) $this->qty * (1 + ((float) $this->waste_percent / 100));
     }
 
+    /**
+     * Rincian potong batangan: berapa potong yang muat dalam satu batang dan
+     * berapa milimeter tersisa di ujungnya.
+     *
+     * Null bila bahannya bukan batangan atau tidak diisi dengan mode panjang —
+     * di luar itu pertanyaan "sisa ujungnya berapa" memang tidak berlaku.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function barNesting(): ?array
+    {
+        if ($this->input_mode !== 'length' || $this->material?->dimension_type !== 'linear') {
+            return null;
+        }
+
+        $n = $this->material->barNesting((float) $this->piece_length_mm);
+
+        return $n['muat_utuh'] ? $n : null;
+    }
+
+    /** "1 batang dapat 7 potong 800 mm, ujung sisa 382 mm" */
+    public function cuttingLabel(): ?string
+    {
+        if (! $n = $this->barNesting()) {
+            return null;
+        }
+
+        $trim = fn (float $v) => rtrim(rtrim(number_format($v, 1, ',', '.'), '0'), ',');
+
+        return sprintf(
+            '1 %s dapat %d potong %s mm, ujung sisa %s mm',
+            $this->material->unit ?: 'batang',
+            $n['muat'],
+            $trim((float) $this->piece_length_mm),
+            $trim($n['sisa_per_batang'])
+        );
+    }
+
     /** Berapa rupiah yang hilang jadi sisa potong lembaran. */
     public function nestingWasteCost(): float
     {
