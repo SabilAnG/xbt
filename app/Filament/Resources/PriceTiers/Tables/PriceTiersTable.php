@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\PriceTiers\Tables;
 
-use App\Models\Formula;
+use App\Models\Item;
 use App\Models\PriceTier;
 use App\Support\TableActions;
 use App\Support\TableExport;
@@ -17,11 +17,16 @@ class PriceTiersTable
 {
     public static function configure(Table $table): Table
     {
-        // Satu HPP acuan dipakai untuk seluruh baris supaya kolom harga bisa
-        // dibandingkan langsung antar tingkatan.
-        $acuan = Formula::with(['materials.material', 'costs.component', 'machines.machine'])
-            ->where('is_active', true)->first();
-        $hpp = $acuan?->hppPerUnit() ?? 0;
+        // Satu modal acuan dipakai untuk seluruh baris supaya kolom harga bisa
+        // dibandingkan langsung antar tingkatan. Diambil dari barang jual
+        // termahal yang modalnya sudah terisi — angka nyata, bukan karangan.
+        //
+        // Dulu acuannya HPP formula. Modul produksi sedang dibangun ulang;
+        // kembalikan ke HPP begitu formula ada lagi.
+        $acuan = Item::query()
+            ->where('is_active', true)->where('cost_price', '>', 0)
+            ->orderByDesc('cost_price')->first();
+        $hpp = (float) ($acuan?->cost_price ?? 0);
 
         return $table
             ->defaultSort('sort_order')
@@ -41,7 +46,7 @@ class PriceTiersTable
                 TextColumn::make('harga')->label('Harga Jual')->alignRight()->money('IDR')
                     ->weight('bold')->color('primary')
                     ->getStateUsing(fn (PriceTier $r) => $r->price($hpp))
-                    ->description($acuan ? 'HPP '.$acuan->name : 'belum ada formula'),
+                    ->description($acuan ? 'modal '.$acuan->name : 'belum ada barang bermodal'),
 
                 TextColumn::make('laba')->label('Laba Bersih')->alignRight()->money('IDR')
                     ->color('success')

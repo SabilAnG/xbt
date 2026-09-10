@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\PriceTiers\Schemas;
 
-use App\Models\Formula;
+use App\Models\Item;
 use App\Models\PriceTier;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
@@ -54,17 +54,20 @@ class PriceTierForm
                         ->live(onBlur: true)
                         ->helperText('Isi 0 untuk penjualan langsung. Shopee/Tokopedia biasanya 8–12%.'),
 
-                    // Contoh memakai HPP formula pertama supaya angkanya nyata,
-                    // bukan sekadar rumus di atas kertas.
+                    // Contoh memakai modal barang jual termahal supaya angkanya
+                    // nyata, bukan sekadar rumus di atas kertas. Dulu acuannya
+                    // HPP formula; kembalikan ke sana setelah modul produksi
+                    // selesai dibangun ulang.
                     Placeholder::make('contoh')
-                        ->label('Contoh dengan formula pertama')
+                        ->label('Contoh dengan barang bermodal tertinggi')
                         ->columnSpanFull()
                         ->content(function (callable $get) {
-                            $f = Formula::with(['materials.material', 'costs.component', 'machines.machine'])
-                                ->where('is_active', true)->first();
+                            $barang = Item::query()
+                                ->where('is_active', true)->where('cost_price', '>', 0)
+                                ->orderByDesc('cost_price')->first();
 
-                            if (! $f) {
-                                return 'Belum ada formula untuk dijadikan contoh.';
+                            if (! $barang) {
+                                return 'Belum ada barang bermodal untuk dijadikan contoh.';
                             }
 
                             $tier = new PriceTier([
@@ -72,13 +75,13 @@ class PriceTierForm
                                 'fee_percent' => (float) ($get('fee_percent') ?: 0),
                             ]);
 
-                            $hpp = $f->hppPerUnit();
-                            $b = $tier->breakdown($hpp);
+                            $modal = (float) $barang->cost_price;
+                            $b = $tier->breakdown($modal);
                             $rp = fn ($n) => 'Rp '.number_format($n, 0, ',', '.');
 
                             return sprintf(
-                                '%s — HPP %s → harga jual %s, potongan %s, laba bersih %s (%.1f%% dari harga).',
-                                $f->name, $rp($hpp), $rp($b['harga']), $rp($b['potongan']),
+                                '%s — modal %s → harga jual %s, potongan %s, laba bersih %s (%.1f%% dari harga).',
+                                $barang->name, $rp($modal), $rp($b['harga']), $rp($b['potongan']),
                                 $rp($b['laba']), $b['margin_nyata']
                             );
                         }),
