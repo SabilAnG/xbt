@@ -65,8 +65,7 @@ class AdminPanelProvider extends PanelProvider
             // lalu aset & laporan, baru data acuan yang jarang disentuh.
             ->navigationGroups([
                 NavigationGroup::make('Operasional')->icon('heroicon-o-arrows-right-left'),
-                // Grup "Produksi" sengaja belum didaftarkan: modulnya sedang
-                // dibangun ulang. Tambahkan kembali bersama resource barunya.
+                NavigationGroup::make('Produksi')->icon('heroicon-o-wrench-screwdriver'),
                 NavigationGroup::make('Aset')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Master Data')->icon('heroicon-o-rectangle-stack')->collapsed(),
                 NavigationGroup::make('Toko Online')->icon('heroicon-o-globe-alt')->collapsed(),
