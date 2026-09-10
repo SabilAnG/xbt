@@ -6,14 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Jenis barang produksi: Pipa, Plat, Hardware.
+ * Jenis barang produksi: Pipa, Plat, Hardware, Bahan Penolong.
  *
- * Hanya untuk mengelompokkan saat mencari. Sumber pengadaan dan peran di
- * produk punya kolomnya sendiri di ProductionItem.
+ * Memegang peran dan sumber pengadaan untuk seluruh barang di bawahnya.
+ * Seluruh pipa adalah bahan utama yang dibeli; menjawabnya sekali di sini jauh
+ * lebih masuk akal daripada mengulanginya tiap menambah barang. Barang yang
+ * menyimpang tetap bisa mengubahnya sendiri.
  */
 class ProductionItemCategory extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'is_active', 'sort_order'];
+    protected $fillable = [
+        'name', 'slug', 'source', 'role', 'description', 'is_active', 'sort_order',
+    ];
+
+    /** Disamakan dengan bawaan kolomnya — lihat catatan di ProductionItem. */
+    protected $attributes = [
+        'source' => 'beli',
+        'role' => 'utama',
+    ];
 
     protected function casts(): array
     {
@@ -23,5 +33,15 @@ class ProductionItemCategory extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ProductionItem::class);
+    }
+
+    public function displaySource(): string
+    {
+        return ProductionItem::SOURCES[$this->source] ?? $this->source;
+    }
+
+    public function displayRole(): string
+    {
+        return ProductionItem::ROLES[$this->role] ?? $this->role;
     }
 }

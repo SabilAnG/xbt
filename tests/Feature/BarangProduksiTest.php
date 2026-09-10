@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\ProductionItems\Pages\CreateProductionItem;
 use App\Models\ProductionItem;
+use App\Models\ProductionItemCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -134,6 +135,44 @@ class BarangProduksiTest extends TestCase
     {
         $this->assertSame('41,84 m', $this->pipa()->formatBase(41_835));
         $this->assertSame('2,88 m²', $this->plat()->formatBase(2_880_000));
+    }
+
+    // ----------------------------------------------- warisan dari jenis barang
+
+    /**
+     * Inti alur isiannya: jenis dijawab sekali, barang tinggal ukuran dan harga.
+     */
+    public function test_memilih_jenis_barang_mengisi_peran_dan_sumbernya(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $jenis = ProductionItemCategory::create([
+            'name' => 'Pegas & Mounting',
+            'slug' => 'pegas-mounting',
+            'role' => 'aksesoris_utama',
+            'source' => 'beli_produksi',
+        ]);
+
+        Livewire::test(CreateProductionItem::class)
+            ->assertSuccessful()
+            ->fillForm(['production_item_category_id' => $jenis->id])
+            ->assertFormSet([
+                'role' => 'aksesoris_utama',
+                'source' => 'beli_produksi',
+            ]);
+    }
+
+    public function test_aksesoris_utama_ikut_dihitung_sebagai_bahan_wajib(): void
+    {
+        // Pegas bentuknya aksesoris, tapi tanpa itu knalpot tidak bisa dipasang.
+        $pegas = $this->pipa(['role' => 'aksesoris_utama']);
+        $amplas = $this->pipa(['role' => 'penolong']);
+        $pipa = $this->pipa();
+
+        $this->assertTrue($pipa->wajib());
+        $this->assertTrue($pegas->wajib(), 'Aksesoris Utama seharusnya termasuk bahan wajib.');
+        $this->assertFalse($amplas->wajib());
+        $this->assertSame('Aksesoris Utama', $pegas->displayRole());
     }
 
     public function test_form_menampilkan_sumber_peran_dan_batas_sisa(): void

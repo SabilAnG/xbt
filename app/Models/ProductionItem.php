@@ -37,12 +37,23 @@ class ProductionItem extends Model
         'beli_produksi' => 'Dibeli atau dibuat sendiri',
     ];
 
-    /** Perannya di produk jadi. */
+    /**
+     * Perannya di produk jadi, urut dari yang paling menentukan.
+     *
+     * "Aksesoris Utama" ada karena kenyataannya memang begitu: pegas dan karet
+     * mounting bentuknya aksesoris, tapi tanpa keduanya knalpot tidak bisa
+     * dipasang. Memaksanya masuk "Aksesoris" membuat daftar bahan wajib jadi
+     * tidak lengkap.
+     */
     public const ROLES = [
         'utama' => 'Bahan Utama',
+        'aksesoris_utama' => 'Aksesoris Utama',
         'aksesoris' => 'Aksesoris',
         'penolong' => 'Bahan Penolong',
     ];
+
+    /** Peran yang keberadaannya wajib untuk produk bisa jadi. */
+    public const ROLES_WAJIB = ['utama', 'aksesoris_utama'];
 
     /** Bentuknya menentukan ukuran mana yang berlaku dan bagaimana dikonversi. */
     public const SHAPES = [
@@ -59,6 +70,18 @@ class ProductionItem extends Model
         'length_mm', 'width_mm', 'diameter_mm', 'thickness_mm', 'weight_gram', 'volume_ml',
         'cost_price', 'stock', 'min_stock', 'min_reusable',
         'notes', 'is_active',
+    ];
+
+    /**
+     * Disamakan dengan bawaan kolomnya supaya objek yang baru dibuat sudah
+     * punya nilai sebelum sempat dibaca ulang dari database. Tanpa ini
+     * `wajib()` pada barang yang baru saja disimpan membaca role kosong.
+     */
+    protected $attributes = [
+        'source' => 'beli',
+        'role' => 'utama',
+        'shape' => 'count',
+        'unit' => 'pcs',
     ];
 
     protected function casts(): array
@@ -105,6 +128,12 @@ class ProductionItem extends Model
     public function displayRole(): string
     {
         return self::ROLES[$this->role] ?? $this->role;
+    }
+
+    /** Wajib ada supaya produk bisa jadi — bukan sekadar pelengkap. */
+    public function wajib(): bool
+    {
+        return in_array($this->role, self::ROLES_WAJIB, true);
     }
 
     public function displayShape(): string

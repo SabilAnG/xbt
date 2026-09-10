@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ProductionItems\Schemas;
 
 use App\Models\ProductionItem;
+use App\Models\ProductionItemCategory;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -10,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 
 /**
  * Form master barang produksi.
@@ -27,41 +29,51 @@ class ProductionItemForm
 
         return $schema->components([
             Section::make('Identitas')
+                ->description('Pilih jenisnya, dan peran serta cara pengadaannya ikut terisi sendiri — tinggal lanjut ke ukuran dan harga.')
                 ->columns(2)
                 ->schema([
+                    TextInput::make('name')
+                        ->label('Nama Barang')->required()->maxLength(255)
+                        ->helperText('Contoh: Pipa SS 201 Ø28 x 1,2mm'),
+
                     TextInput::make('sku')
                         ->label('Kode / SKU')->required()->maxLength(64)
                         ->unique(ignoreRecord: true)
                         ->helperText('Contoh: PIPA-28, PLAT-08.'),
 
-                    TextInput::make('name')
-                        ->label('Nama Barang')->required()->maxLength(255)
-                        ->helperText('Contoh: Pipa SS 201 Ø28 x 1,2mm'),
-
                     Select::make('production_item_category_id')
-                        ->label('Jenis')
+                        ->label('Jenis Barang')
                         ->relationship('category', 'name')
-                        ->searchable()->preload()
-                        ->helperText('Pengelompokan saat mencari: Pipa, Plat, Hardware.'),
+                        ->searchable()->preload()->live()
+                        ->helperText('Pipa, Plat, Baut & Mur. Peran dan cara pengadaan mengikuti jenis yang dipilih.')
+                        ->createOptionForm(fn () => self::jenisBaru())
+                        ->createOptionUsing(fn (array $data) => ProductionItemCategory::create(
+                            $data + ['slug' => Str::slug($data['name'])]
+                        )->getKey())
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            if (! $jenis = ProductionItemCategory::find($state)) {
+                                return;
+                            }
+
+                            $set('role', $jenis->role);
+                            $set('source', $jenis->source);
+                        }),
 
                     Toggle::make('is_active')->label('Aktif')->default(true),
-                ]),
 
-            Section::make('Didapat dari & Perannya')
-                ->description('Dua hal yang menentukan cara sistem memperlakukan barang ini saat stoknya kurang, dan di mana ia muncul dalam perhitungan modal.')
-                ->columns(2)
-                ->schema([
-                    Select::make('source')
-                        ->label('Didapat dari')
-                        ->options(ProductionItem::SOURCES)
-                        ->default('beli')->required()
-                        ->helperText('Cone dan perforated core bisa ditebus di toko maupun dibuat sendiri — pilih yang ketiga bila keduanya mungkin.'),
-
+                    // Ditampilkan supaya terlihat apa yang terisi, dan tetap
+                    // bisa diubah: satu jenis jarang seragam seratus persen.
                     Select::make('role')
                         ->label('Perannya di produk')
                         ->options(ProductionItem::ROLES)
                         ->default('utama')->required()
-                        ->helperText('Bahan utama menempel jadi badan knalpot; aksesoris seperti baut dan pegas; penolong seperti kawat las dan amplas yang habis dipakai tapi tidak menempel.'),
+                        ->helperText('Terisi dari jenis barang. Ubah hanya bila barang ini menyimpang dari jenisnya.'),
+
+                    Select::make('source')
+                        ->label('Didapat dari')
+                        ->options(ProductionItem::SOURCES)
+                        ->default('beli')->required()
+                        ->helperText('Terisi dari jenis barang.'),
                 ]),
 
             Section::make('Ukuran, Satuan & Harga')
@@ -150,6 +162,33 @@ class ProductionItemForm
                 ->collapsed()
                 ->schema([Textarea::make('notes')->hiddenLabel()->rows(3)]),
         ]);
+    }
+
+    /**
+     * Isian ringkas untuk membuat jenis barang tanpa meninggalkan layar ini.
+     *
+     * Peran dan sumber ikut ditanyakan karena itulah gunanya jenis: begitu
+     * dipilih, keduanya langsung terisi ke barang yang sedang dibuat.
+     *
+     * @return array<int, mixed>
+     */
+    private static function jenisBaru(): array
+    {
+        return [
+            TextInput::make('name')
+                ->label('Nama Jenis')->required()->maxLength(255)
+                ->helperText('Contoh: Pipa, Plat, Baut & Mur.'),
+
+            Select::make('role')
+                ->label('Perannya di produk')
+                ->options(ProductionItem::ROLES)
+                ->default('utama')->required(),
+
+            Select::make('source')
+                ->label('Didapat dari')
+                ->options(ProductionItem::SOURCES)
+                ->default('beli')->required(),
+        ];
     }
 
     /**

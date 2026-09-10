@@ -22,9 +22,9 @@ class ProductionItemCategoryResource extends Resource
 
     protected static ?int $navigationSort = 110;
 
-    protected static ?string $modelLabel = 'Jenis Barang Produksi';
+    protected static ?string $modelLabel = 'Jenis Barang';
 
-    protected static ?string $pluralModelLabel = 'Jenis Barang Produksi';
+    protected static ?string $pluralModelLabel = 'Jenis Barang';
 
     public static function getNavigationGroup(): ?string
     {
