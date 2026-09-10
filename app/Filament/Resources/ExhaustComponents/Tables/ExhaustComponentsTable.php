@@ -2,69 +2,51 @@
 
 namespace App\Filament\Resources\ExhaustComponents\Tables;
 
+use App\Filament\Resources\ExhaustComponents\ExhaustComponentResource;
 use App\Models\ExhaustComponent;
 use App\Support\TableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Daftar komponen, dikelompokkan per bagian.
+ * Daftar bagian knalpot sebagai kartu.
  *
- * Bengkel menyebutnya berkelompok — "yang di header", "yang di silincer" —
- * jadi daftarnya disusun begitu, bukan satu daftar panjang berabjad.
+ * Menampilkan enam belas komponen sekaligus membuat orang membaca daftar,
+ * bukan memahami susunannya. Yang tampil di sini hanya bagiannya — Header,
+ * Silincer — dan isinya dibuka dengan mengklik kartunya, sama seperti gudang.
  */
 class ExhaustComponentsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->bagian()->withCount('children'))
             ->defaultSort('sort_order')
-            ->groups([
-                Group::make('parent.name')
-                    ->label('Bagian')
-                    ->getTitleFromRecordUsing(fn (ExhaustComponent $r) => $r->parent?->name ?? 'Bagian Induk'),
-            ])
-            ->defaultGroup('parent.name')
+            ->contentGrid(['default' => 1, 'md' => 2, 'xl' => 3])
+            ->paginated(false)
+            ->recordUrl(fn (ExhaustComponent $record) => ExhaustComponentResource::getUrl('isi', ['record' => $record]))
             ->columns([
-                TextColumn::make('name')
-                    ->label('Komponen')->searchable()->sortable()->weight('medium')
-                    ->description(fn (ExhaustComponent $r) => $r->code),
+                Stack::make([
+                    TextColumn::make('name')
+                        ->label('Bagian')
+                        ->searchable()->sortable()
+                        ->weight('bold')->size('lg'),
 
-                TextColumn::make('bahan')
-                    ->label('Bahan Baku')
-                    ->getStateUsing(fn (ExhaustComponent $r) => $r->displayMaterial())
-                    ->color(fn (ExhaustComponent $r) => match (true) {
-                        $r->isBagian() => 'gray',
-                        $r->item === null => 'danger',
-                        default => null,
-                    })
-                    ->description(fn (ExhaustComponent $r) => $r->item?->conversionLabel()),
+                    TextColumn::make('notes')
+                        ->color('gray')->size('sm')->wrap(),
 
-                TextColumn::make('children_count')
-                    ->label('Isi')->counts('children')->alignCenter()
-                    ->formatStateUsing(fn ($state) => $state > 0 ? $state.' komponen' : '—')
-                    ->toggleable(),
+                    TextColumn::make('isi')
+                        ->getStateUsing(fn (ExhaustComponent $r) => self::ringkasIsi($r))
+                        ->weight('medium'),
 
-                TextColumn::make('sort_order')->label('Urutan')->alignCenter()->toggleable(isToggledHiddenByDefault: true),
-
-                IconColumn::make('is_active')->label('Aktif')->boolean()->toggleable(),
-            ])
-            ->filters([
-                SelectFilter::make('parent_id')
-                    ->label('Bagian')
-                    ->options(fn () => ExhaustComponent::query()
-                        ->bagian()->orderBy('sort_order')->pluck('name', 'id')),
-
-                Filter::make('tanpa_bahan')
-                    ->label('Bahan bakunya belum dipilih')
-                    ->query(fn (Builder $query) => $query->tanpaBahan()),
+                    TextColumn::make('belum')
+                        ->getStateUsing(fn (ExhaustComponent $r) => self::ringkasBelum($r))
+                        ->color('warning')->size('sm'),
+                ])->space(2),
             ])
             ->recordActions([
                 EditAction::make()->label('Ubah'),
@@ -73,15 +55,26 @@ class ExhaustComponentsTable
             ->toolbarActions([
                 BulkActionGroup::make([TableActions::deleteBulk(self::penjagaHapus())]),
             ])
-            ->emptyStateHeading('Belum ada komponen')
+            ->emptyStateHeading('Belum ada bagian knalpot')
             ->emptyStateDescription('Mulai dari bagiannya — Header, Silincer — lalu isi komponennya.')
             ->emptyStateIcon('heroicon-o-puzzle-piece');
     }
 
-    /**
-     * Bagian yang masih berisi komponen tidak dihapus diam-diam: anaknya ikut
-     * terhapus, dan itu jarang yang dimaksud.
-     */
+    private static function ringkasIsi(ExhaustComponent $bagian): string
+    {
+        $jumlah = $bagian->children_count ?? $bagian->children()->count();
+
+        return $jumlah === 0 ? 'Belum ada komponen' : $jumlah.' komponen';
+    }
+
+    /** Sisa pekerjaan yang paling sering dicari: bahan yang belum ditentukan. */
+    private static function ringkasBelum(ExhaustComponent $bagian): ?string
+    {
+        $belum = $bagian->children()->whereNull('production_item_id')->count();
+
+        return $belum > 0 ? $belum.' belum ada bahan bakunya' : null;
+    }
+
     private static function penjagaHapus(): callable
     {
         return function (ExhaustComponent $record): ?string {

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ExhaustComponents;
 
 use App\Filament\Resources\ExhaustComponents\Pages\CreateExhaustComponent;
 use App\Filament\Resources\ExhaustComponents\Pages\EditExhaustComponent;
+use App\Filament\Resources\ExhaustComponents\Pages\IsiBagian;
 use App\Filament\Resources\ExhaustComponents\Pages\ListExhaustComponents;
 use App\Filament\Resources\ExhaustComponents\Schemas\ExhaustComponentForm;
 use App\Filament\Resources\ExhaustComponents\Tables\ExhaustComponentsTable;
@@ -61,6 +62,8 @@ class ExhaustComponentResource extends Resource
         return [
             'index' => ListExhaustComponents::route('/'),
             'create' => CreateExhaustComponent::route('/create'),
+            // Dibuka dengan mengklik kartu bagiannya.
+            'isi' => IsiBagian::route('/{record}/isi'),
             'edit' => EditExhaustComponent::route('/{record}/edit'),
         ];
     }

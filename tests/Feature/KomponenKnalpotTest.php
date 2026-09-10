@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\ExhaustComponents\Pages\IsiBagian;
 use App\Filament\Resources\ExhaustComponents\Pages\ListExhaustComponents;
 use App\Models\ExhaustComponent;
 use App\Models\ProductionItem;
@@ -99,13 +100,37 @@ class KomponenKnalpotTest extends TestCase
         $this->assertSame('Silincer / Peredam Glasswool', ExhaustComponent::where('name', 'Peredam Glasswool')->sole()->fullName());
     }
 
-    public function test_daftar_komponen_bisa_dibuka_dan_menampilkan_bagiannya(): void
+    /**
+     * Daftar utama memuat bagiannya saja — enam belas komponen sekaligus
+     * membuat orang membaca daftar, bukan memahami susunannya.
+     */
+    public function test_daftar_utama_hanya_memuat_bagiannya(): void
     {
         $this->actingAs(User::factory()->create());
 
         Livewire::test(ListExhaustComponents::class)
             ->assertSuccessful()
+            ->assertSee('Header')
+            ->assertSee('Silincer')
+            ->assertDontSee('Tabung Silincer');
+    }
+
+    public function test_isi_bagian_memuat_komponennya_saja(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $header = ExhaustComponent::where('name', 'Header')->sole();
+        $silincer = ExhaustComponent::where('name', 'Silincer')->sole();
+
+        Livewire::test(IsiBagian::class, ['record' => $header])
+            ->assertSuccessful()
             ->assertSee('P1')
-            ->assertSee('Tabung Silincer');
+            ->assertSee('Gantungan Per')
+            ->assertDontSee('Tabung Silincer');
+
+        Livewire::test(IsiBagian::class, ['record' => $silincer])
+            ->assertSuccessful()
+            ->assertSee('Tabung Silincer')
+            ->assertDontSee('Gantungan Per');
     }
 }
