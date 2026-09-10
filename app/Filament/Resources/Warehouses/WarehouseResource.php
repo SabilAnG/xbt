@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Warehouses;
 
 use App\Filament\Resources\Warehouses\Pages\CreateWarehouse;
 use App\Filament\Resources\Warehouses\Pages\EditWarehouse;
+use App\Filament\Resources\Warehouses\Pages\IsiGudang;
 use App\Filament\Resources\Warehouses\Pages\ListWarehouses;
 use App\Filament\Resources\Warehouses\Schemas\WarehouseForm;
 use App\Filament\Resources\Warehouses\Tables\WarehousesTable;
@@ -48,6 +49,8 @@ class WarehouseResource extends Resource
         return [
             'index' => ListWarehouses::route('/'),
             'create' => CreateWarehouse::route('/create'),
+            // Dibuka dengan mengklik kartunya di daftar gudang.
+            'isi' => IsiGudang::route('/{record}/isi'),
             'edit' => EditWarehouse::route('/{record}/edit'),
         ];
     }

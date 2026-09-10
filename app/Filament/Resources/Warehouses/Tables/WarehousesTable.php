@@ -2,45 +2,56 @@
 
 namespace App\Filament\Resources\Warehouses\Tables;
 
+use App\Filament\Resources\Warehouses\WarehouseResource;
 use App\Models\Warehouse;
 use App\Support\TableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
+/**
+ * Gudang ditampilkan sebagai kartu, bukan baris tabel.
+ *
+ * Jumlahnya sedikit dan jarang bertambah, jadi yang dicari orang bukan
+ * "baris mana" melainkan "gudang mana" — dan kartu menjawab itu lebih cepat.
+ * Seluruh kartu bisa diklik untuk membuka isinya.
+ */
 class WarehousesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
             ->defaultSort('sort_order')
+            ->contentGrid(['default' => 1, 'md' => 2, 'xl' => 4])
+            ->paginated(false)
+            ->recordUrl(fn (Warehouse $record) => WarehouseResource::getUrl('isi', ['record' => $record]))
             ->columns([
-                TextColumn::make('code')->label('Kode')->searchable()->sortable()->weight('medium'),
+                Stack::make([
+                    TextColumn::make('name')
+                        ->label('Gudang')
+                        ->searchable()->sortable()
+                        ->weight('bold')->size('lg'),
 
-                TextColumn::make('name')->label('Gudang')->searchable()->sortable()->wrap()
-                    ->description(fn (Warehouse $r) => $r->description),
+                    TextColumn::make('type')
+                        ->badge()
+                        ->formatStateUsing(fn (Warehouse $r) => $r->displayType())
+                        ->color(fn (string $state) => match ($state) {
+                            'bahan_mentah' => 'primary',
+                            'setengah_jadi' => 'warning',
+                            'finish_good' => 'success',
+                            default => 'gray',
+                        }),
 
-                TextColumn::make('type')
-                    ->label('Jenis')->badge()
-                    ->formatStateUsing(fn (Warehouse $r) => $r->displayType())
-                    ->color(fn (string $state) => match ($state) {
-                        'bahan_mentah' => 'primary',
-                        'setengah_jadi' => 'warning',
-                        'finish_good' => 'success',
-                        default => 'gray',
-                    }),
+                    TextColumn::make('description')
+                        ->color('gray')->size('sm')->wrap(),
 
-                TextColumn::make('stocks_count')
-                    ->label('Barang')->counts('stocks')->alignCenter(),
-
-                TextColumn::make('nilai')
-                    ->label('Nilai Isi')->money('IDR')->alignRight()
-                    ->getStateUsing(fn (Warehouse $r) => $r->stockValue()),
-
-                IconColumn::make('is_active')->label('Aktif')->boolean()->toggleable(),
+                    TextColumn::make('isi')
+                        ->getStateUsing(fn (Warehouse $r) => self::ringkasIsi($r))
+                        ->weight('medium'),
+                ])->space(2),
             ])
             ->filters([
                 SelectFilter::make('type')->label('Jenis')->options(Warehouse::TYPES),
@@ -54,6 +65,18 @@ class WarehousesTable
             ])
             ->emptyStateHeading('Belum ada gudang')
             ->emptyStateIcon('heroicon-o-building-storefront');
+    }
+
+    /** "6 barang · Rp 4.320.000" — cukup untuk memilih kartu mana yang dibuka. */
+    private static function ringkasIsi(Warehouse $gudang): string
+    {
+        $jumlah = $gudang->stocks()->where('qty', '!=', 0)->count();
+
+        if ($jumlah === 0) {
+            return 'Masih kosong';
+        }
+
+        return $jumlah.' barang · Rp '.number_format($gudang->stockValue(), 0, ',', '.');
     }
 
     /**

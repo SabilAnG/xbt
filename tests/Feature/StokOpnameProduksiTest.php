@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\ProductionItemOpnames\Pages\CreateProductionItemOpname;
 use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
+use App\Filament\Resources\Warehouses\Pages\IsiGudang;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemMovement;
 use App\Models\ProductionItemOpname;
@@ -215,6 +216,31 @@ class StokOpnameProduksiTest extends TestCase
         $this->assertSame(900.0, $pipa->stockIn($sisa->id));
         $this->assertSame(12_000.0, $pipa->stockIn($mentah->id), 'Gudang lain tidak boleh ikut berubah.');
         $this->assertSame(12_900.0, (float) $pipa->stock);
+    }
+
+    /**
+     * Kartu gudang diklik untuk membuka isinya, dan yang tampil hanya stok di
+     * gudang itu — pertanyaan orang yang membukanya selalu "ada apa di sini".
+     */
+    public function test_halaman_isi_gudang_hanya_menampilkan_stok_gudang_itu(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $pipa = $this->pipa();
+        $mentah = $this->gudang('BM');
+        $sisa = $this->gudang('BS');
+
+        $opname = $this->sesi($mentah);
+        $this->baris($opname, $pipa, sistem: 0, fisik: 12_000);
+        $this->stok->postOpname($opname);
+
+        Livewire::test(IsiGudang::class, ['record' => $mentah])
+            ->assertSuccessful()
+            ->assertSee($pipa->name);
+
+        Livewire::test(IsiGudang::class, ['record' => $sisa])
+            ->assertSuccessful()
+            ->assertDontSee($pipa->name);
     }
 
     public function test_opname_tanpa_gudang_ditolak(): void
