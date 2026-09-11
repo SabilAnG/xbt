@@ -35,19 +35,31 @@
 
         /* Terang */
         --kaca-bg: rgb(255 255 255 / 0.74);
-        --kaca-bg-pekat: rgb(255 255 255 / 0.9);
+        --kaca-bg-topbar: rgb(255 255 255 / 0.82);
+        --kaca-bg-pekat: rgb(255 255 255 / 0.97);
         --kaca-garis: rgb(255 255 255 / 0.7);
+
+        /* Garis kilau di bibir atas permukaan — tempat cahaya jatuh. Ini yang
+           membuat panel terbaca sebagai kaca, bukan sekadar kotak berwarna. */
+        --kaca-kilau: rgb(255 255 255 / 0.9);
         --kaca-bayang: 0 8px 32px rgb(15 23 42 / 0.08);
         --kaca-lantai: #f4f4f6;
         --kaca-sorot: 22%;
     }
 
     .dark {
-        /* Gelap pekat, mendekati hitam — cahaya baru terbaca sebagai cahaya
-           kalau yang di sekitarnya benar-benar gelap. */
-        --kaca-bg: rgb(20 20 23 / 0.72);
-        --kaca-bg-pekat: rgb(20 20 23 / 0.92);
-        --kaca-garis: rgb(255 255 255 / 0.08);
+        /*
+         * Permukaan kaca di sini adalah lapisan PUTIH tipis, bukan abu-abu
+         * gelap. Abu-abu gelap di atas latar yang hampir hitam menghasilkan
+         * warna yang nyaris sama dengan latarnya — panelnya jadi tak terlihat
+         * terangkat sama sekali, persis seperti bawaan Filament. Putih tipis
+         * mengangkatnya, dan blur di belakangnya baru ada gunanya.
+         */
+        --kaca-bg: rgb(255 255 255 / 0.055);
+        --kaca-bg-topbar: rgb(13 13 16 / 0.62);
+        --kaca-bg-pekat: rgb(26 26 30 / 0.96);
+        --kaca-garis: rgb(255 255 255 / 0.1);
+        --kaca-kilau: rgb(255 255 255 / 0.07);
         --kaca-bayang: 0 10px 40px rgb(0 0 0 / 0.55);
         --kaca-lantai: #0a0a0b;
 
@@ -109,7 +121,13 @@
     }
 
     .fi-topbar {
-        box-shadow: var(--kaca-bayang);
+        background: var(--kaca-bg-topbar) !important;
+        border-bottom: 1px solid var(--kaca-garis) !important;
+        box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau);
+    }
+
+    .fi-sidebar {
+        border-inline-end: 1px solid var(--kaca-garis) !important;
     }
 
     /* Menu yang sedang dibuka diberi cahaya tipis, bukan sekadar blok warna. */
@@ -145,11 +163,21 @@
         -webkit-backdrop-filter: blur(var(--kaca-blur)) saturate(150%);
         border: 1px solid var(--kaca-garis) !important;
         border-radius: var(--kaca-radius) !important;
-        box-shadow: var(--kaca-bayang);
+        box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau);
         transition: box-shadow var(--kaca-transisi),
                     transform var(--kaca-transisi),
                     background var(--kaca-transisi),
                     border-color var(--kaca-transisi);
+    }
+
+    /*
+     * Yang mengambang di atas isi halaman dibuat pekat, bukan kaca tipis.
+     * Menu dan modal harus terbaca di atas apa pun yang kebetulan ada di
+     * belakangnya — teks tipis di atas teks lain tidak terbaca siapa pun.
+     */
+    .fi-modal-window,
+    .fi-dropdown-panel {
+        background: var(--kaca-bg-pekat) !important;
     }
 
     /*
@@ -176,7 +204,8 @@
     .fi-wi-stats-overview-stat:hover {
         transform: translateY(-4px);
         border-color: var(--kaca-tepi-nyala) !important;
-        box-shadow: var(--kaca-bayang), 0 0 34px -12px var(--kaca-glow);
+        box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau),
+                    0 0 34px -12px var(--kaca-glow);
     }
 
     .fi-wi-stats-overview-stat:hover::before {
