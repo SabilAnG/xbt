@@ -9,7 +9,6 @@ use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Models\StockOpname;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -26,6 +25,8 @@ use RuntimeException;
  */
 class PostingService
 {
+    public function __construct(private readonly WalletPosting $kas) {}
+
     // ---------------------------------------------------------------- purchase
 
     public function postPurchase(Purchase $purchase): void
@@ -192,6 +193,13 @@ class PostingService
 
         DB::transaction(function () use ($opname) {
             foreach ($opname->items as $line) {
+                // Harga jual yang diisi saat menghitung ikut diperbarui, dan
+                // itu terjadi walau jumlahnya cocok: yang dikoreksi harga,
+                // bukan stok.
+                if (filled($line->unit_price) && $line->item) {
+                    $line->item->forceFill(['sell_price' => $line->unit_price])->save();
+                }
+
                 $diff = (float) $line->difference;
 
                 if (abs($diff) < 0.0001) {
@@ -254,27 +262,7 @@ class PostingService
 
     private function moveWallet(?Wallet $wallet, string $direction, float $amount, $source, $occurredAt, ?string $description = null): void
     {
-        // Dompet opsional: nota bisa dicatat tanpa memilih sumber dana.
-        if (! $wallet || abs($amount) < 0.0001) {
-            return;
-        }
-
-        $balance = $direction === 'in'
-            ? (float) $wallet->current_balance + $amount
-            : (float) $wallet->current_balance - $amount;
-
-        WalletTransaction::create([
-            'wallet_id' => $wallet->id,
-            'direction' => $direction,
-            'amount' => $amount,
-            'balance_after' => $balance,
-            'source_type' => $source::class,
-            'source_id' => $source->id,
-            'occurred_at' => $occurredAt,
-            'description' => $description,
-        ]);
-
-        $wallet->forceFill(['current_balance' => $balance])->save();
+        $this->kas->move($wallet, $direction, $amount, $source, $occurredAt, $description);
     }
 
     /**
@@ -290,16 +278,10 @@ class PostingService
             ->pluck('item_id')
             ->unique();
 
-        $walletIds = WalletTransaction::query()
-            ->where('source_type', $document::class)
-            ->where('source_id', $document->id)
-            ->pluck('wallet_id')
-            ->unique();
-
         StockMovement::where('source_type', $document::class)->where('source_id', $document->id)->delete();
-        WalletTransaction::where('source_type', $document::class)->where('source_id', $document->id)->delete();
 
         Item::whereIn('id', $itemIds)->get()->each->recalculateStock();
-        Wallet::whereIn('id', $walletIds)->get()->each->recalculateBalance();
+
+        $this->kas->reverseFor($document);
     }
 }

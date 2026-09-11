@@ -22,6 +22,7 @@ class DocumentNumber
         'stock_opnames' => 'SO',
         // Modul produksi
         'production_item_opnames' => 'SOP',  // stok opname barang produksi
+        'production_purchases' => 'PBP',     // pembelian bahan produksi
     ];
 
     private const COLUMNS = [
@@ -30,6 +31,7 @@ class DocumentNumber
         'expenses' => 'reference_number',
         'stock_opnames' => 'opname_number',
         'production_item_opnames' => 'opname_number',
+        'production_purchases' => 'invoice_number',
     ];
 
     /**

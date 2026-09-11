@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemMovement;
 use App\Models\ProductionItemOpname;
+use App\Models\ProductionPurchase;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -24,6 +25,86 @@ use RuntimeException;
  */
 class ProductionStockService
 {
+    public function __construct(private readonly WalletPosting $kas) {}
+
+    // ------------------------------------------------------------- pembelian
+
+    /**
+     * Bukukan nota pembelian bahan: stok gudang naik, kas turun.
+     *
+     * Qty di nota memakai satuan beli — tujuh batang — sedangkan stok disimpan
+     * dalam satuan pakai. Konversinya dikerjakan di sini supaya orang yang
+     * menyalin nota toko tidak perlu mengalikan apa pun.
+     */
+    public function postPurchase(ProductionPurchase $nota): void
+    {
+        if ($nota->isPosted()) {
+            throw new RuntimeException('Nota pembelian ini sudah dibukukan.');
+        }
+
+        $nota->loadMissing(['items.item', 'items.warehouse', 'warehouse', 'wallet']);
+
+        if ($nota->items->isEmpty()) {
+            throw new RuntimeException('Tidak bisa membukukan pembelian tanpa baris bahan.');
+        }
+
+        // Tiap baris menyebut gudangnya sendiri; yang belum menyebut ikut
+        // gudang bawaan nota. Kalau dua-duanya kosong, tidak ada tempat yang
+        // bisa dituju dan menebaknya berarti stok mendarat entah di mana.
+        $tanpaGudang = $nota->items->filter(fn ($baris) => ! ($baris->warehouse ?? $nota->warehouse));
+
+        if ($tanpaGudang->isNotEmpty()) {
+            throw new RuntimeException(
+                $tanpaGudang->count().' baris belum menyebut gudang tujuan — bahan yang dibeli harus mendarat di sebuah gudang.'
+            );
+        }
+
+        DB::transaction(function () use ($nota) {
+            $nota->recalculateTotals();
+
+            foreach ($nota->items as $baris) {
+                $gudang = $baris->warehouse ?? $nota->warehouse;
+
+                // Harga beli terakhir menjadi harga pokok berjalan — dan itu
+                // dipasang lebih dulu supaya baris kartu di bawah mencatat
+                // harga per satuan pakai yang baru, bukan yang lama.
+                $baris->item->forceFill(['cost_price' => $baris->unit_cost])->save();
+
+                $this->catat(
+                    item: $baris->item,
+                    gudang: $gudang,
+                    selisih: $baris->baseQty(),
+                    source: $nota,
+                    movedAt: $nota->purchased_at,
+                    notes: 'Pembelian '.$nota->invoice_number.' — '.$gudang->name,
+                    type: 'purchase',
+                );
+            }
+
+            $this->kas->move(
+                wallet: $nota->wallet,
+                direction: 'out',
+                amount: (float) $nota->fresh()->total,
+                source: $nota,
+                occurredAt: $nota->purchased_at,
+                description: 'Pembelian bahan '.$nota->invoice_number,
+            );
+
+            $nota->forceFill(['status' => 'posted', 'posted_at' => now()])->save();
+        });
+    }
+
+    public function unpostPurchase(ProductionPurchase $nota): void
+    {
+        DB::transaction(function () use ($nota) {
+            $this->reverse($nota);
+            $this->kas->reverseFor($nota);
+            $nota->forceFill(['status' => 'draft', 'posted_at' => null])->save();
+        });
+    }
+
+    // ---------------------------------------------------------------- opname
+
     public function postOpname(ProductionItemOpname $opname): void
     {
         if ($opname->isPosted()) {
@@ -86,11 +167,12 @@ class ProductionStockService
         object $source,
         mixed $movedAt,
         ?string $notes = null,
+        string $type = 'opname',
     ): void {
         ProductionItemMovement::create([
             'production_item_id' => $item->id,
             'warehouse_id' => $gudang->id,
-            'type' => 'opname',
+            'type' => $type,
             'qty_in' => max($selisih, 0.0),
             'qty_out' => max(-$selisih, 0.0),
             'balance_after' => $item->stockIn($gudang->id) + $selisih,
