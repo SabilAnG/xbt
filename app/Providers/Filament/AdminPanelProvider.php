@@ -18,6 +18,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -85,6 +87,12 @@ class AdminPanelProvider extends PanelProvider
                 LowStockItems::class,
                 DraftDocuments::class,
             ])
+
+            // Tombol buku di pojok kanan bawah: panduan menu yang sedang dibuka.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): View => view('filament.tutorial'),
+            )
 
             ->middleware([
                 EncryptCookies::class,
