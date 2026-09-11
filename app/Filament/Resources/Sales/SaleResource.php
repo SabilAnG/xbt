@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Sales\Pages\CreateSale;
 use App\Filament\Resources\Sales\Pages\EditSale;
 use App\Filament\Resources\Sales\Pages\ListSales;
@@ -9,12 +10,11 @@ use App\Filament\Resources\Sales\Schemas\SaleForm;
 use App\Filament\Resources\Sales\Tables\SalesTable;
 use App\Models\Sale;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class SaleResource extends Resource
+class SaleResource extends BaseResource
 {
     protected static ?string $model = Sale::class;
 

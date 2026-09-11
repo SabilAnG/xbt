@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\ExhaustComponents;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ExhaustComponents\Pages\IsiBagian;
 use App\Filament\Resources\ExhaustComponents\Pages\ListExhaustComponents;
 use App\Filament\Resources\ExhaustComponents\Schemas\ExhaustComponentForm;
 use App\Filament\Resources\ExhaustComponents\Tables\ExhaustComponentsTable;
 use App\Models\ExhaustComponent;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ExhaustComponentResource extends Resource
+class ExhaustComponentResource extends BaseResource
 {
     protected static ?string $model = ExhaustComponent::class;
 

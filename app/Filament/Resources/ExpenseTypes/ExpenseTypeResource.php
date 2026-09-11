@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\ExpenseTypes;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ExpenseTypes\Pages\ListExpenseTypes;
 use App\Filament\Resources\ExpenseTypes\Schemas\ExpenseTypeForm;
 use App\Filament\Resources\ExpenseTypes\Tables\ExpenseTypesTable;
 use App\Models\ExpenseType;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ExpenseTypeResource extends Resource
+class ExpenseTypeResource extends BaseResource
 {
     protected static ?string $model = ExpenseType::class;
 

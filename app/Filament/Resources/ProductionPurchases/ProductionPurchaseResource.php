@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ProductionPurchases;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ProductionPurchases\Pages\CreateProductionPurchase;
 use App\Filament\Resources\ProductionPurchases\Pages\EditProductionPurchase;
 use App\Filament\Resources\ProductionPurchases\Pages\ListProductionPurchases;
@@ -9,7 +10,6 @@ use App\Filament\Resources\ProductionPurchases\Schemas\ProductionPurchaseForm;
 use App\Filament\Resources\ProductionPurchases\Tables\ProductionPurchasesTable;
 use App\Models\ProductionPurchase;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -23,7 +23,7 @@ use Filament\Tables\Table;
  * Tetap berhalaman penuh, tidak modal: notanya bertingkat dan barisnya banyak,
  * dan mengisinya bukan pekerjaan sekali ketik.
  */
-class ProductionPurchaseResource extends Resource
+class ProductionPurchaseResource extends BaseResource
 {
     protected static ?string $model = ProductionPurchase::class;
 

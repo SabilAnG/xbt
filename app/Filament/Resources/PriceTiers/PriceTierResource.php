@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\PriceTiers;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\PriceTiers\Pages\ListPriceTiers;
 use App\Filament\Resources\PriceTiers\Schemas\PriceTierForm;
 use App\Filament\Resources\PriceTiers\Tables\PriceTiersTable;
 use App\Models\PriceTier;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class PriceTierResource extends Resource
+class PriceTierResource extends BaseResource
 {
     protected static ?string $model = PriceTier::class;
 

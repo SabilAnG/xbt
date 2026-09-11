@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Formula;
+use App\Support\HakPartner;
 use App\Support\HitungHpp;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -43,6 +44,12 @@ class KalkulatorHpp extends Page implements HasForms
 
     /** @var array<string, mixed> */
     public array $data = [];
+
+    /** Disaring sama seperti resource: hak partner menentukan. */
+    public static function canAccess(): bool
+    {
+        return HakPartner::boleh(static::class, 'Produksi');
+    }
 
     public static function getNavigationGroup(): ?string
     {

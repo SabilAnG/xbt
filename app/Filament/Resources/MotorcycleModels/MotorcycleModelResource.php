@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\MotorcycleModels;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\MotorcycleModels\Pages\ListMotorcycleModels;
 use App\Filament\Resources\MotorcycleModels\Schemas\MotorcycleModelForm;
 use App\Filament\Resources\MotorcycleModels\Tables\MotorcycleModelsTable;
 use App\Models\MotorcycleModel;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class MotorcycleModelResource extends Resource
+class MotorcycleModelResource extends BaseResource
 {
     protected static ?string $model = MotorcycleModel::class;
 

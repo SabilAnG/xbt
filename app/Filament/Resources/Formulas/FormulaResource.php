@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Formulas;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Formulas\Pages\CreateFormula;
 use App\Filament\Resources\Formulas\Pages\EditFormula;
 use App\Filament\Resources\Formulas\Pages\ListFormulas;
@@ -9,12 +10,11 @@ use App\Filament\Resources\Formulas\Schemas\FormulaForm;
 use App\Filament\Resources\Formulas\Tables\FormulasTable;
 use App\Models\Formula;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class FormulaResource extends Resource
+class FormulaResource extends BaseResource
 {
     protected static ?string $model = Formula::class;
 

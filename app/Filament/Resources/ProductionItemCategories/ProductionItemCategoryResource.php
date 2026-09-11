@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\ProductionItemCategories;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ProductionItemCategories\Pages\ListProductionItemCategories;
 use App\Filament\Resources\ProductionItemCategories\Schemas\ProductionItemCategoryForm;
 use App\Filament\Resources\ProductionItemCategories\Tables\ProductionItemCategoriesTable;
 use App\Models\ProductionItemCategory;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ProductionItemCategoryResource extends Resource
+class ProductionItemCategoryResource extends BaseResource
 {
     protected static ?string $model = ProductionItemCategory::class;
 

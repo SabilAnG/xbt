@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\ItemTypes;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ItemTypes\Pages\ListItemTypes;
 use App\Filament\Resources\ItemTypes\Schemas\ItemTypeForm;
 use App\Filament\Resources\ItemTypes\Tables\ItemTypesTable;
 use App\Models\ItemType;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ItemTypeResource extends Resource
+class ItemTypeResource extends BaseResource
 {
     protected static ?string $model = ItemType::class;
 

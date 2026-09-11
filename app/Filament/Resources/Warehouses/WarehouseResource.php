@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\Warehouses;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Warehouses\Pages\IsiGudang;
 use App\Filament\Resources\Warehouses\Pages\ListWarehouses;
 use App\Filament\Resources\Warehouses\Schemas\WarehouseForm;
 use App\Filament\Resources\Warehouses\Tables\WarehousesTable;
 use App\Models\Warehouse;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class WarehouseResource extends Resource
+class WarehouseResource extends BaseResource
 {
     protected static ?string $model = Warehouse::class;
 

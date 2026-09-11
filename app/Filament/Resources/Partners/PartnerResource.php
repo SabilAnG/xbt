@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Partners;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Partners\Pages\ListPartners;
 use App\Filament\Resources\Partners\Schemas\PartnerForm;
 use App\Filament\Resources\Partners\Tables\PartnersTable;
 use App\Models\Tenant;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -18,7 +18,7 @@ use Filament\Tables\Table;
  * Barisnya lahir dari formulir publik dan diam di situ sampai disetujui —
  * tombol setuju itulah yang membuatkan database, akun, dan subdomainnya.
  */
-class PartnerResource extends Resource
+class PartnerResource extends BaseResource
 {
     protected static ?string $model = Tenant::class;
 

@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\ItemCategories;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ItemCategories\Pages\ListItemCategories;
 use App\Filament\Resources\ItemCategories\Schemas\ItemCategoryForm;
 use App\Filament\Resources\ItemCategories\Tables\ItemCategoriesTable;
 use App\Models\ItemCategory;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ItemCategoryResource extends Resource
+class ItemCategoryResource extends BaseResource
 {
     protected static ?string $model = ItemCategory::class;
 

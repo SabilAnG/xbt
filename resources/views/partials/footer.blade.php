@@ -122,9 +122,11 @@ Indonesia
                             <li>
                                 <a href="/privacy-policy">Privacy Policy</a>
                             </li>
-                            <li>
-                                <a href="/pasang-iklan">Pasang Iklan</a>
-                            </li>
+                            @unless (\App\Support\HakPartner::partner())
+                                <li>
+                                    <a href="/pasang-iklan">Pasang Iklan</a>
+                                </li>
+                            @endunless
                         </ul>
                     </div>
                 </div>

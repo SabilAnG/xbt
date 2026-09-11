@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\MotorcycleBrands;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\MotorcycleBrands\Pages\ListMotorcycleBrands;
 use App\Filament\Resources\MotorcycleBrands\Schemas\MotorcycleBrandForm;
 use App\Filament\Resources\MotorcycleBrands\Tables\MotorcycleBrandsTable;
 use App\Models\MotorcycleBrand;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class MotorcycleBrandResource extends Resource
+class MotorcycleBrandResource extends BaseResource
 {
     protected static ?string $model = MotorcycleBrand::class;
 

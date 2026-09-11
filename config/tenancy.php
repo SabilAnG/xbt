@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Tenancy\PrefixCacheBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -38,7 +39,8 @@ return [
      */
     'bootstrappers' => [
         DatabaseTenancyBootstrapper::class,
-        CacheTenancyBootstrapper::class,
+        // Bawaan tenancy memakai cache tag, yang tidak didukung store database.
+        PrefixCacheBootstrapper::class,
         FilesystemTenancyBootstrapper::class,
         QueueTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
@@ -145,7 +147,16 @@ return [
          * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => true,
+        /*
+         * Dimatikan. Bila menyala, helper asset() membelokkan SELURUH alamat
+         * aset ke /tenancy/assets/ — termasuk CSS dan JavaScript Filament, yang
+         * sebenarnya berkas aplikasi yang sama untuk semua orang. Akibatnya
+         * panel partner tampil tanpa gaya sama sekali.
+         *
+         * Berkas milik partner sendiri tetap terpisah lewat disk bersuffix di
+         * atas, dan dipanggil dengan Storage::url(), bukan asset().
+         */
+        'asset_helper_tenancy' => false,
     ],
 
     /**

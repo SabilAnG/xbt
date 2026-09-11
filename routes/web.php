@@ -23,14 +23,20 @@ Route::view('/workshop', 'pages.workshop')->name('workshop');
 Route::view('/tracking', 'pages.tracking')->name('tracking');
 Route::view('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
 
-// Jadi Partner: buka toko sendiri di atas aplikasi ini.
-Route::get('/jadi-partner', [PartnerRegistrationController::class, 'create'])->name('partner.register');
-Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])->name('partner.register.store');
+/*
+| Hanya di situs induk. Mendaftar jadi partner dan memasang iklan adalah
+| urusan Hypersonic; dibiarkan hidup di subdomain partner, pendaftarannya
+| justru mendarat di database partner itu dan tidak pernah terbaca.
+*/
+Route::middleware('pusat')->group(function () {
+    Route::get('/jadi-partner', [PartnerRegistrationController::class, 'create'])->name('partner.register');
+    Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])->name('partner.register.store');
 
-Route::view('/pasang-iklan', 'pages.pasang-iklan')->name('pasang-iklan');
+    Route::view('/pasang-iklan', 'pages.pasang-iklan')->name('pasang-iklan');
 
-// Klik banner iklan: dihitung di server lalu diteruskan ke situs pemasang.
-Route::get('/iklan/{advertisement}', AdvertisementClickController::class)->name('iklan.klik');
+    // Klik banner iklan: dihitung di server lalu diteruskan ke situs pemasang.
+    Route::get('/iklan/{advertisement}', AdvertisementClickController::class)->name('iklan.klik');
+});
 Route::view('/terms-and-conditions', 'pages.terms-and-conditions')->name('terms-and-conditions');
 
 Route::get('/products', function () {

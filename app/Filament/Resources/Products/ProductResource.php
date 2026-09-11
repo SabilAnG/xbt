@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\Products;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Resources\Products\Schemas\ProductForm;
 use App\Filament\Resources\Products\Tables\ProductsTable;
 use App\Models\Product;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ProductResource extends Resource
+class ProductResource extends BaseResource
 {
     protected static ?string $model = Product::class;
 

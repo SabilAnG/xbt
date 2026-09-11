@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\Items;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Items\Pages\KartuStok;
 use App\Filament\Resources\Items\Pages\ListItems;
 use App\Filament\Resources\Items\Schemas\ItemForm;
 use App\Filament\Resources\Items\Tables\ItemsTable;
 use App\Models\Item;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ItemResource extends Resource
+class ItemResource extends BaseResource
 {
     protected static ?string $model = Item::class;
 

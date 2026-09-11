@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ProductionItemOpnames;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ProductionItemOpnames\Pages\CreateProductionItemOpname;
 use App\Filament\Resources\ProductionItemOpnames\Pages\EditProductionItemOpname;
 use App\Filament\Resources\ProductionItemOpnames\Pages\ListProductionItemOpnames;
@@ -9,12 +10,11 @@ use App\Filament\Resources\ProductionItemOpnames\Schemas\ProductionItemOpnameFor
 use App\Filament\Resources\ProductionItemOpnames\Tables\ProductionItemOpnamesTable;
 use App\Models\ProductionItemOpname;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ProductionItemOpnameResource extends Resource
+class ProductionItemOpnameResource extends BaseResource
 {
     protected static ?string $model = ProductionItemOpname::class;
 

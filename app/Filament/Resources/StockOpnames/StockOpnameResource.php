@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StockOpnames;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\StockOpnames\Pages\CreateStockOpname;
 use App\Filament\Resources\StockOpnames\Pages\EditStockOpname;
 use App\Filament\Resources\StockOpnames\Pages\LembarHitung;
@@ -10,12 +11,11 @@ use App\Filament\Resources\StockOpnames\Schemas\StockOpnameForm;
 use App\Filament\Resources\StockOpnames\Tables\StockOpnamesTable;
 use App\Models\StockOpname;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class StockOpnameResource extends Resource
+class StockOpnameResource extends BaseResource
 {
     protected static ?string $model = StockOpname::class;
 

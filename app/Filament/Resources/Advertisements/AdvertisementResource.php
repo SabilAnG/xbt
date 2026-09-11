@@ -5,9 +5,9 @@ namespace App\Filament\Resources\Advertisements;
 use App\Filament\Resources\Advertisements\Pages\ListAdvertisements;
 use App\Filament\Resources\Advertisements\Schemas\AdvertisementForm;
 use App\Filament\Resources\Advertisements\Tables\AdvertisementsTable;
+use App\Filament\Resources\BaseResource;
 use App\Models\Advertisement;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -18,7 +18,7 @@ use Filament\Tables\Table;
  * Duduk di grup Website bersama pengaturan isi halaman, karena itulah yang
  * sebenarnya dikerjakan: menentukan apa yang tampil di halaman mana.
  */
-class AdvertisementResource extends Resource
+class AdvertisementResource extends BaseResource
 {
     protected static ?string $model = Advertisement::class;
 

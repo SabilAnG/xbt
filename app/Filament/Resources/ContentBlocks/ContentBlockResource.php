@@ -2,19 +2,19 @@
 
 namespace App\Filament\Resources\ContentBlocks;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ContentBlocks\Pages\EditContentBlock;
 use App\Filament\Resources\ContentBlocks\Pages\ListContentBlocks;
 use App\Filament\Resources\ContentBlocks\Schemas\ContentBlockForm;
 use App\Filament\Resources\ContentBlocks\Tables\ContentBlocksTable;
 use App\Models\ContentBlock;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
-class ContentBlockResource extends Resource
+class ContentBlockResource extends BaseResource
 {
     protected static ?string $model = ContentBlock::class;
 

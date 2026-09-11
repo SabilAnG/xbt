@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Expenses;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Expenses\Pages\CreateExpense;
 use App\Filament\Resources\Expenses\Pages\EditExpense;
 use App\Filament\Resources\Expenses\Pages\ListExpenses;
@@ -9,12 +10,11 @@ use App\Filament\Resources\Expenses\Schemas\ExpenseForm;
 use App\Filament\Resources\Expenses\Tables\ExpensesTable;
 use App\Models\Expense;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class ExpenseResource extends Resource
+class ExpenseResource extends BaseResource
 {
     protected static ?string $model = Expense::class;
 

@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\ProductionServices;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ProductionServices\Pages\ListProductionServices;
 use App\Filament\Resources\ProductionServices\Schemas\ProductionServiceForm;
 use App\Filament\Resources\ProductionServices\Tables\ProductionServicesTable;
 use App\Models\ProductionService;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
  * Ditaruh tepat setelah Formula karena keduanya sepasang: formula menghitung
  * modal bahan, jasa produksi melengkapinya dengan ongkos kerja.
  */
-class ProductionServiceResource extends Resource
+class ProductionServiceResource extends BaseResource
 {
     protected static ?string $model = ProductionService::class;
 

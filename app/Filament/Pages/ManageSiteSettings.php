@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Support\HakPartner;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -31,6 +32,12 @@ class ManageSiteSettings extends Page implements HasForms
 
     /** @var array<string, mixed> */
     public array $data = [];
+
+    /** Disaring sama seperti resource: hak partner menentukan. */
+    public static function canAccess(): bool
+    {
+        return HakPartner::boleh(static::class, 'Website');
+    }
 
     public static function getNavigationGroup(): ?string
     {

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchases;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Purchases\Pages\CreatePurchase;
 use App\Filament\Resources\Purchases\Pages\EditPurchase;
 use App\Filament\Resources\Purchases\Pages\ListPurchases;
@@ -9,12 +10,11 @@ use App\Filament\Resources\Purchases\Schemas\PurchaseForm;
 use App\Filament\Resources\Purchases\Tables\PurchasesTable;
 use App\Models\Purchase;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class PurchaseResource extends Resource
+class PurchaseResource extends BaseResource
 {
     protected static ?string $model = Purchase::class;
 

@@ -59,9 +59,12 @@
                             <li>
                                 <a class="menu-item" href="/contact">Contact</a>
                             </li>
-                            <li>
-                                <a class="menu-item" href="/jadi-partner">Jadi Partner</a>
-                            </li>
+                            {{-- Hanya di situs induk: toko partner tidak menawarkan orang jadi partner. --}}
+                            @unless (\App\Support\HakPartner::partner())
+                                <li>
+                                    <a class="menu-item" href="/jadi-partner">Jadi Partner</a>
+                                </li>
+                            @endunless
                             <li class="tracking-link-mobile" style="display: none">
                                 <a href="/tracking"
                                     class="btn-tracking-mobile fx-slide hover-white d-inline-flex align-items-center py-3"

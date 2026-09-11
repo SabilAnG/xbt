@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\Wallets;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Wallets\Pages\ListWallets;
 use App\Filament\Resources\Wallets\Schemas\WalletForm;
 use App\Filament\Resources\Wallets\Tables\WalletsTable;
 use App\Models\Wallet;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class WalletResource extends Resource
+class WalletResource extends BaseResource
 {
     protected static ?string $model = Wallet::class;
 

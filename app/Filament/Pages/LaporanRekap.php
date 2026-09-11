@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Expense;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Support\HakPartner;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -42,6 +43,12 @@ class LaporanRekap extends Page implements HasForms
 
     /** @var array<string, mixed> */
     public array $data = [];
+
+    /** Disaring sama seperti resource: hak partner menentukan. */
+    public static function canAccess(): bool
+    {
+        return HakPartner::boleh(static::class, 'Aset');
+    }
 
     public static function getNavigationGroup(): ?string
     {

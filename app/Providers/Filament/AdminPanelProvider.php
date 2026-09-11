@@ -6,6 +6,8 @@ use App\Filament\Widgets\CashflowChart;
 use App\Filament\Widgets\DraftDocuments;
 use App\Filament\Widgets\InventoryOverview;
 use App\Filament\Widgets\LowStockItems;
+use App\Http\Middleware\KenaliPartnerDariSubdomain;
+use App\Http\Middleware\PastikanPartnerAktif;
 use App\Models\Setting;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -95,6 +97,12 @@ class AdminPanelProvider extends PanelProvider
             )
 
             ->middleware([
+                // Paling depan: koneksi database harus sudah pindah ke milik
+                // partner sebelum sesi dibaca, sebelum login diperiksa, dan
+                // sebelum menu apa pun dibangun.
+                KenaliPartnerDariSubdomain::class,
+                PastikanPartnerAktif::class,
+
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\HanyaPusat;
+use App\Http\Middleware\KenaliPartnerDariSubdomain;
 use App\Http\Middleware\PastikanPartnerAktif;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -33,6 +35,16 @@ return Application::configure(basePath: dirname(__DIR__))
         // Yang dikunci hanya pintunya; datanya tetap utuh.
         $middleware->alias([
             'partner.aktif' => PastikanPartnerAktif::class,
+            'pusat' => HanyaPusat::class,
+        ]);
+
+        // Halaman publik melayani dua sisi: situs Hypersonic di alamat pusat,
+        // dan toko partner di subdomainnya. Yang membedakan hanya database di
+        // belakangnya — jadi pengenalannya harus terjadi sebelum apa pun
+        // dibaca, termasuk sesi.
+        $middleware->prependToGroup('web', [
+            KenaliPartnerDariSubdomain::class,
+            PastikanPartnerAktif::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
