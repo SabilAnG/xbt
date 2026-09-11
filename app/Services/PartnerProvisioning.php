@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
@@ -97,11 +96,12 @@ class PartnerProvisioning
      */
     public function hapus(Tenant $tenant): void
     {
-        if ($tenant->database()->manager()->databaseExists($nama = $tenant->database()->getName())) {
-            DB::statement('DROP DATABASE IF EXISTS `'.str_replace('`', '', $nama).'`');
-        }
-
         $tenant->domains()->delete();
+
+        // Databasenya dibuang oleh tenancy lewat event TenantDeleted. Sempat
+        // dihapus manual di sini lebih dulu, dan job bawaan itu lalu menabrak
+        // database yang sudah tidak ada — penghapusan gagal separuh jalan,
+        // meninggalkan barisnya hidup tanpa toko.
         $tenant->delete();
     }
 
