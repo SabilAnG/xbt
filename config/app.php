@@ -55,6 +55,13 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Domain induk untuk subdomain partner: toko-anu.garagehs-speed.com.
+    | Dipisah dari APP_URL karena keduanya bisa berbeda — panel pusat
+    | duduk di shop.garagehs-speed.com, partner di subdomain lain.
+    */
+    'partner_domain' => env('PARTNER_DOMAIN', 'garagehs-speed.com'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
