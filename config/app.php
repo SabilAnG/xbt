@@ -62,6 +62,12 @@ return [
     'partner_domain' => env('PARTNER_DOMAIN', 'garagehs-speed.com'),
 
     /*
+    | Nomor WhatsApp admin, tujuan tombol Langganan di halaman partner
+    | yang masa pakainya habis. Format bebas — yang bukan angka dibuang.
+    */
+    'admin_whatsapp' => env('ADMIN_WHATSAPP', '6281234567890'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
