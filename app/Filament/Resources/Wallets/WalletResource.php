@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Wallets;
 
-use App\Filament\Resources\Wallets\Pages\CreateWallet;
-use App\Filament\Resources\Wallets\Pages\EditWallet;
 use App\Filament\Resources\Wallets\Pages\ListWallets;
 use App\Filament\Resources\Wallets\Schemas\WalletForm;
 use App\Filament\Resources\Wallets\Tables\WalletsTable;
@@ -52,8 +50,6 @@ class WalletResource extends Resource
     {
         return [
             'index' => ListWallets::route('/'),
-            'create' => CreateWallet::route('/create'),
-            'edit' => EditWallet::route('/{record}/edit'),
         ];
     }
 }

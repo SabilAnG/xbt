@@ -17,6 +17,7 @@ class PriceTierForm
     {
         return $schema->components([
             Section::make('Tingkatan Harga')
+                ->columnSpanFull()
                 ->columns(2)
                 ->schema([
                     TextInput::make('name')
@@ -40,6 +41,7 @@ class PriceTierForm
                 ]),
 
             Section::make('Margin & Potongan')
+                ->columnSpanFull()
                 ->description('Margin dihitung dari harga jual, bukan dari modal. 40% berarti empat puluh persen dari uang yang masuk benar-benar jadi laba.')
                 ->columns(2)
                 ->schema([

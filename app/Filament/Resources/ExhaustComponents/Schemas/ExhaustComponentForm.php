@@ -16,6 +16,7 @@ class ExhaustComponentForm
     {
         return $schema->components([
             Section::make()
+                ->columnSpanFull()
                 ->description('Daftar bagian penyusun knalpot. Bahan dan ukurannya diisi nanti di formula, karena berbeda tiap model motor.')
                 ->columns(2)
                 ->schema([

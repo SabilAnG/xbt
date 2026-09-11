@@ -16,6 +16,7 @@ class ExpenseCategoryForm
     {
         return $schema->components([
             Section::make()
+                ->columnSpanFull()
                 ->columns(2)
                 ->schema([
                     Select::make('expense_type_id')

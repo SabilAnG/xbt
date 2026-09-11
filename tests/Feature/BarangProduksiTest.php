@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\ProductionItems\Pages\CreateProductionItem;
+use App\Filament\Resources\ProductionItems\Pages\ListProductionItems;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemCategory;
 use App\Models\User;
@@ -112,8 +112,8 @@ class BarangProduksiTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        Livewire::test(CreateProductionItem::class)
-            ->fillForm([
+        Livewire::test(ListProductionItems::class)
+            ->callAction('create', [
                 'name' => 'Pipa 6 meter',
                 'sku' => 'PIP-METER',
                 'shape' => 'linear',
@@ -122,8 +122,7 @@ class BarangProduksiTest extends TestCase
                 'length_mm' => 6,
                 'cost_price' => 90_000,
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertHasNoActionErrors();
 
         $pipa = ProductionItem::where('sku', 'PIP-METER')->sole();
 
@@ -137,8 +136,8 @@ class BarangProduksiTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        Livewire::test(CreateProductionItem::class)
-            ->fillForm([
+        Livewire::test(ListProductionItems::class)
+            ->callAction('create', [
                 'name' => 'Pipa 1,5 inch',
                 'sku' => 'PIP-INCH',
                 'shape' => 'linear',
@@ -148,8 +147,7 @@ class BarangProduksiTest extends TestCase
                 'diameter_mm' => 1.5,
                 'cost_price' => 90_000,
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertHasNoActionErrors();
 
         $pipa = ProductionItem::where('sku', 'PIP-INCH')->sole();
 
@@ -166,16 +164,15 @@ class BarangProduksiTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        Livewire::test(CreateProductionItem::class)
-            ->fillForm([
+        Livewire::test(ListProductionItems::class)
+            ->callAction('create', [
                 'name' => 'Baut M8 x 20',
                 'sku' => 'BAUT-M8',
                 'shape' => 'count',
                 'unit' => 'pcs',
                 'cost_price' => 1_500,
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertHasNoActionErrors();
 
         $baut = ProductionItem::where('sku', 'BAUT-M8')->sole();
 
@@ -265,10 +262,10 @@ class BarangProduksiTest extends TestCase
             'source' => 'beli_produksi',
         ]);
 
-        Livewire::test(CreateProductionItem::class)
-            ->assertSuccessful()
+        Livewire::test(ListProductionItems::class)
+            ->mountAction('create')
             ->fillForm(['production_item_category_id' => $jenis->id])
-            ->assertFormSet([
+            ->assertActionDataSet([
                 'role' => 'aksesoris_utama',
                 'source' => 'beli_produksi',
             ]);
@@ -291,12 +288,14 @@ class BarangProduksiTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        Livewire::test(CreateProductionItem::class)
-            ->assertSuccessful()
-            ->assertSee('Didapat dari')
-            ->assertSee('Perannya di produk')
-            ->assertSee('Dibeli atau dibuat sendiri')
-            ->assertSee('Sisa terkecil yang masih terpakai');
+        Livewire::test(ListProductionItems::class)
+            ->mountAction('create')
+            ->assertMountedActionModalSee([
+                'Didapat dari',
+                'Perannya di produk',
+                'Dibeli atau dibuat sendiri',
+                'Sisa terkecil yang masih terpakai',
+            ]);
     }
 
     // --------------------------------------------------------------- fixture

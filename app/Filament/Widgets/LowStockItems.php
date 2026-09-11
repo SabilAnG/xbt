@@ -55,10 +55,14 @@ class LowStockItems extends TableWidget
                     ->toggleable(),
             ])
             ->recordActions([
+                // Ke kartu stoknya, bukan ke form ubah barang: yang dicari orang
+                // saat melihat stok menipis adalah riwayatnya — sejak kapan dan
+                // terpakai ke mana. Mengubah barangnya sendiri kini lewat modal
+                // di menu Stok Barang.
                 Action::make('buka')
-                    ->label('Buka')
+                    ->label('Kartu stok')
                     ->icon('heroicon-m-arrow-top-right-on-square')
-                    ->url(fn (Item $record) => ItemResource::getUrl('edit', ['record' => $record]))
+                    ->url(fn (Item $record) => ItemResource::getUrl('kartu', ['record' => $record]))
                     ->color('gray'),
             ]);
     }

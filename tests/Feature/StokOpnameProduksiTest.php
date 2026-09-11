@@ -323,6 +323,30 @@ class StokOpnameProduksiTest extends TestCase
             ->assertDontSee($pipa->name);
     }
 
+    /**
+     * Barisnya stok di gudang ini, tapi yang ingin diubah orang selalu
+     * barangnya — jadi modal di baris itu membuka master barangnya.
+     */
+    public function test_barang_bisa_diubah_dari_halaman_isi_gudang(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $pipa = $this->pipa();
+        $mentah = $this->gudang('BM');
+
+        $opname = $this->sesi($mentah);
+        $this->baris($opname, $pipa, sistem: 0, fisik: 12_000);
+        $this->stok->postOpname($opname);
+
+        $stok = $mentah->stocks()->where('production_item_id', $pipa->id)->sole();
+
+        Livewire::test(IsiGudang::class, ['record' => $mentah])
+            ->callTableAction('ubahBarang', $stok, ['name' => 'Pipa SS 201 Ø32'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('Pipa SS 201 Ø32', $pipa->fresh()->name);
+    }
+
     public function test_opname_tanpa_gudang_ditolak(): void
     {
         $pipa = $this->pipa();

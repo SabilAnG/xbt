@@ -16,6 +16,7 @@ class WalletForm
         return $schema
             ->components([
                 Section::make('Dompet')
+                    ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')->label('Nama')->required()->maxLength(255),

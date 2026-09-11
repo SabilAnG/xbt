@@ -66,7 +66,9 @@ class MasterDataForm
         $fields[] = Toggle::make('is_active')->label('Aktif')->default(true);
 
         return $schema->components([
-            Section::make()->columns(2)->schema($fields),
+            // Selebar wadahnya: form ini dibuka sebagai modal, dan skema modal
+            // Filament dua kolom — tanpa ini kartunya cuma mengisi separuh kiri.
+            Section::make()->columnSpanFull()->columns(2)->schema($fields),
         ]);
     }
 }

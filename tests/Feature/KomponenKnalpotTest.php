@@ -82,6 +82,27 @@ class KomponenKnalpotTest extends TestCase
     }
 
     /**
+     * Ditambahkan lewat modal di halaman bagiannya, bukan halaman tersendiri —
+     * dan bagiannya tidak ditanyakan lagi karena sudah pasti dari halaman mana
+     * orang menekannya.
+     */
+    public function test_komponen_ditambah_lewat_modal_langsung_masuk_bagiannya(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $silincer = ExhaustComponent::where('name', 'Silincer')->sole();
+
+        Livewire::test(IsiBagian::class, ['record' => $silincer])
+            ->callAction('tambah', ['name' => 'Peredam Glasswool'])
+            ->assertHasNoActionErrors();
+
+        $baru = ExhaustComponent::where('name', 'Peredam Glasswool')->sole();
+
+        $this->assertSame($silincer->id, $baru->parent_id);
+        $this->assertTrue($baru->is_active);
+    }
+
+    /**
      * Daftar utama memuat bagiannya saja — enam belas komponen sekaligus
      * membuat orang membaca daftar, bukan memahami susunannya.
      */

@@ -16,6 +16,7 @@ class WarehouseForm
     {
         return $schema->components([
             Section::make()
+                ->columnSpanFull()
                 ->columns(2)
                 ->schema([
                     TextInput::make('name')

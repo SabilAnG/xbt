@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\ItemTypes;
 
-use App\Filament\Resources\ItemTypes\Pages\CreateItemType;
-use App\Filament\Resources\ItemTypes\Pages\EditItemType;
 use App\Filament\Resources\ItemTypes\Pages\ListItemTypes;
 use App\Filament\Resources\ItemTypes\Schemas\ItemTypeForm;
 use App\Filament\Resources\ItemTypes\Tables\ItemTypesTable;
@@ -52,8 +50,6 @@ class ItemTypeResource extends Resource
     {
         return [
             'index' => ListItemTypes::route('/'),
-            'create' => CreateItemType::route('/create'),
-            'edit' => EditItemType::route('/{record}/edit'),
         ];
     }
 }

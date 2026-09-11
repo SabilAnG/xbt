@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\ExpenseCategories;
 
-use App\Filament\Resources\ExpenseCategories\Pages\CreateExpenseCategory;
-use App\Filament\Resources\ExpenseCategories\Pages\EditExpenseCategory;
 use App\Filament\Resources\ExpenseCategories\Pages\ListExpenseCategories;
 use App\Filament\Resources\ExpenseCategories\Schemas\ExpenseCategoryForm;
 use App\Filament\Resources\ExpenseCategories\Tables\ExpenseCategoriesTable;
@@ -52,8 +50,6 @@ class ExpenseCategoryResource extends Resource
     {
         return [
             'index' => ListExpenseCategories::route('/'),
-            'create' => CreateExpenseCategory::route('/create'),
-            'edit' => EditExpenseCategory::route('/{record}/edit'),
         ];
     }
 }

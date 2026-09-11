@@ -1,12 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\Items\RelationManagers;
+namespace App\Filament\Resources\Items\Pages;
 
+use App\Filament\Resources\Items\ItemResource;
+use App\Models\Item;
 use App\Models\StockMovement;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Schema;
+use Filament\Resources\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -15,23 +19,46 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Kartu stok — riwayat masuk/keluar satu barang.
  *
- * Baris di sini dibuat oleh PostingService, tidak pernah diketik langsung,
- * jadi tabel ini sengaja read-only.
+ * Dulu ini relation manager yang menumpang di halaman ubah barang. Sejak
+ * menambah dan mengubah barang dikerjakan lewat modal, halaman itu tidak ada
+ * lagi, dan riwayat sepanjang ini memang lebih pantas punya halaman sendiri
+ * daripada dijejalkan ke dalam kotak modal.
+ *
+ * Barisnya dibuat oleh PostingService, tidak pernah diketik langsung, jadi
+ * tabel ini sengaja read-only.
  */
-class MovementsRelationManager extends RelationManager
+class KartuStok extends Page implements HasTable
 {
-    protected static string $relationship = 'movements';
+    use InteractsWithTable;
 
-    protected static ?string $title = 'Kartu Stok';
+    protected static string $resource = ItemResource::class;
 
-    public function form(Schema $schema): Schema
+    protected string $view = 'filament.resources.items.kartu-stok';
+
+    public Item $record;
+
+    public function mount(Item $record): void
     {
-        return $schema->components([]);
+        $this->record = $record;
+    }
+
+    public function getTitle(): string
+    {
+        return 'Kartu Stok — '.$this->record->name;
+    }
+
+    public function getSubheading(): ?string
+    {
+        $sisa = rtrim(rtrim(number_format((float) $this->record->stock, 2, ',', '.'), '0'), ',');
+
+        return $this->record->sku.' · sisa '.$sisa.' '.($this->record->unit ?? 'pcs');
     }
 
     public function table(Table $table): Table
     {
         return $table
+            ->query(fn (): Builder => StockMovement::query()
+                ->where('item_id', $this->record->id))
             ->defaultSort('moved_at', 'desc')
             ->paginated([25, 50, 100])
             ->columns([
@@ -103,5 +130,16 @@ class MovementsRelationManager extends RelationManager
             ->toolbarActions([])
             ->emptyStateHeading('Belum ada pergerakan')
             ->emptyStateDescription('Stok bergerak setelah nota pembelian, penjualan, atau stok opname dibukukan.');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('kembali')
+                ->label('Semua Barang')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('gray')
+                ->url(fn () => ItemResource::getUrl('index')),
+        ];
     }
 }

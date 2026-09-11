@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\Items;
 
-use App\Filament\Resources\Items\Pages\CreateItem;
-use App\Filament\Resources\Items\Pages\EditItem;
+use App\Filament\Resources\Items\Pages\KartuStok;
 use App\Filament\Resources\Items\Pages\ListItems;
 use App\Filament\Resources\Items\Schemas\ItemForm;
 use App\Filament\Resources\Items\Tables\ItemsTable;
@@ -43,17 +42,17 @@ class ItemResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            RelationManagers\MovementsRelationManager::class,
-        ];
+        // Kartu stok punya halaman sendiri sekarang — relation manager tidak
+        // bisa hidup di dalam modal, dan riwayat sepanjang itu memang tidak
+        // pantas dijejalkan ke sana.
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListItems::route('/'),
-            'create' => CreateItem::route('/create'),
-            'edit' => EditItem::route('/{record}/edit'),
+            'kartu' => KartuStok::route('/{record}/kartu'),
         ];
     }
 }

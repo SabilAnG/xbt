@@ -3,9 +3,14 @@
 namespace App\Filament\Resources\ExhaustComponents\Pages;
 
 use App\Filament\Resources\ExhaustComponents\ExhaustComponentResource;
+use App\Filament\Resources\ExhaustComponents\Schemas\ExhaustComponentForm;
 use App\Models\ExhaustComponent;
 use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -72,7 +77,12 @@ class IsiBagian extends Page implements HasTable
 
                 IconColumn::make('is_active')->label('Aktif')->boolean()->toggleable(),
             ])
-            ->recordUrl(fn (ExhaustComponent $record) => ExhaustComponentResource::getUrl('edit', ['record' => $record]))
+            ->recordActions([
+                EditAction::make()
+                    ->label('Ubah')
+                    ->schema(fn (Schema $schema) => ExhaustComponentForm::configure($schema))
+                    ->modalWidth(Width::TwoExtraLarge),
+            ])
             ->emptyStateHeading('Belum ada komponen di bagian ini')
             ->emptyStateDescription('Daftarkan bagian-bagiannya; bahan dan ukurannya menyusul di formula.')
             ->emptyStateIcon('heroicon-o-puzzle-piece');
@@ -81,12 +91,21 @@ class IsiBagian extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('tambah')
+            CreateAction::make('tambah')
                 ->label('Tambah Komponen')
                 ->icon('heroicon-o-plus')
                 ->color('primary')
+                ->model(ExhaustComponent::class)
+                ->schema(fn (Schema $schema) => ExhaustComponentForm::configure($schema))
+                ->modalWidth(Width::TwoExtraLarge)
                 // Bagiannya sudah pasti; jangan minta orang memilihnya lagi.
-                ->url(fn () => ExhaustComponentResource::getUrl('create', ['bagian' => $this->record->id])),
+                // Urutannya pun: yang baru ditambahkan selalu di urutan paling
+                // belakang, bukan di depan komponen yang sudah tertata.
+                ->fillForm(fn (): array => [
+                    'parent_id' => $this->record->id,
+                    'sort_order' => ((int) $this->record->children()->max('sort_order')) + 10,
+                    'is_active' => true,
+                ]),
 
             Action::make('kembali')
                 ->label('Semua Bagian')

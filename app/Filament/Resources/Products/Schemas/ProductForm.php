@@ -18,6 +18,7 @@ class ProductForm
         return $schema
             ->components([
                 Section::make('Details')
+                    ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
@@ -46,10 +47,11 @@ class ProductForm
                             ->columnSpanFull(),
 
                         TextInput::make('price')
+                            ->label('Harga')
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->prefix('$'),
+                            ->prefix('Rp'),
 
                         TextInput::make('sort_order')
                             ->required()
@@ -63,6 +65,7 @@ class ProductForm
                     ]),
 
                 Section::make('Description')
+                    ->columnSpanFull()
                     ->schema([
                         RichEditor::make('description')
                             ->hiddenLabel()
@@ -71,6 +74,7 @@ class ProductForm
                     ]),
 
                 Section::make('Gallery')
+                    ->columnSpanFull()
                     ->schema([
                         Repeater::make('images')
                             ->relationship()

@@ -99,7 +99,7 @@ class ItemsTable
                     ->label('Kartu stok')
                     ->icon('heroicon-m-clipboard-document-list')
                     ->color('gray')
-                    ->url(fn (Item $record) => ItemResource::getUrl('edit', ['record' => $record]).'#relation-manager'),
+                    ->url(fn (Item $record) => ItemResource::getUrl('kartu', ['record' => $record])),
 
                 EditAction::make()->label('Ubah'),
 

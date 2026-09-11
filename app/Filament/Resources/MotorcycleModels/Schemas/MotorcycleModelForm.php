@@ -16,6 +16,7 @@ class MotorcycleModelForm
     {
         return $schema->components([
             Section::make()
+                ->columnSpanFull()
                 ->columns(2)
                 ->schema([
                     Select::make('motorcycle_brand_id')

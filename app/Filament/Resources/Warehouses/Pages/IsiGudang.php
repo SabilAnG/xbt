@@ -3,13 +3,16 @@
 namespace App\Filament\Resources\Warehouses\Pages;
 
 use App\Filament\Resources\ProductionItemOpnames\ProductionItemOpnameResource;
-use App\Filament\Resources\ProductionItems\ProductionItemResource;
+use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
 use App\Filament\Resources\Warehouses\WarehouseResource;
 use App\Models\ProductionItem;
 use App\Models\ProductionItemStock;
 use App\Models\Warehouse;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -99,9 +102,32 @@ class IsiGudang extends Page implements HasTable
                         ? $query->whereHas('item', fn (Builder $q) => $q->where('role', $data['value']))
                         : $query),
             ])
-            ->recordUrl(fn (ProductionItemStock $record) => $record->item
-                ? ProductionItemResource::getUrl('edit', ['record' => $record->item])
-                : null)
+            // Yang diklik barisnya adalah stok di gudang ini, tapi yang ingin
+            // diubah orang selalu barangnya — jadi modalnya membuka master
+            // barang itu, bukan baris stoknya.
+            ->recordActions([
+                Action::make('ubahBarang')
+                    ->label('Ubah barang')
+                    ->icon('heroicon-m-pencil-square')
+                    ->color('gray')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalHeading(fn (?ProductionItemStock $record) => 'Ubah '.$record?->item?->name)
+                    ->modalSubmitActionLabel('Simpan')
+                    // Yang diisi form ini barangnya, bukan baris stoknya —
+                    // tanpa ini `relationship()` di dalamnya dicari di
+                    // ProductionItemStock dan tidak ketemu.
+                    ->schema(fn (Schema $schema, ?ProductionItemStock $record) => ProductionItemForm::configure(
+                        $record?->item
+                            ? $schema->record($record->item)
+                            : $schema->model(ProductionItem::class)
+                    ))
+                    ->fillForm(fn (?ProductionItemStock $record) => $record?->item?->attributesToArray() ?? [])
+                    ->action(function (ProductionItemStock $record, array $data) {
+                        $record->item?->update($data);
+
+                        Notification::make()->success()->title('Barang disimpan')->send();
+                    }),
+            ])
             ->emptyStateHeading('Gudang ini masih kosong')
             ->emptyStateDescription('Stok masuk lewat stok opname — dan nanti lewat pembelian serta produksi.')
             ->emptyStateIcon('heroicon-o-archive-box');

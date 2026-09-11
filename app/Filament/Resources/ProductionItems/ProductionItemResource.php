@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\ProductionItems;
 
-use App\Filament\Resources\ProductionItems\Pages\CreateProductionItem;
-use App\Filament\Resources\ProductionItems\Pages\EditProductionItem;
 use App\Filament\Resources\ProductionItems\Pages\ListProductionItems;
 use App\Filament\Resources\ProductionItems\Schemas\ProductionItemForm;
 use App\Filament\Resources\ProductionItems\Tables\ProductionItemsTable;
@@ -62,8 +60,6 @@ class ProductionItemResource extends Resource
     {
         return [
             'index' => ListProductionItems::route('/'),
-            'create' => CreateProductionItem::route('/create'),
-            'edit' => EditProductionItem::route('/{record}/edit'),
         ];
     }
 }

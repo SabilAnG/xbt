@@ -30,6 +30,7 @@ class ProductionItemForm
     {
         return $schema->components([
             Section::make('Identitas')
+                ->columnSpanFull()
                 ->description('Pilih jenisnya, dan peran serta cara pengadaannya ikut terisi sendiri — tinggal lanjut ke ukuran dan harga.')
                 ->columns(2)
                 ->schema([
@@ -78,11 +79,13 @@ class ProductionItemForm
                 ]),
 
             Section::make('Ukuran, Satuan & Harga')
+                ->columnSpanFull()
                 ->description('Anda membeli per batang atau lembar, tapi memakainya per milimeter. Isi ukurannya sekali di sini, sistem yang menghitung harga per satuan pakai.')
                 ->columns(3)
                 ->schema(self::medanUkuranHarga()),
 
             Section::make('Stok')
+                ->columnSpanFull()
                 ->columns(3)
                 ->schema([
                     TextInput::make('stock')
@@ -103,6 +106,7 @@ class ProductionItemForm
                 ]),
 
             Section::make('Catatan')
+                ->columnSpanFull()
                 ->collapsed()
                 ->schema([Textarea::make('notes')->hiddenLabel()->rows(3)]),
         ]);

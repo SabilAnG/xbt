@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\MotorcycleBrands;
 
-use App\Filament\Resources\MotorcycleBrands\Pages\CreateMotorcycleBrand;
-use App\Filament\Resources\MotorcycleBrands\Pages\EditMotorcycleBrand;
 use App\Filament\Resources\MotorcycleBrands\Pages\ListMotorcycleBrands;
 use App\Filament\Resources\MotorcycleBrands\Schemas\MotorcycleBrandForm;
 use App\Filament\Resources\MotorcycleBrands\Tables\MotorcycleBrandsTable;
@@ -52,8 +50,6 @@ class MotorcycleBrandResource extends Resource
     {
         return [
             'index' => ListMotorcycleBrands::route('/'),
-            'create' => CreateMotorcycleBrand::route('/create'),
-            'edit' => EditMotorcycleBrand::route('/{record}/edit'),
         ];
     }
 }

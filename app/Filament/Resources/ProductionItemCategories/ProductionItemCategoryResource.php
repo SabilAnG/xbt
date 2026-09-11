@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\ProductionItemCategories;
 
-use App\Filament\Resources\ProductionItemCategories\Pages\CreateProductionItemCategory;
-use App\Filament\Resources\ProductionItemCategories\Pages\EditProductionItemCategory;
 use App\Filament\Resources\ProductionItemCategories\Pages\ListProductionItemCategories;
 use App\Filament\Resources\ProductionItemCategories\Schemas\ProductionItemCategoryForm;
 use App\Filament\Resources\ProductionItemCategories\Tables\ProductionItemCategoriesTable;
@@ -45,8 +43,6 @@ class ProductionItemCategoryResource extends Resource
     {
         return [
             'index' => ListProductionItemCategories::route('/'),
-            'create' => CreateProductionItemCategory::route('/create'),
-            'edit' => EditProductionItemCategory::route('/{record}/edit'),
         ];
     }
 }

@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\MotorcycleModels;
 
-use App\Filament\Resources\MotorcycleModels\Pages\CreateMotorcycleModel;
-use App\Filament\Resources\MotorcycleModels\Pages\EditMotorcycleModel;
 use App\Filament\Resources\MotorcycleModels\Pages\ListMotorcycleModels;
 use App\Filament\Resources\MotorcycleModels\Schemas\MotorcycleModelForm;
 use App\Filament\Resources\MotorcycleModels\Tables\MotorcycleModelsTable;
@@ -52,8 +50,6 @@ class MotorcycleModelResource extends Resource
     {
         return [
             'index' => ListMotorcycleModels::route('/'),
-            'create' => CreateMotorcycleModel::route('/create'),
-            'edit' => EditMotorcycleModel::route('/{record}/edit'),
         ];
     }
 }
