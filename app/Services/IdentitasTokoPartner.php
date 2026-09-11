@@ -6,7 +6,7 @@ use App\Models\Setting;
 use App\Models\Tenant;
 
 /**
- * Mengisi identitas toko partner saat pertama kali dibuatkan.
+ * Mengisi identitas toko partner: nama, email, dan nomor WhatsApp-nya sendiri.
  *
  * Tanpa ini tabel settings partner kosong, dan seluruh halaman tokonya jatuh ke
  * nilai bawaan yang tertulis di view — yakni nama, email, dan nomor WhatsApp
@@ -24,14 +24,28 @@ class IdentitasTokoPartner
     /**
      * Dijalankan di dalam `$tenant->run()`, jadi seluruh penulisan mendarat di
      * database partner.
+     *
+     * Isian yang sudah punya nilai tidak disentuh. Saat partner baru dibuat
+     * tabelnya memang kosong, jadi ini tidak mengubah apa pun di sana — tapi
+     * ia membuat metode yang sama aman dipakai untuk menambal partner lama,
+     * tanpa menimpa nama atau nomor yang sudah mereka ganti sendiri.
+     *
+     * @return list<string> kunci yang baru terisi
      */
-    public function isi(Tenant $partner): void
+    public function isi(Tenant $partner): array
     {
+        $terisi = [];
+
         foreach ($this->nilai($partner) as $kunci => $nilai) {
-            if (filled($nilai)) {
-                Setting::put($kunci, $nilai);
+            if (blank($nilai) || filled(Setting::get($kunci))) {
+                continue;
             }
+
+            Setting::put($kunci, $nilai);
+            $terisi[] = $kunci;
         }
+
+        return $terisi;
     }
 
     /** @return array<string, string|null> */

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Setting;
 use App\Models\Tenant;
+use App\Services\IdentitasTokoPartner;
 use App\Services\SesiPartner;
 use App\Support\HakPartner;
 use App\Support\Tutorial;
@@ -42,6 +43,37 @@ class PartnerKelengkapanTest extends TestCase
 
         // Hanya angka — bentuk yang dipakai wa.me maupun tel:
         $this->assertSame('081234567890', setting_wa());
+    }
+
+    /**
+     * Identitas diisi saat partner disetujui, jadi partner yang disetujui
+     * sebelum langkah itu ada tokonya masih memakai identitas Hypersonic.
+     * Perintah penambalnya memakai metode yang sama, jadi metode itu harus
+     * aman diulang: yang sudah bernilai — termasuk yang diganti sendiri oleh
+     * partner — tidak boleh tertimpa.
+     */
+    public function test_identitas_tidak_menimpa_isian_yang_sudah_ada(): void
+    {
+        Setting::put('contact.email', 'sudah@diganti.test');
+
+        $partner = new Tenant([
+            'name' => 'Knalpot Jaya',
+            'owner_email' => 'budi@contoh.test',
+            'owner_phone' => '081234567890',
+        ]);
+
+        $terisi = app(IdentitasTokoPartner::class)->isi($partner);
+
+        $this->assertSame('sudah@diganti.test', Setting::get('contact.email'));
+        $this->assertNotContains('contact.email', $terisi);
+
+        // Yang memang masih kosong tetap terisi.
+        $this->assertSame('Knalpot Jaya', Setting::get('site.name'));
+        $this->assertSame('6281234567890', Setting::get('whatsapp.primary'));
+        $this->assertContains('site.name', $terisi);
+
+        // Diulang tidak mengisi apa pun lagi.
+        $this->assertSame([], app(IdentitasTokoPartner::class)->isi($partner));
     }
 
     /** Situs induk tidak boleh berubah kalau tabel settings-nya kosong. */
