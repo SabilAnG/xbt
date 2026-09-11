@@ -3,12 +3,16 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\Formulas\Pages\CreateFormula;
+use App\Filament\Resources\Formulas\Schemas\FormulaForm;
+use App\Filament\Resources\ProductionServices\Pages\ListProductionServices;
 use App\Models\ExhaustComponent;
 use App\Models\Formula;
 use App\Models\FormulaLine;
+use App\Models\FormulaService;
 use App\Models\MotorcycleBrand;
 use App\Models\MotorcycleModel;
 use App\Models\ProductionItem;
+use App\Models\ProductionService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -161,6 +165,79 @@ class FormulaTest extends TestCase
         $this->assertSame('Racing Standar — Yamaha Mio', $formula->fullName());
     }
 
+    // ------------------------------------------------------------- biaya jasa
+
+    /**
+     * Modal sesungguhnya bahan ditambah jasa. Menghitungnya dari bahan saja
+     * membuat knalpot yang dichrome terlihat semurah yang tidak — dan selisih
+     * itu berakhir di harga jual.
+     */
+    public function test_modal_total_menjumlah_bahan_dan_jasa(): void
+    {
+        $formula = $this->formula();
+        $pipa = $this->pipa();
+
+        // 20 cm x 2 = 400 mm, Rp15/mm -> Rp6.000
+        $this->baris($formula, 'P1', $pipa, [
+            'input_mode' => 'length', 'size_unit' => 'cm',
+            'piece_length_mm' => 200, 'piece_count' => 2,
+        ]);
+
+        $this->jasa($formula, $this->chrome(), qty: 1);          // Rp150.000
+        $this->jasa($formula, $this->las(), qty: 12);            // 12 x Rp5.000
+
+        $formula->refresh();
+
+        $this->assertSame(6_000.0, $formula->materialCost());
+        $this->assertSame(210_000.0, $formula->serviceCost());
+        $this->assertSame(216_000.0, $formula->totalCost());
+    }
+
+    public function test_hasil_lebih_dari_satu_membagi_jasanya_juga(): void
+    {
+        $formula = $this->formula(['output_qty' => 3]);
+        $this->jasa($formula, $this->chrome(), qty: 3);
+
+        $formula->refresh();
+
+        $this->assertSame(450_000.0, $formula->serviceCost());
+        $this->assertSame(150_000.0, $formula->serviceCostPerUnit());
+        $this->assertSame(150_000.0, $formula->totalCostPerUnit());
+    }
+
+    /** Formula tanpa jasa tetap sah — tidak semua knalpot dichrome. */
+    public function test_formula_tanpa_jasa_modalnya_bahan_saja(): void
+    {
+        $formula = $this->formula();
+        $this->baris($formula, 'P1', $this->pipa(), [
+            'input_mode' => 'length', 'size_unit' => 'cm',
+            'piece_length_mm' => 200, 'piece_count' => 2,
+        ]);
+
+        $formula->refresh();
+
+        $this->assertSame(0.0, $formula->serviceCost());
+        $this->assertSame($formula->materialCost(), $formula->totalCost());
+    }
+
+    /**
+     * Tarif yang sudah dipakai resep tidak boleh hilang diam-diam: modal
+     * formula ikut turun tanpa jejak, dan turunnya baru ketahuan setelah harga
+     * jual terlanjur ditetapkan.
+     */
+    public function test_jasa_yang_dipakai_formula_tidak_bisa_dihapus(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $chrome = $this->chrome();
+        $this->jasa($this->formula(), $chrome, qty: 1);
+
+        Livewire::test(ListProductionServices::class)
+            ->callTableAction('delete', $chrome);
+
+        $this->assertDatabaseHas('production_services', ['id' => $chrome->id]);
+    }
+
     // ------------------------------------------------------------- tampilan
 
     /**
@@ -179,6 +256,51 @@ class FormulaTest extends TestCase
             ->assertSee('P1')
             ->assertSee('Tabung Silincer')
             ->assertSee('Type Motor');
+    }
+
+    /**
+     * Cara mengisi ukuran tidak lagi ditanyakan ke orang — bentuk bahannya di
+     * master sudah menjawabnya. Salah menebaknya di sini berarti kolom ukuran
+     * yang salah yang muncul, dan kebutuhan bahan ikut keliru.
+     */
+    public function test_memilih_bahan_menentukan_sendiri_cara_ukurannya(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $form = Livewire::test(CreateFormula::class)->assertSuccessful();
+
+        [$satu, $dua, $tiga] = array_slice(array_keys($form->get('data.lines')), 0, 3);
+
+        $form->set("data.lines.{$satu}.production_item_id", $this->pipa()->id)
+            ->set("data.lines.{$dua}.production_item_id", $this->plat()->id)
+            ->set("data.lines.{$tiga}.production_item_id", $this->barangBeli()->id);
+
+        $this->assertSame('length', $form->get("data.lines.{$satu}.input_mode"));
+        $this->assertSame('rect', $form->get("data.lines.{$dua}.input_mode"));
+        $this->assertSame('count', $form->get("data.lines.{$tiga}.input_mode"));
+    }
+
+    /**
+     * Header dan Silincer terbaca menyambung dalam satu tabel; pembatasnya
+     * hanya boleh muncul di baris tempat bagiannya benar-benar berganti.
+     */
+    public function test_pembatas_hanya_di_baris_tempat_bagian_berganti(): void
+    {
+        $this->assertSame(
+            [true, false, false, true, false],
+            FormulaForm::awalBagian([1, 1, 1, 2, 2]),
+        );
+
+        // Komponen Header yang diselipkan di tengah Silincer memang berganti
+        // bagian dua kali, dan dua-duanya perlu ditandai.
+        $this->assertSame(
+            [true, true, true],
+            FormulaForm::awalBagian([1, 2, 1]),
+        );
+
+        // Komponen lepas tanpa bagian tetap terhitung sebagai awal.
+        $this->assertSame([true, false], FormulaForm::awalBagian([null, null]));
+        $this->assertSame([], FormulaForm::awalBagian([]));
     }
 
     // --------------------------------------------------------------- fixture
@@ -205,6 +327,31 @@ class FormulaTest extends TestCase
         ], $ukuran));
     }
 
+    private function jasa(Formula $formula, ProductionService $jasa, float $qty): FormulaService
+    {
+        return FormulaService::create([
+            'formula_id' => $formula->id,
+            'production_service_id' => $jasa->id,
+            'qty' => $qty,
+        ]);
+    }
+
+    private function chrome(): ProductionService
+    {
+        return ProductionService::create([
+            'name' => 'Chrome', 'slug' => 'chrome',
+            'unit' => 'unit', 'rate' => 150_000,
+        ]);
+    }
+
+    private function las(): ProductionService
+    {
+        return ProductionService::create([
+            'name' => 'Las Argon', 'slug' => 'las-argon',
+            'unit' => 'titik', 'rate' => 5_000,
+        ]);
+    }
+
     private function pipa(): ProductionItem
     {
         return ProductionItem::create([
@@ -214,6 +361,18 @@ class FormulaTest extends TestCase
             'unit' => 'batang',
             'length_mm' => 6_000,
             'cost_price' => 90_000,     // -> Rp15 per mm
+        ]);
+    }
+
+    /** Pureng, plenger, baut — dibeli jadi, jadi cukup dihitung per buah. */
+    private function barangBeli(): ProductionItem
+    {
+        return ProductionItem::create([
+            'sku' => sprintf('BLI-%03d', ++$this->urut),
+            'name' => 'Pureng #'.$this->urut,
+            'shape' => 'count',
+            'unit' => 'pcs',
+            'cost_price' => 10_000,
         ]);
     }
 

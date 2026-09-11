@@ -12,16 +12,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * apa, dan berapa ukurannya. Ukurannya diisi apa adanya — pipa cukup
  * panjangnya dalam cm — lalu kebutuhannya dalam satuan pakai diturunkan
  * otomatis, supaya tidak ada perkalian yang bisa salah di tangan orang.
+ *
+ * `input_mode` menentukan cara ukurannya dibaca — `length` sepanjang sekian,
+ * `rect` sekian kali sekian, `count` sekian buah — dan tidak pernah diketik
+ * sendiri: bentuk bahannya di master sudah menjawabnya. Pipa memang selalu
+ * dipotong, plat selalu persegi, barang beli jadi selalu dihitung per buah.
  */
 class FormulaLine extends Model
 {
-    /** Cara ukurannya disebut, mengikuti bentuk bahannya. */
-    public const INPUT_MODES = [
-        'length' => 'Panjang potongan',
-        'rect' => 'Potongan persegi (p x l)',
-        'count' => 'Jumlah satuan',
-    ];
-
     protected $fillable = [
         'formula_id', 'exhaust_component_id', 'production_item_id',
         'input_mode', 'size_unit',
@@ -120,15 +118,5 @@ class FormulaLine extends Model
     public function displayQty(): string
     {
         return $this->item?->formatBase((float) $this->qty) ?? (string) $this->qty;
-    }
-
-    /** Mode yang masuk akal untuk bentuk bahan tertentu. */
-    public static function modesFor(?string $shape): array
-    {
-        return match ($shape) {
-            'linear' => ['length' => 'Panjang potongan', 'count' => 'Jumlah satuan'],
-            'sheet' => ['rect' => 'Potongan persegi (p x l)', 'count' => 'Jumlah satuan'],
-            default => ['count' => 'Jumlah satuan'],
-        };
     }
 }

@@ -40,10 +40,14 @@ class FormulasTable
                     })
                     ->color(fn (Formula $r) => $r->siap() ? 'success' : 'warning'),
 
+                // Totalnya yang ditampilkan, rinciannya menyusul di bawah:
+                // yang hanya melihat angka bahan akan mengira knalpot berchrome
+                // semurah yang tidak.
                 TextColumn::make('modal')
-                    ->label('Modal Bahan / unit')->money('IDR')->alignRight()
-                    ->getStateUsing(fn (Formula $r) => $r->materialCostPerUnit())
-                    ->description(fn (Formula $r) => 'per '.$r->output_unit),
+                    ->label('Modal / unit')->money('IDR')->alignRight()
+                    ->getStateUsing(fn (Formula $r) => $r->totalCostPerUnit())
+                    ->description(fn (Formula $r) => 'bahan '.self::rp($r->materialCostPerUnit())
+                        .' + jasa '.self::rp($r->serviceCostPerUnit())),
 
                 IconColumn::make('is_active')->label('Aktif')->boolean()->toggleable(),
             ])
@@ -75,6 +79,15 @@ class FormulasTable
                                 'notes', 'sort_order',
                             ]));
                         }
+
+                        // Ikut tersalin: resep motor sebelah biasanya dichrome
+                        // dan dipoles sama saja, dan menyalin setengahnya
+                        // membuat modal salinannya terlihat lebih murah.
+                        foreach ($record->services as $jasa) {
+                            $replica->services()->create($jasa->only([
+                                'production_service_id', 'qty', 'notes', 'sort_order',
+                            ]));
+                        }
                     }),
 
                 TableActions::delete(fn () => null),
@@ -85,5 +98,10 @@ class FormulasTable
             ->emptyStateHeading('Belum ada formula')
             ->emptyStateDescription('Formula baru langsung terisi seluruh komponen — tinggal tentukan bahan dan ukurannya.')
             ->emptyStateIcon('heroicon-o-beaker');
+    }
+
+    private static function rp(float $angka): string
+    {
+        return 'Rp'.number_format($angka, 0, ',', '.');
     }
 }

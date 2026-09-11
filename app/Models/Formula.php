@@ -49,6 +49,12 @@ class Formula extends Model
         return $this->hasMany(FormulaLine::class)->orderBy('sort_order');
     }
 
+    /** Biaya lain-lain: chrome, poles, las — diambil dari master jasa. */
+    public function services(): HasMany
+    {
+        return $this->hasMany(FormulaService::class)->orderBy('sort_order');
+    }
+
     // ------------------------------------------------------------- susunan
 
     /**
@@ -92,9 +98,42 @@ class Formula extends Model
     /** Modal bahan per unit keluaran. */
     public function materialCostPerUnit(): float
     {
+        return $this->perUnit($this->materialCost());
+    }
+
+    /** Biaya jasa untuk satu kali resep. */
+    public function serviceCost(): float
+    {
+        return $this->services->sum(fn (FormulaService $service) => $service->subtotal());
+    }
+
+    public function serviceCostPerUnit(): float
+    {
+        return $this->perUnit($this->serviceCost());
+    }
+
+    /**
+     * Modal sesungguhnya: bahan ditambah jasa.
+     *
+     * Inilah angka yang dipakai menetapkan harga jual. Menghitungnya dari bahan
+     * saja membuat knalpot yang dichrome terlihat semurah yang tidak.
+     */
+    public function totalCost(): float
+    {
+        return $this->materialCost() + $this->serviceCost();
+    }
+
+    public function totalCostPerUnit(): float
+    {
+        return $this->perUnit($this->totalCost());
+    }
+
+    /** Sekali resep bisa menghasilkan lebih dari satu; biayanya dibagi rata. */
+    private function perUnit(float $biaya): float
+    {
         $out = (float) $this->output_qty;
 
-        return $out > 0 ? $this->materialCost() / $out : 0.0;
+        return $out > 0 ? $biaya / $out : 0.0;
     }
 
     /** Nama yang tidak ambigu: "Racing Standar — Yamaha Mio". */
