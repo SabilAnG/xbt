@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PartnerRegistrationController;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\TrackingController;
 use App\Models\Product;
@@ -20,6 +21,10 @@ Route::view('/contact', 'pages.contact')->name('contact');
 Route::view('/workshop', 'pages.workshop')->name('workshop');
 Route::view('/tracking', 'pages.tracking')->name('tracking');
 Route::view('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
+
+// Jadi Partner: buka toko sendiri di atas aplikasi ini.
+Route::get('/jadi-partner', [PartnerRegistrationController::class, 'create'])->name('partner.register');
+Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])->name('partner.register.store');
 Route::view('/terms-and-conditions', 'pages.terms-and-conditions')->name('terms-and-conditions');
 
 Route::get('/products', function () {

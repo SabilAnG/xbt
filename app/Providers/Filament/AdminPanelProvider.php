@@ -64,6 +64,7 @@ class AdminPanelProvider extends PanelProvider
             // Urutan grup dibuat mengikuti alur kerja harian: transaksi dulu,
             // lalu aset & laporan, baru data acuan yang jarang disentuh.
             ->navigationGroups([
+                NavigationGroup::make('Partner')->icon('heroicon-o-building-storefront'),
                 NavigationGroup::make('Operasional')->icon('heroicon-o-arrows-right-left'),
                 NavigationGroup::make('Produksi')->icon('heroicon-o-wrench-screwdriver'),
                 NavigationGroup::make('Aset')->icon('heroicon-o-banknotes'),

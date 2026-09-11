@@ -59,6 +59,9 @@
                             <li>
                                 <a class="menu-item" href="/contact">Contact</a>
                             </li>
+                            <li>
+                                <a class="menu-item" href="/jadi-partner">Jadi Partner</a>
+                            </li>
                             <li class="tracking-link-mobile" style="display: none">
                                 <a href="/tracking"
                                     class="btn-tracking-mobile fx-slide hover-white d-inline-flex align-items-center py-3"
