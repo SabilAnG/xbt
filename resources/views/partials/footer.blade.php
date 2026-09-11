@@ -1,3 +1,5 @@
+@include('partials.iklan', ['posisi' => 'footer'])
+
 <footer>
     <div class="container">
         <div class="row gx-5">
@@ -119,6 +121,9 @@ Indonesia
                             </li>
                             <li>
                                 <a href="/privacy-policy">Privacy Policy</a>
+                            </li>
+                            <li>
+                                <a href="/pasang-iklan">Pasang Iklan</a>
                             </li>
                         </ul>
                     </div>

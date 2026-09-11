@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdvertisementClickController;
 use App\Http\Controllers\PartnerRegistrationController;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\TrackingController;
@@ -25,6 +26,11 @@ Route::view('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
 // Jadi Partner: buka toko sendiri di atas aplikasi ini.
 Route::get('/jadi-partner', [PartnerRegistrationController::class, 'create'])->name('partner.register');
 Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])->name('partner.register.store');
+
+Route::view('/pasang-iklan', 'pages.pasang-iklan')->name('pasang-iklan');
+
+// Klik banner iklan: dihitung di server lalu diteruskan ke situs pemasang.
+Route::get('/iklan/{advertisement}', AdvertisementClickController::class)->name('iklan.klik');
 Route::view('/terms-and-conditions', 'pages.terms-and-conditions')->name('terms-and-conditions');
 
 Route::get('/products', function () {
