@@ -79,7 +79,7 @@
                         <p>
                             You have the right to access, update, or request deletion of your personal data. 
                             To exercise these rights, please contact our support team at 
-                            <a href="mailto:hypersonicspeedtech@gmail.com" class="text-orange fw-bold">support@hypersonic.id</a>.
+                            <a href="mailto:{{ setting_email() }}" class="text-orange fw-bold">support@hypersonic.id</a>.
                         </p>
 
                         <h5 class="mt-4 text-orange">{{ content('privacy-policy.text.16', '7. Policy Updates') }}</h5>

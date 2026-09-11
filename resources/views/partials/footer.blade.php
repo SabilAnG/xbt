@@ -60,7 +60,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                                                        <a target="_blank" href="/redirect/away?to=https%3A%2F%2Fwa.me%2F62895337161221%3Ftext%3DHello%2BHypersonic%2BSpeed%2BTech&amp;utm_source=web_footer_menu">
+                                                                        <a target="_blank" href="/redirect/away?to=https%3A%2F%2Fwa.me%2F{{ setting_wa() }}%3Ftext%3DHello%2BHypersonic%2BSpeed%2BTech&amp;utm_source=web_footer_menu">
                                         WhatsApp
                                     </a>
                                 </li>
@@ -93,14 +93,14 @@ Indonesia
                     <div class="fw-bold text-white">
                         <i class="icofont-phone me-2 id-color"></i>Call Us
                     </div>
-                    62895337161221
+                    {{ setting_wa() }}
 
                     <div class="spacer-20"></div>
 
                     <div class="fw-bold text-white">
                         <i class="icofont-envelope me-2 id-color"></i>Email Us
                     </div>
-                    <a href="mailto:hypersonicspeedtech@gmail.com">hypersonicspeedtech@gmail.com</a>
+                    <a href="mailto:{{ setting_email() }}">{{ setting_email() }}</a>
                 </div>
             </div>
         </div>
@@ -113,7 +113,7 @@ Indonesia
                     <div class="de-flex">
                         <div class="de-flex-col">
                             Copyright &copy; 2026 &nbsp;<a href="{{ \App\Support\Toko::url('/') }}"
-                                class="text-orange fw-bold text-decoration-none">Hypersonic Speed Tech</a>
+                                class="text-orange fw-bold text-decoration-none">{{ setting_nama() }}</a>
                         </div>
                         <ul class="menu-simple">
                             <li>

@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\PartnerDisetujui;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
@@ -23,6 +26,11 @@ use Stancl\Tenancy\Jobs\MigrateDatabase;
  */
 class PartnerProvisioning
 {
+    public function __construct(
+        private readonly IdentitasTokoPartner $identitas,
+        private readonly DataAwalPartner $awal,
+    ) {}
+
     /**
      * @param  array<int, string>  $fitur  kunci dari Tenant::FEATURES
      * @param  int|null  $hari  masa pakai; null berarti tanpa batas
@@ -53,6 +61,15 @@ class PartnerProvisioning
                 'password' => $sandi,   // sudah ter-hash sejak pendaftaran
                 'email_verified_at' => now(),
             ]);
+
+            // Tanpa ini seluruh halaman toko partner memakai nama, email, dan
+            // nomor WhatsApp Hypersonic — dan pembeli yang menekan tombol
+            // WhatsApp di sana menghubungi kami, bukan yang berjualan.
+            $this->identitas->isi($tenant);
+
+            // Toko yang benar-benar kosong tidak bisa mencatat apa pun: tanpa
+            // dompet tidak ada nota yang bisa dibukukan.
+            $this->awal->isi();
         });
 
         $tenant->forceFill([
@@ -64,6 +81,29 @@ class PartnerProvisioning
             // hanya ada di database partner sendiri.
             'owner_password' => null,
         ])->save();
+
+        $this->kabari($tenant->fresh());
+    }
+
+    /**
+     * Kabari partner bahwa tokonya sudah jadi.
+     *
+     * Kegagalan mengirim tidak boleh membatalkan persetujuan: tokonya sudah
+     * terlanjur dibuat, dan melempar error di sini membuat admin mengira
+     * seluruh proses gagal lalu mengulanginya — padahal databasenya sudah ada.
+     */
+    private function kabari(Tenant $tenant): void
+    {
+        try {
+            Notification::route('mail', $tenant->owner_email)
+                ->notify(new PartnerDisetujui($tenant));
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengabari partner lewat email.', [
+                'partner' => $tenant->getTenantKey(),
+                'email' => $tenant->owner_email,
+                'sebab' => $e->getMessage(),
+            ]);
+        }
     }
 
     /** Perpanjangan: masa pakai dihitung dari sekarang atau dari sisa yang ada. */

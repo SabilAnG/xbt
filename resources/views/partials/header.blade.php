@@ -6,15 +6,15 @@
                     <div class="d-flex justify-content-end xs-hide">
                         <div class="d-flex">
                             <div class="topbar-widget me-5">
-                                                                <a href="tel:62895337161221">
+                                                                <a href="tel:{{ setting_wa() }}">
                                     <img src="{{ content_image('header.image.1', 'assets/images/misc/phone.svg') }}" class=""
-                                        alt="" />62895337161221
+                                        alt="" />{{ setting_wa() }}
                                 </a>
                             </div>
                             <div class="topbar-widget">
-                                                                <a href="mailto:hypersonicspeedtech@gmail.com">
+                                                                <a href="mailto:{{ setting_email() }}">
                                     <img src="{{ content_image('header.image.2', 'assets/images/misc/envelope.svg') }}" class=""
-                                        alt="" />hypersonicspeedtech@gmail.com
+                                        alt="" />{{ setting_email() }}
                                 </a>
                             </div>
                         </div>

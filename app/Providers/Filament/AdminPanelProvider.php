@@ -92,6 +92,27 @@ class AdminPanelProvider extends PanelProvider
                 DraftDocuments::class,
             ])
 
+            // Lapisan kaca di atas gaya bawaan Filament, bukan tema yang
+            // dibangun ulang — supaya pembaruan Filament tetap terpakai.
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): View => view('filament.tema-kaca'),
+            )
+
+            // Terang/gelap satu klik di topbar. Pilihan yang sama ada di menu
+            // profil, tapi terkubur dua klik ke dalam.
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn (): View => view('filament.tombol-tema'),
+            )
+
+            // Pengingat masa pakai, di atas isi halaman. Tanpa ini partner baru
+            // tahu langganannya habis ketika tokonya sudah mati.
+            ->renderHook(
+                PanelsRenderHook::CONTENT_START,
+                fn (): View => view('filament.peringatan-masa-pakai'),
+            )
+
             // Tombol buku di pojok kanan bawah: panduan menu yang sedang dibuka.
             ->renderHook(
                 PanelsRenderHook::BODY_END,

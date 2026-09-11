@@ -65,7 +65,11 @@ Route::prefix('toko/{partner}')
 */
 Route::middleware('pusat')->group(function () {
     Route::get('/jadi-partner', [PartnerRegistrationController::class, 'create'])->name('partner.register');
-    Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])->name('partner.register.store');
+    // Formulir terbuka untuk siapa saja. Tanpa batas, satu skrip bisa memenuhi
+    // antrean persetujuan dengan ribuan baris dalam semenit.
+    Route::post('/jadi-partner', [PartnerRegistrationController::class, 'store'])
+        ->middleware('throttle:5,60')
+        ->name('partner.register.store');
 
     Route::view('/pasang-iklan', 'pages.pasang-iklan')->name('pasang-iklan');
 

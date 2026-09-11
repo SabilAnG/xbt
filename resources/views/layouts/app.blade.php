@@ -64,7 +64,7 @@ Purbalingga, Central Java 53371
 Indonesia
         </div>
         <div>
-            <i class="icofont-envelope me-2 op-5"></i><a href="mailto:hypersonicspeedtech@gmail.com">hypersonicspeedtech@gmail.com</a>
+            <i class="icofont-envelope me-2 op-5"></i><a href="mailto:{{ setting_email() }}">{{ setting_email() }}</a>
         </div>
 
         <div class="spacer-30-line"></div>
@@ -91,7 +91,7 @@ Indonesia
             <a target="_blank" href="#">
                 <i class="fa-brands fa-youtube"></i>
             </a>
-            <a target="_blank" href="/redirect/away?to=https%3A%2F%2Fwa.me%2F62895337161221%3Ftext%3DHello%2BHypersonic%2BSpeed%2BTech&amp;utm_source=web_overlay_menu">
+            <a target="_blank" href="/redirect/away?to=https%3A%2F%2Fwa.me%2F{{ setting_wa() }}%3Ftext%3DHello%2BHypersonic%2BSpeed%2BTech&amp;utm_source=web_overlay_menu">
                 <i class="fa-brands fa-whatsapp"></i>
             </a>
         </div>

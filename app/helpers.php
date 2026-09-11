@@ -38,3 +38,40 @@ if (! function_exists('content_image')) {
         return $path ? asset($path) : '';
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Identitas toko yang sedang dibuka
+|--------------------------------------------------------------------------
+| Nilai-nilai ini dulu tertulis langsung di view, sehingga setiap toko partner
+| menampilkan nama, email, dan nomor WhatsApp Hypersonic. Bukan sekadar salah
+| nama: pembeli yang menekan tombol WhatsApp di toko partner menghubungi kami,
+| bukan yang berjualan.
+|
+| Nilai bawaannya tetap milik Hypersonic, supaya situs induk tidak berubah
+| sedikit pun bila tabel settings-nya kosong.
+*/
+
+if (! function_exists('setting_nama')) {
+    function setting_nama(): string
+    {
+        return (string) Setting::get('site.name', 'Hypersonic Speed Tech');
+    }
+}
+
+if (! function_exists('setting_email')) {
+    function setting_email(): string
+    {
+        return (string) Setting::get('contact.email', 'hypersonicspeedtech@gmail.com');
+    }
+}
+
+if (! function_exists('setting_wa')) {
+    /** Hanya angka — bentuk yang dipakai tautan wa.me maupun tel:. */
+    function setting_wa(): string
+    {
+        $nomor = (string) Setting::get('whatsapp.primary', '62895337161221');
+
+        return preg_replace('/\D/', '', $nomor) ?: '62895337161221';
+    }
+}

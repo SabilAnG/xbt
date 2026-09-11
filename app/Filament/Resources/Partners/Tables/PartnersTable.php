@@ -106,6 +106,16 @@ class PartnersTable
                         }
                     }),
 
+                // Email butuh SMTP yang belum tentu terpasang; WhatsApp selalu
+                // ada, dan nomornya sudah diisi partner saat mendaftar. Pesannya
+                // ditulis lengkap supaya admin tidak perlu mengarangnya tiap kali.
+                Action::make('whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('success')
+                    ->url(fn (Tenant $record) => $record->tautanWhatsapp(), shouldOpenInNewTab: true)
+                    ->visible(fn (Tenant $record) => filled($record->owner_phone)),
+
                 Action::make('perpanjang')
                     ->label('Perpanjang')
                     ->icon('heroicon-o-clock')

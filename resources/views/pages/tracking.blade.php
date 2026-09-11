@@ -740,7 +740,7 @@
             });
 
             openWhatsApp.addEventListener('click', function() {
-                const phone = '62895337161221';
+                const phone = '{{ setting_wa() }}';
                 if (phone && phone.length > 0) {
                     const orderNumber = input.value.trim();
                     const text = encodeURIComponent(

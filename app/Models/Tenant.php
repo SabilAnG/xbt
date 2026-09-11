@@ -152,6 +152,40 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return rtrim(config('app.url'), '/').'/toko/'.$this->slug;
     }
 
+    /**
+     * Tautan WhatsApp ke pemilik toko, pesannya sudah terisi.
+     *
+     * Isi pesannya mengikuti keadaan partner: yang baru disetujui dikirimi
+     * alamat tokonya, yang masa pakainya hampir habis diingatkan. Admin tidak
+     * perlu mengarang kalimat yang sama berulang kali, dan partner menerima
+     * keterangan yang benar-benar dia butuhkan.
+     */
+    public function tautanWhatsapp(): string
+    {
+        $nomor = preg_replace('/\D/', '', (string) $this->owner_phone);
+
+        if (str_starts_with($nomor, '0')) {
+            $nomor = '62'.ltrim($nomor, '0');
+        }
+
+        $pesan = match (true) {
+            $this->status === self::MENUNGGU => 'Halo '.$this->owner_name
+                .', pendaftaran toko '.$this->name.' sudah kami terima dan sedang diproses.',
+
+            $this->kedaluwarsa() => 'Halo '.$this->owner_name.', masa pakai toko '.$this->name
+                .' sudah habis. Hubungi kami untuk memperpanjang.',
+
+            $this->status === self::AKTIF => 'Halo '.$this->owner_name.', toko '.$this->name
+                .' sudah aktif. Alamatnya: '.$this->alamat()
+                .' — masuk panel admin di '.rtrim(config('app.url'), '/').'/admin/login'
+                .' memakai email '.$this->owner_email.' dan sandi yang Anda tentukan saat mendaftar.',
+
+            default => 'Halo '.$this->owner_name.', mengenai pendaftaran toko '.$this->name.'.',
+        };
+
+        return 'https://wa.me/'.$nomor.'?text='.rawurlencode($pesan);
+    }
+
     /** Tanpa skema, untuk ditampilkan ringkas di tabel. */
     public function alamatRingkas(): string
     {

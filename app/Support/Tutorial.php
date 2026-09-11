@@ -143,6 +143,163 @@ class Tutorial
                 ],
             ],
 
+            'resources.purchases.index' => [
+                'judul' => 'Pembelian',
+                'ringkas' => 'Nota pembelian barang jual dari supplier. Stok bertambah dan kas berkurang setelah dibukukan.',
+                'langkah' => [
+                    'Isi nomor nota, tanggal, dan supplier sesuai nota aslinya.',
+                    'Pilih dompet bila sudah dibayar. Dikosongkan berarti kas belum bergerak.',
+                    'Tambahkan barangnya — harga beli terakhir terisi sendiri, tinggal diperbaiki bila berbeda.',
+                    'Selama masih Draft tidak ada yang bergerak. Tekan "Bukukan" untuk menaikkan stok dan mengurangi kas.',
+                    'Harga beli di nota yang dibukukan menjadi harga pokok berjalan barang itu.',
+                ],
+            ],
+
+            'resources.sales.index' => [
+                'judul' => 'Penjualan',
+                'ringkas' => 'Nota penjualan ke pembeli. Stok berkurang, kas bertambah, dan labanya dihitung.',
+                'langkah' => [
+                    'Pilih barang dan jumlahnya; harga jual terisi dari master barang.',
+                    'Modal tiap baris dibekukan saat dibukukan, jadi laba historis tidak ikut berubah kalau harga pokok naik belakangan.',
+                    'Tekan "Bukukan" untuk mengurangi stok dan menambah kas.',
+                    '"Batalkan" mengembalikan semuanya, lalu stok dan saldo dihitung ulang dari nota yang tersisa.',
+                ],
+            ],
+
+            'resources.expenses.index' => [
+                'judul' => 'Pengeluaran',
+                'ringkas' => 'Biaya di luar pembelian barang: listrik, sewa, gaji, ongkos kirim.',
+                'langkah' => [
+                    'Pilih kategori biayanya — itu yang mengelompokkan pengeluaran di laporan.',
+                    'Pilih dompet sumber dananya. Dikosongkan berarti belum dibayar dan kas tidak bergerak.',
+                    'Tekan "Bukukan" untuk mengurangi saldo dompet.',
+                ],
+            ],
+
+            'resources.products.index' => [
+                'judul' => 'Katalog Website',
+                'ringkas' => 'Produk yang tampil di halaman toko Anda.',
+                'langkah' => [
+                    'Ini yang dilihat pengunjung — berbeda dari Stok Barang, yang mengurus persediaan.',
+                    'Isi harga dalam rupiah, lalu unggah fotonya. Foto pertama jadi gambar utama.',
+                    'Yang tidak aktif hilang dari halaman toko tanpa dihapus datanya.',
+                    'Satu produk bisa ditautkan ke barang di Stok Barang, supaya stoknya ikut terbaca.',
+                ],
+            ],
+
+            'resources.orders.index' => [
+                'judul' => 'Orders',
+                'ringkas' => 'Pesanan yang masuk dari halaman toko.',
+                'langkah' => [
+                    'Pesanan datang sendiri saat pengunjung memesan lewat situs.',
+                    'Ubah statusnya seiring pesanan diproses, supaya riwayatnya terbaca.',
+                    'Pesanan yang sudah dibayar dicatat sebagai penjualan lewat menu Penjualan.',
+                ],
+            ],
+
+            'resources.wallets.index' => [
+                'judul' => 'Dompet',
+                'ringkas' => 'Tempat uang: kas laci, rekening bank, dompet digital.',
+                'langkah' => [
+                    'Saldo tidak diketik langsung. Ia bergerak lewat nota yang dibukukan.',
+                    '"Saldo awal" hanya untuk keadaan saat pertama kali dicatat di sistem.',
+                    'Tiap nota pembelian, penjualan, dan pengeluaran menunjuk satu dompet — itu yang membuat saldonya bergerak.',
+                ],
+            ],
+
+            'resources.price-tiers.index' => [
+                'judul' => 'Tingkat Harga',
+                'ringkas' => 'Aturan harga untuk tiap jenis pembeli: umum, reseller, marketplace.',
+                'langkah' => [
+                    'Margin dihitung dari harga jual, bukan dari modal. Margin 40% berarti empat puluh persen dari uang yang masuk benar-benar jadi laba.',
+                    '"Potongan Marketplace" untuk penjualan lewat aplikasi. Isi 0 untuk penjualan langsung.',
+                    'Contoh perhitungannya tampil di bawah form, memakai barang bermodal tertinggi.',
+                ],
+            ],
+
+            'resources.item-categories.index' => [
+                'judul' => 'Kategori Produk',
+                'ringkas' => 'Pengelompokan barang jual: Full Set, Silincer, Leheran.',
+                'langkah' => [
+                    'Dipakai menyaring daftar dan mengelompokkan laporan.',
+                    'Kategori yang masih dipakai barang tidak bisa dihapus.',
+                ],
+            ],
+
+            'resources.item-types.index' => [
+                'judul' => 'Jenis Barang',
+                'ringkas' => 'Pembeda kasar barang jual: Produk Jadi, Sparepart.',
+                'langkah' => [
+                    'Lebih luas daripada kategori — dipakai memisahkan barang yang Anda buat sendiri dari yang dibeli jadi.',
+                ],
+            ],
+
+            'resources.motorcycle-brands.index' => [
+                'judul' => 'Brand Motor',
+                'ringkas' => 'Merek motor: Honda, Yamaha, Suzuki.',
+                'langkah' => [
+                    'Induk dari Type Motor. Menghapus brand tidak bisa selama masih ada type motor di bawahnya.',
+                ],
+            ],
+
+            'resources.motorcycle-models.index' => [
+                'judul' => 'Type Motor',
+                'ringkas' => 'Type motor berikut brand-nya: Honda Beat Street, Yamaha Aerox 155.',
+                'langkah' => [
+                    'Slug memuat nama brand supaya "Beat" Honda dan Yamaha tidak bentrok.',
+                    'Dipakai formula untuk menyebut resep ini milik motor apa, dan dipakai barang untuk menyebut cocok di motor apa.',
+                    'Type motor baru juga bisa dibuat langsung dari stok opname saat mendaftarkan barang.',
+                ],
+            ],
+
+            'resources.expense-types.index' => [
+                'judul' => 'Jenis Pengeluaran',
+                'ringkas' => 'Pengelompokan besar biaya: Operasional, Produksi.',
+                'langkah' => [
+                    'Induk dari Kategori Pengeluaran, dan itu yang memisahkan biaya di laporan.',
+                ],
+            ],
+
+            'resources.expense-categories.index' => [
+                'judul' => 'Kategori Pengeluaran',
+                'ringkas' => 'Rincian biaya: Listrik, Sewa Tempat, Gaji, Ongkos Kirim.',
+                'langkah' => [
+                    'Tiap kategori menempel pada satu jenis pengeluaran.',
+                    'Inilah yang dipilih saat mencatat pengeluaran, jadi buat secukupnya — terlalu rinci membuat orang asal pilih.',
+                ],
+            ],
+
+            'resources.production-item-categories.index' => [
+                'judul' => 'Jenis Barang Produksi',
+                'ringkas' => 'Pengelompokan bahan: Pipa, Plat, Baut & Mur, Bahan Penolong.',
+                'langkah' => [
+                    '"Perannya di produk" dan "Didapat dari" dijawab sekali di sini, lalu terisi otomatis tiap kali bahan jenis ini ditambahkan.',
+                    '"Gudang bawaan" mengisi sendiri gudang tujuan saat bahan jenis ini dibeli.',
+                    'Aksesoris Utama untuk yang bentuknya aksesoris tapi wajib ada — pegas dan karet mounting.',
+                ],
+            ],
+
+            'resources.production-item-opnames.index' => [
+                'judul' => 'Stok Opname Produksi',
+                'ringkas' => 'Menghitung fisik stok bahan di satu gudang, lalu mengoreksi selisihnya.',
+                'langkah' => [
+                    'Pilih gudang yang dihitung dulu — koreksi stok harus tahu masuk ke gudang mana.',
+                    'Isi hasil hitungan dalam satuan pakai: pipa dalam meter atau milimeter, bukan batang.',
+                    'Hanya baris yang selisih yang mengoreksi stok.',
+                    '"Lembar Hitung" bisa dicetak untuk dibawa ke gudang.',
+                ],
+            ],
+
+            'resources.content-blocks.index' => [
+                'judul' => 'Page Content',
+                'ringkas' => 'Teks dan gambar di halaman toko, bisa diubah tanpa menyentuh kode.',
+                'langkah' => [
+                    'Tiap baris mewakili satu potong teks atau gambar di halaman.',
+                    'Yang dikosongkan kembali memakai teks bawaan, jadi halaman tidak pernah tampil kosong.',
+                    'Nama toko, email, dan nomor WhatsApp diatur terpisah di menu Site settings.',
+                ],
+            ],
+
             'resources.items.index' => [
                 'judul' => 'Stok Barang',
                 'ringkas' => 'Barang jadi yang dijual, berikut stok dan harganya.',

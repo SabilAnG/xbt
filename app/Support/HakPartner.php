@@ -66,6 +66,24 @@ class HakPartner
         return $fitur !== null && $partner->punyaHak($fitur);
     }
 
+    /**
+     * Tujuan tombol Perpanjang di panel partner: WhatsApp admin Hypersonic.
+     *
+     * Nomornya dari config, bukan dari Site settings — saat panel partner yang
+     * terbuka, Site settings berisi nomor PARTNER, dan tombol ini justru harus
+     * menghubungi kami.
+     */
+    public static function tautanPerpanjang(): string
+    {
+        $nomor = preg_replace('/\D/', '', (string) config('app.admin_whatsapp'));
+        $partner = self::partner();
+
+        $pesan = 'Halo, saya ingin memperpanjang langganan website saya'
+            .($partner ? ' ('.$partner->name.')' : '').'.';
+
+        return 'https://wa.me/'.$nomor.'?text='.rawurlencode($pesan);
+    }
+
     /** Partner yang sedang dilayani, atau null bila ini panel pusat. */
     public static function partner(): ?Tenant
     {
