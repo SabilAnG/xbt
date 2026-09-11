@@ -33,7 +33,9 @@ class ProductsTable
                     ->description(fn ($record) => $record->fitment),
 
                 TextColumn::make('price')
-                    ->money('USD')
+                    ->label('Harga')
+                    ->money('IDR')
+                    ->alignRight()
                     ->sortable(),
 
                 TextColumn::make('images_count')
