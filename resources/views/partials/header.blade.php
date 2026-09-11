@@ -32,7 +32,7 @@
                     <div class="de-flex-col">
                         <!-- logo begin -->
                         <div id="logo">
-                            <a href="/">
+                            <a href="{{ \App\Support\Toko::url('/') }}">
                                                                     <img class="logo-main" src="{{ asset(setting('site.logo', 'assets/images/logo-white.png')) }}"
                                         alt="" style="height: 50px; width: auto; object-fit: contain;" />
                                     <img class="logo-mobile" src="{{ asset(setting('site.logo', 'assets/images/logo-white.png')) }}"
@@ -45,19 +45,19 @@
                         <!-- mainemenu begin -->
                         <ul id="mainmenu">
                             <li>
-                                <a class="menu-item" href="/">Home</a>
+                                <a class="menu-item" href="{{ \App\Support\Toko::url('/') }}">Home</a>
                             </li>
                             <li>
-                                <a class="menu-item" href="/products">Products</a>
+                                <a class="menu-item" href="{{ \App\Support\Toko::url('/products') }}">Products</a>
                             </li>
                             <li>
-                                <a class="menu-item" href="/workshop">Workshop</a>
+                                <a class="menu-item" href="{{ \App\Support\Toko::url('/workshop') }}">Workshop</a>
                             </li>
                             <li>
-                                <a class="menu-item" href="/about">About</a>
+                                <a class="menu-item" href="{{ \App\Support\Toko::url('/about') }}">About</a>
                             </li>
                             <li>
-                                <a class="menu-item" href="/contact">Contact</a>
+                                <a class="menu-item" href="{{ \App\Support\Toko::url('/contact') }}">Contact</a>
                             </li>
                             {{-- Hanya di situs induk: toko partner tidak menawarkan orang jadi partner. --}}
                             @unless (\App\Support\HakPartner::partner())
@@ -66,7 +66,7 @@
                                 </li>
                             @endunless
                             <li class="tracking-link-mobile" style="display: none">
-                                <a href="/tracking"
+                                <a href="{{ \App\Support\Toko::url('/tracking') }}"
                                     class="btn-tracking-mobile fx-slide hover-white d-inline-flex align-items-center py-3"
                                     style="font-size: 16px;">
                                     <i class="fas fa-shipping-fast me-2" style="font-size: 16px;"></i>
@@ -78,7 +78,7 @@
                     </div>
                     <div class="de-flex-col">
                         <div class="menu_side_area">
-                            <a href="/tracking"
+                            <a href="{{ \App\Support\Toko::url('/tracking') }}"
                                 class="btn-main fx-slide hover-white d-inline-flex align-items-center px-3 py-2"
                                 style="font-size: 14px;">
                                 <i class="fas fa-shipping-fast me-2" style="font-size: 16px;"></i>

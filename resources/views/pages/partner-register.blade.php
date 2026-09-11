@@ -69,9 +69,9 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Alamat Toko</label>
                                     <div class="input-group">
+                                        <span class="input-group-text">{{ rtrim(str_replace(['https://','http://'], '', config('app.url')), '/') }}/toko/</span>
                                         <input type="text" name="slug" class="form-control"
                                             value="{{ old('slug') }}" placeholder="knalpot-jaya" required>
-                                        <span class="input-group-text">.{{ config('app.partner_domain') }}</span>
                                     </div>
                                     <small class="text-muted">
                                         Huruf kecil, angka, dan tanda hubung. Ini jadi alamat toko Anda.

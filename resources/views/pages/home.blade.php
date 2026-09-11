@@ -113,7 +113,7 @@
                         Our dedication to excellence allows us to deliver products
                         that meet the highest standards—designed to endure, inspire, and perform.') }}
                     </p>
-                    <a class="btn-main fx-slide wow fadeInUp" href="/about" data-wow-delay=".6s">
+                    <a class="btn-main fx-slide wow fadeInUp" href="{{ \App\Support\Toko::url('/about') }}" data-wow-delay=".6s">
                         <span>{{ content('home.text.5', 'Read More') }}</span>
                     </a>
                 </div>
@@ -154,7 +154,7 @@
                                 <div class="mb-3">
                                     Harley Davidson Touring Series
                                 </div>
-                                <a class="btn-main fx-slide" href="/products/harley-davidson-touring-series-2-2-exhaust-system">
+                                <a class="btn-main fx-slide" href="{{ \App\Support\Toko::url('/products/harley-davidson-touring-series-2-2-exhaust-system') }}">
                                     <span>{{ content('home.text.7', 'View Details') }}</span>
                                 </a>
                             </div>
@@ -177,7 +177,7 @@
                                 <div class="mb-3">
                                     fit for DYNA 1986 - 2020+
                                 </div>
-                                <a class="btn-main fx-slide" href="/products/harley-davidson-dyna-2-1-exhaust-system">
+                                <a class="btn-main fx-slide" href="{{ \App\Support\Toko::url('/products/harley-davidson-dyna-2-1-exhaust-system') }}">
                                     <span>{{ content('home.text.9', 'View Details') }}</span>
                                 </a>
                             </div>
@@ -200,7 +200,7 @@
                                 <div class="mb-3">
                                     fit for sportster 48 | 1200 | iron 883
                                 </div>
-                                <a class="btn-main fx-slide" href="/products/harley-davidson-sportster-horn-model-2-2-exhaust-system">
+                                <a class="btn-main fx-slide" href="{{ \App\Support\Toko::url('/products/harley-davidson-sportster-horn-model-2-2-exhaust-system') }}">
                                     <span>{{ content('home.text.11', 'View Details') }}</span>
                                 </a>
                             </div>
@@ -223,7 +223,7 @@
                                 <div class="mb-3">
                                     fit for MUSCLE VRSCA | VRSCAW | VRSCE &amp; etc
                                 </div>
-                                <a class="btn-main fx-slide" href="/products/harley-davidson-v-rod-2-1-exhaust-system">
+                                <a class="btn-main fx-slide" href="{{ \App\Support\Toko::url('/products/harley-davidson-v-rod-2-1-exhaust-system') }}">
                                     <span>{{ content('home.text.13', 'View Details') }}</span>
                                 </a>
                             </div>
@@ -246,7 +246,7 @@
                                 <div class="mb-3">
                                     fit for sportster 48 | 1200 | IRON 883
                                 </div>
-                                <a class="btn-main fx-slide" href="/products/harley-davidson-sportster-twisted-model-2-2-exhaust-system">
+                                <a class="btn-main fx-slide" href="{{ \App\Support\Toko::url('/products/harley-davidson-sportster-twisted-model-2-2-exhaust-system') }}">
                                     <span>{{ content('home.text.15', 'View Details') }}</span>
                                 </a>
                             </div>
@@ -297,7 +297,7 @@
                     </h3>
                 </div>
                 <div class="col-lg-3 text-lg-end">
-                    <a class="btn-main fx-slide btn-line" href="/workshop"><span>{{ content('home.text.20', 'Read
+                    <a class="btn-main fx-slide btn-line" href="{{ \App\Support\Toko::url('/workshop') }}"><span>{{ content('home.text.20', 'Read
                             More') }}</span></a>
                 </div>
             </div>

@@ -55,8 +55,6 @@ class PartnerProvisioning
             ]);
         });
 
-        $tenant->domains()->firstOrCreate(['domain' => $this->subdomain($tenant)]);
-
         $tenant->forceFill([
             'status' => Tenant::AKTIF,
             'features' => array_values($fitur),
@@ -103,10 +101,5 @@ class PartnerProvisioning
         // database yang sudah tidak ada — penghapusan gagal separuh jalan,
         // meninggalkan barisnya hidup tanpa toko.
         $tenant->delete();
-    }
-
-    private function subdomain(Tenant $tenant): string
-    {
-        return $tenant->slug.'.'.config('app.partner_domain', 'garagehs-speed.com');
     }
 }

@@ -17,7 +17,7 @@
                 </h1>
                 <div class="border-bottom mb-3"></div>
                 <ul class="crumb wow fadeInUp">
-                    <li><a href="/">Home</a></li>
+                    <li><a href="{{ \App\Support\Toko::url('/') }}">Home</a></li>
                     <li class="active">{{ content('privacy-policy.text.2', 'Privacy Policy') }}</li>
                 </ul>
             </div>
@@ -91,7 +91,7 @@
                         <p class="mt-5 fst-italic text-muted">
                             By using our website, you agree to the terms of this Privacy Policy. 
                             If you have any concerns, please reach out via our 
-                            <a href="/contact" class="text-orange fw-bold">Contact Page</a>.
+                            <a href="{{ \App\Support\Toko::url('/contact') }}" class="text-orange fw-bold">Contact Page</a>.
                         </p>
                     </div>
 

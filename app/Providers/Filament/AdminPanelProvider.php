@@ -2,10 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\MasukPanel;
 use App\Filament\Widgets\CashflowChart;
 use App\Filament\Widgets\DraftDocuments;
 use App\Filament\Widgets\InventoryOverview;
 use App\Filament\Widgets\LowStockItems;
+use App\Http\Middleware\KenaliPartnerDariSesi;
 use App\Http\Middleware\KenaliPartnerDariSubdomain;
 use App\Http\Middleware\PastikanPartnerAktif;
 use App\Models\Setting;
@@ -37,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(MasukPanel::class)
             ->profile(isSimple: false)
 
             // Oranye mengikuti --primary-color situs publik.
@@ -100,12 +102,17 @@ class AdminPanelProvider extends PanelProvider
                 // Paling depan: koneksi database harus sudah pindah ke milik
                 // partner sebelum sesi dibaca, sebelum login diperiksa, dan
                 // sebelum menu apa pun dibangun.
+                // Alamat lebih tegas daripada sesi, jadi diperiksa lebih dulu.
                 KenaliPartnerDariSubdomain::class,
-                PastikanPartnerAktif::class,
 
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+
+                // Baru di sini: partner yang masuk lewat alamat panel yang sama
+                // dikenali dari sesinya, dan sesi baru ada sesudah baris di atas.
+                KenaliPartnerDariSesi::class,
+                PastikanPartnerAktif::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

@@ -140,9 +140,21 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return self::STATUSES[$this->status] ?? $this->status;
     }
 
-    /** Alamat toko partner, subdomain dari domain utama. */
+    /**
+     * Alamat toko partner.
+     *
+     * Path, bukan subdomain: partner yang disetujui langsung hidup tanpa satu
+     * pun langkah di server — tidak ada DNS yang perlu ditambah, tidak ada
+     * vhost, tidak ada sertifikat.
+     */
     public function alamat(): string
     {
-        return $this->domains->first()?->domain ?? $this->slug;
+        return rtrim(config('app.url'), '/').'/toko/'.$this->slug;
+    }
+
+    /** Tanpa skema, untuk ditampilkan ringkas di tabel. */
+    public function alamatRingkas(): string
+    {
+        return preg_replace('#^https?://#', '', $this->alamat());
     }
 }

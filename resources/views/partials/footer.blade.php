@@ -19,19 +19,19 @@
                             <h5>{{ content('footer.text.1', 'Company') }}</h5>
                             <ul>
                                 <li>
-                                    <a href="/">Home</a>
+                                    <a href="{{ \App\Support\Toko::url('/') }}">Home</a>
                                 </li>
                                 <li>
-                                    <a href="/products">Products</a>
+                                    <a href="{{ \App\Support\Toko::url('/products') }}">Products</a>
                                 </li>
                                 <li>
-                                    <a href="/workshop">Workshop</a>
+                                    <a href="{{ \App\Support\Toko::url('/workshop') }}">Workshop</a>
                                 </li>
                                 <li>
-                                    <a href="/about">About</a>
+                                    <a href="{{ \App\Support\Toko::url('/about') }}">About</a>
                                 </li>
                                 <li>
-                                    <a href="/contact">Contact</a>
+                                    <a href="{{ \App\Support\Toko::url('/contact') }}">Contact</a>
                                 </li>
                             </ul>
                         </div>
@@ -112,15 +112,15 @@ Indonesia
                 <div class="col-md-12">
                     <div class="de-flex">
                         <div class="de-flex-col">
-                            Copyright &copy; 2026 &nbsp;<a href="/"
+                            Copyright &copy; 2026 &nbsp;<a href="{{ \App\Support\Toko::url('/') }}"
                                 class="text-orange fw-bold text-decoration-none">Hypersonic Speed Tech</a>
                         </div>
                         <ul class="menu-simple">
                             <li>
-                                <a href="/terms-and-conditions">Terms &amp; Conditions</a>
+                                <a href="{{ \App\Support\Toko::url('/terms-and-conditions') }}">Terms &amp; Conditions</a>
                             </li>
                             <li>
-                                <a href="/privacy-policy">Privacy Policy</a>
+                                <a href="{{ \App\Support\Toko::url('/privacy-policy') }}">Privacy Policy</a>
                             </li>
                             @unless (\App\Support\HakPartner::partner())
                                 <li>

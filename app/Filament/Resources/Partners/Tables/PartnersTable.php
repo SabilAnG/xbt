@@ -23,7 +23,7 @@ class PartnersTable
             ->columns([
                 TextColumn::make('name')
                     ->label('Toko')->searchable()->sortable()->weight('medium')
-                    ->description(fn (Tenant $r) => $r->alamat()),
+                    ->description(fn (Tenant $r) => $r->status === Tenant::AKTIF ? $r->alamatRingkas() : '—'),
 
                 TextColumn::make('owner_name')
                     ->label('Pemilik')->searchable()

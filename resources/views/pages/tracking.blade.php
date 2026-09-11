@@ -398,7 +398,7 @@
                 </h1>
                 <div class="border-bottom mb-3"></div>
                 <ul class="crumb wow fadeInUp">
-                    <li><a href="/">Home</a></li>
+                    <li><a href="{{ \App\Support\Toko::url('/') }}">Home</a></li>
                     <li class="active">{{ content('tracking.text.2', 'Track Your Order') }}</li>
                 </ul>
             </div>

@@ -17,7 +17,7 @@
                 </h1>
                 <div class="border-bottom mb-3"></div>
                 <ul class="crumb wow fadeInUp">
-                    <li><a href="/">Home</a></li>
+                    <li><a href="{{ \App\Support\Toko::url('/') }}">Home</a></li>
                     <li class="active">{!! content('terms-and-conditions.text.2', 'Terms &amp; Conditions') !!}</li>
                 </ul>
             </div>
@@ -83,7 +83,7 @@
                         <p class="mt-5 fst-italic text-muted">
                             If you have any questions regarding these Terms & Conditions, 
                             please contact us via our 
-                            <a href="/contact" class="text-orange fw-bold">Contact Page</a>.
+                            <a href="{{ \App\Support\Toko::url('/contact') }}" class="text-orange fw-bold">Contact Page</a>.
                         </p>
                     </div>
 

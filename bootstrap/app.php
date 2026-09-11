@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HanyaPusat;
+use App\Http\Middleware\KenaliPartnerDariSesi;
 use App\Http\Middleware\KenaliPartnerDariSubdomain;
 use App\Http\Middleware\PastikanPartnerAktif;
 use Illuminate\Foundation\Application;
@@ -44,6 +45,16 @@ return Application::configure(basePath: dirname(__DIR__))
         // dibaca, termasuk sesi.
         $middleware->prependToGroup('web', [
             KenaliPartnerDariSubdomain::class,
+        ]);
+
+        // Di belakang, karena keduanya perlu sesi yang sudah dibaca. Ini juga
+        // yang menjangkau route Livewire: ia tidak memakai middleware panel,
+        // dan tanpa pengenalan di sini setiap permintaan Livewire dari panel
+        // partner membaca user bernomor sama di database PUSAT — yakni admin
+        // Hypersonic. Sesinya lalu dibuang karena sandinya tidak cocok, dan
+        // partner terlempar ke halaman login sedetik setelah masuk.
+        $middleware->appendToGroup('web', [
+            KenaliPartnerDariSesi::class,
             PastikanPartnerAktif::class,
         ]);
     })

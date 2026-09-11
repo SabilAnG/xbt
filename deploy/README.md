@@ -173,99 +173,59 @@ docker compose -f compose.prod.yaml exec app php artisan db:seed --class=Produks
 Upload pengguna aman: `public/uploads` dan `storage` ada di named volume, tidak
 ikut tertimpa image baru.
 
-## Toko partner (subdomain)
+## Toko partner
 
 Partner mendaftar lewat tombol "Jadi Partner" di situs, lalu admin menyetujuinya
-di menu Partner. Persetujuan itu yang membuat database, akun admin, dan
-subdomainnya — sebelum disetujui tidak ada apa pun yang dibuat di server.
+di menu Partner. Persetujuan itu yang membuat database dan akun adminnya.
 
-### Kenapa di bawah `shop.`, bukan langsung di domain utama
+**Tidak ada satu pun langkah di server tiap ada partner baru.** Toko hidup di
+path, bukan subdomain:
 
-`garagehs-speed.com` **tidak ada di VPS ini** — ia menunjuk `2.57.91.91`, server
-lain (Hostinger) yang juga memegang emailnya. Hanya `shop.garagehs-speed.com`
-yang mengarah ke `147.93.81.184`.
+    https://shop.garagehs-speed.com/toko/knalpot-jaya          toko
+    https://shop.garagehs-speed.com/admin                      panel
 
-Memasang wildcard `*.garagehs-speed.com` ke VPS ini akan menangkap setiap
-subdomain yang belum punya record sendiri di sana, termasuk yang dipakai webmail.
-Karena itu toko partner ditaruh di bawah `shop.`, yang seluruhnya milik VPS ini:
+Panelnya alamat yang sama untuk semua orang. Email yang menentukan: kalau email
+itu milik seorang partner, database dipindahkan ke miliknya lebih dulu, baru
+sandinya diperiksa — di tabel users milik partner itu sendiri.
 
-    knalpot-jaya.shop.garagehs-speed.com
+### Kenapa path, bukan subdomain
 
-Kalau nanti mau yang lebih pendek (`knalpot-jaya.garagehs-speed.com`), pastikan
-dulu seluruh subdomain milik Hostinger — `mail`, `webmail`, `autodiscover`, `ftp`,
-`cpanel` — sudah punya record A/CNAME sendiri di sana. Record eksplisit menang
-atas wildcard, jadi yang sudah terdaftar aman. Sesudah itu ubah satu baris:
+Subdomain menuntut tiga hal yang semuanya di luar aplikasi: record DNS wildcard,
+vhost nginx, dan sertifikat per partner. Yang ketiga tidak bisa diotomatiskan
+tanpa menaruh kredensial API DNS di server — satu kunci yang bisa menulis ulang
+seluruh DNS domain, di mesin yang berbagi dengan enam produksi lain.
 
-    PARTNER_DOMAIN=garagehs-speed.com
+Path menghapus ketiganya. Sertifikat `shop.garagehs-speed.com` yang sudah ada
+melindungi semua toko partner sekaligus.
 
-### 1. DNS di Hostinger — sekali saja
+Berkas `nginx-partner.conf` dan `partner-ssl.sh` ditinggal di repo kalau suatu
+saat subdomain diperlukan; kodenya masih mengenali partner dari subdomain juga.
 
-hPanel → **Domains** → `garagehs-speed.com` → **DNS / Nameservers** → *Manage DNS
-records*, lalu tambah:
+### Yang perlu disiapkan — sekali saja
 
-| Type | Name         | Points to        | TTL   |
-| ---- | ------------ | ---------------- | ----- |
-| A    | `*.shop`     | `147.93.81.184`  | 14400 |
-
-Simpan, lalu tunggu sebentar dan uji dari mesin mana pun:
-
-```bash
-dig +short apa-saja.shop.garagehs-speed.com A     # harus menjawab 147.93.81.184
-```
-
-Record `shop` yang sudah ada jangan disentuh — itu situs induknya.
-
-### 2. Vhost nginx — sekali saja
-
-```bash
-scp deploy/nginx-partner.conf root@147.93.81.184:/etc/nginx/sites-available/knalpot-partner
-ssh root@147.93.81.184 'ln -sf /etc/nginx/sites-available/knalpot-partner /etc/nginx/sites-enabled/ && nginx -t && systemctl reload nginx'
-```
-
-Satu vhost melayani semua partner; aplikasi yang mengenali siapa yang dituju dari
-Host header. Subdomain yang tidak terdaftar dibalas 404 oleh aplikasi.
-
-### 3. Sertifikat — sekali per partner baru
-
-```bash
-ssh root@147.93.81.184 'partner-ssl knalpot-jaya'
-```
-
-Memakai tantangan HTTP-01 lewat nginx, jadi **tidak perlu kredensial API DNS**,
-dan perpanjangannya ikut jadwal certbot yang sudah berjalan. Syaratnya cuma DNS
-wildcard di langkah 1 sudah menjawab.
-
-Sertifikat *wildcard* sengaja tidak dipakai: ia mewajibkan tantangan DNS-01,
-yang berarti menaruh kredensial API Hostinger di server — satu kunci yang bisa
-mengubah seluruh DNS domain, disimpan di mesin yang berbagi dengan enam
-produksi lain. Sertifikat per subdomain menghindari itu dengan harga satu
-perintah tiap ada partner baru.
-
-Batas Let's Encrypt: 50 sertifikat per minggu untuk satu domain terdaftar. Kalau
-partner bertambah lebih cepat dari itu, barulah wildcard sepadan dengan risikonya.
-
-### 4. Hak MySQL — sekali saja
-
-Database partner dibuat aplikasi saat menyetujui, jadi user aplikasinya perlu hak
-di database berawalan `tenant`. Bukan hak global — kalau kredensialnya bocor, ia
-tetap tidak bisa menyentuh produksi tetangga di VPS ini.
+**1. Hak MySQL.** Database partner dibuat aplikasi saat menyetujui, jadi user
+aplikasinya perlu hak di database berawalan `tenant`. Bukan hak global — kalau
+kredensialnya bocor, ia tetap tidak bisa menyentuh produksi tetangga.
 
 ```bash
 ssh root@147.93.81.184 'cd /opt/knalpot && set -a && . ./.env && set +a && docker compose -f compose.prod.yaml exec -T db mysql -u root -p"$DB_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`tenant%\`.* TO \"$DB_USERNAME\"@\"%\"; FLUSH PRIVILEGES;"'
 ```
 
-### 5. Isian `.env`
+**2. Isian `.env`.**
 
 ```
-PARTNER_DOMAIN=shop.garagehs-speed.com
+SESSION_CONNECTION=mysql
 ADMIN_WHATSAPP=62895337161221
 ```
+
+`SESSION_CONNECTION` menahan sesi di database pusat supaya tidak ikut berpindah.
+Tanpa itu sesi harus dibaca sebelum kita tahu partner mana yang dituju — padahal
+justru sesi yang menyimpan jawabannya.
 
 `ADMIN_WHATSAPP` adalah tujuan tombol Langganan di halaman partner yang masa
 pakainya habis. Sengaja dari `.env`, bukan dari menu Site settings: saat toko
 partner yang sedang dibuka, Site settings berisi nomor PARTNER — dan tombol itu
 harus menghubungi admin Hypersonic, bukan partner yang sedang menunggak.
-
 
 ## Catatan
 

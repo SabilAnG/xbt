@@ -17,7 +17,7 @@
                 </h1>
                 <div class="border-bottom mb-3"></div>
                 <ul class="crumb wow fadeInUp">
-                    <li><a href="/">Home</a></li>
+                    <li><a href="{{ \App\Support\Toko::url('/') }}">Home</a></li>
                     <li class="active">{{ content('about.text.2', 'About Us') }}</li>
                 </ul>
             </div>
