@@ -26,6 +26,7 @@ class ProductionItemsTable
                 TextColumn::make('name')->label('Barang')->searchable()->sortable()->wrap()
                     ->description(fn (ProductionItem $r) => trim(implode(' · ', array_filter([
                         $r->category?->name,
+                        $r->material ? $r->displayMaterial() : null,
                         $r->displayDimensions() !== '—' ? $r->displayDimensions() : null,
                     ])))),
 
@@ -75,6 +76,8 @@ class ProductionItemsTable
 
                 SelectFilter::make('shape')->label('Bentuk')->options(ProductionItem::SHAPES),
 
+                SelectFilter::make('material')->label('Bahan')->options(ProductionItem::MATERIALS),
+
                 Filter::make('menipis')
                     ->label('Stok menipis / habis')
                     ->query(fn (Builder $query) => $query->whereColumn('stock', '<=', 'min_stock')),
@@ -87,6 +90,7 @@ class ProductionItemsTable
                     'Didapat dari' => fn (ProductionItem $r) => $r->displaySource(),
                     'Peran' => fn (ProductionItem $r) => $r->displayRole(),
                     'Bentuk' => fn (ProductionItem $r) => $r->displayShape(),
+                    'Bahan' => fn (ProductionItem $r) => $r->displayMaterial(),
                     'Ukuran' => fn (ProductionItem $r) => $r->displayDimensions(),
                     'Satuan Beli' => fn (ProductionItem $r) => $r->unit,
                     'Harga Beli' => fn (ProductionItem $r) => $r->cost_price,

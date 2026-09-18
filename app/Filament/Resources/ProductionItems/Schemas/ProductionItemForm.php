@@ -78,9 +78,9 @@ class ProductionItemForm
                         ->helperText('Terisi dari jenis barang.'),
                 ]),
 
-            Section::make('Ukuran, Satuan & Harga')
+            Section::make('Bahan, Ukuran, Satuan & Harga')
                 ->columnSpanFull()
-                ->description('Anda membeli per batang atau lembar, tapi memakainya per milimeter. Isi ukurannya sekali di sini, sistem yang menghitung harga per satuan pakai.')
+                ->description('Anda membeli per batang atau lembar, tapi memakainya per milimeter. Isi bahan dan ukurannya sekali di sini, sistem yang menghitung harga per satuan pakai.')
                 ->columns(3)
                 ->schema(self::medanUkuranHarga()),
 
@@ -167,6 +167,13 @@ class ProductionItemForm
                 ->default('count')->required()->live()
                 ->helperText('Menentukan ukuran mana yang berlaku, dan bagaimana satuan belinya dikonversi.'),
 
+            Select::make('material')
+                ->label('Jenis Bahan')
+                ->options(ProductionItem::MATERIALS)
+                ->searchable()
+                ->placeholder('Belum dicatat')
+                ->helperText('Stainless, besi, galvanis. Berlaku untuk pipa dan plat maupun baut.'),
+
             TextInput::make('unit')
                 ->label('Satuan Beli')->required()->default('pcs')->maxLength(255)
                 ->helperText('Cara Anda membelinya: batang, lembar, kg, tabung, pcs.'),
@@ -181,7 +188,7 @@ class ProductionItemForm
                 ->label('Catat ukurannya juga')
                 ->dehydrated(false)->live()
                 ->visible($bentuk('count'))
-                ->helperText('Nyalakan untuk barang satuan yang ukurannya perlu dicatat, seperti DB killer Ø28 atau perforated core 30 x 300.')
+                ->helperText('Nyalakan untuk barang satuan yang ukurannya perlu dicatat, seperti baut M8 x 20, DB killer Ø28, atau perforated core 30 x 300.')
                 ->afterStateHydrated(function (callable $get, callable $set) {
                     $terisi = collect(self::MEDAN_UKURAN)
                         ->contains(fn (string $medan) => filled($get($medan)));
@@ -257,7 +264,9 @@ class ProductionItemForm
                 ->dehydrateStateUsing(fn ($state, callable $get) => self::keMm($state, $get('size_unit')))
                 ->visible(fn (callable $get) => $get('shape') === 'linear'
                     || ($get('shape') === 'count' && (bool) $get('pakai_ukuran')))
-                ->helperText('Keterangan ukuran, tidak ikut hitungan.'),
+                ->helperText(fn (callable $get) => $get('shape') === 'count'
+                    ? 'Untuk baut, ini ukuran dratnya: M8 berarti 8. Panjangnya diisi di kolom Panjang.'
+                    : 'Keterangan ukuran, tidak ikut hitungan.'),
 
             TextInput::make('thickness_mm')
                 ->label('Tebal')

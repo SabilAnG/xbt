@@ -86,9 +86,30 @@ class ProductionItem extends Model
         'count' => 'Satuan (pcs, set)',
     ];
 
+    /**
+     * Bahan bakunya. Stainless dan besi adalah dua dunia yang berbeda di
+     * bengkel knalpot: harganya berlipat, las-nya beda, dan pemesan biasanya
+     * menyebut bahan lebih dulu daripada ukuran.
+     *
+     * Grade stainless dipisah karena SS201 dan SS304 berbeda harga cukup jauh
+     * untuk mengubah HPP, dan keduanya sama-sama disebut "stainless" di pasar.
+     * Yang belum diketahui grade-nya punya pilihannya sendiri, supaya tidak ada
+     * yang menebak demi mengisi isian.
+     */
+    public const MATERIALS = [
+        'ss201' => 'Stainless SS201',
+        'ss304' => 'Stainless SS304',
+        'stainless' => 'Stainless (grade lain)',
+        'besi' => 'Besi',
+        'galvanis' => 'Besi galvanis',
+        'aluminium' => 'Aluminium',
+        'kuningan' => 'Kuningan',
+        'lainnya' => 'Lainnya',
+    ];
+
     protected $fillable = [
         'sku', 'name', 'production_item_category_id',
-        'source', 'role', 'shape', 'unit', 'size_unit',
+        'source', 'role', 'shape', 'material', 'unit', 'size_unit',
         'length_mm', 'width_mm', 'diameter_mm', 'thickness_mm', 'weight_gram', 'volume_ml',
         'cost_price', 'stock', 'min_stock', 'min_reusable',
         'notes', 'is_active',
@@ -229,6 +250,12 @@ class ProductionItem extends Model
     public function displayShape(): string
     {
         return self::SHAPES[$this->shape] ?? $this->shape;
+    }
+
+    /** Kosong berarti belum dicatat, dan itu ditulis apa adanya. */
+    public function displayMaterial(): string
+    {
+        return self::MATERIALS[$this->material] ?? ($this->material ?: '—');
     }
 
     // -------------------------------------------------- satuan saat mengetik

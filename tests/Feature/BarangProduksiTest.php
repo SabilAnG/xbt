@@ -298,6 +298,76 @@ class BarangProduksiTest extends TestCase
             ]);
     }
 
+    // ------------------------------------------------------------- bahan
+
+    public function test_bahan_tersimpan_terpisah_dari_nama_barang(): void
+    {
+        $pipa = $this->pipa(['material' => 'ss201']);
+
+        $this->assertSame('ss201', $pipa->refresh()->material);
+        $this->assertSame('Stainless SS201', $pipa->displayMaterial());
+    }
+
+    /**
+     * Barang lama tidak punya jawabannya, dan menebak bahannya lebih buruk
+     * daripada mengakui belum tahu — pipa besi yang terlanjur tercatat
+     * stainless salah harga, bukan sekadar salah label.
+     */
+    public function test_bahan_yang_belum_dicatat_tidak_ditebak(): void
+    {
+        $this->assertNull($this->pipa()->material);
+        $this->assertSame('—', $this->pipa()->displayMaterial());
+    }
+
+    /**
+     * Baut stainless dan baut besi beda harga dan beda peruntukan, dan
+     * keduanya barang satuan — bentuk yang ukurannya baru muncul setelah
+     * diminta. Keduanya diuji sekaligus karena di situlah baut dicatat.
+     */
+    public function test_baut_bisa_mencatat_ukuran_dan_bahannya(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(ListProductionItems::class)
+            ->callAction('create', [
+                'name' => 'Baut M8 x 20 SS',
+                'sku' => 'BAUT-M8-SS',
+                'shape' => 'count',
+                'material' => 'ss304',
+                'unit' => 'pcs',
+                'cost_price' => 2_500,
+                'pakai_ukuran' => true,
+                'size_unit' => 'mm',
+                'diameter_mm' => 8,
+                'length_mm' => 20,
+            ])
+            ->assertHasNoActionErrors();
+
+        $baut = ProductionItem::where('sku', 'BAUT-M8-SS')->sole();
+
+        $this->assertSame('Stainless SS304', $baut->displayMaterial());
+        $this->assertSame(8.0, (float) $baut->diameter_mm);
+        $this->assertSame(20.0, (float) $baut->length_mm);
+
+        // Ukuran baut tetap keterangan: satuan belinya masih pcs, jadi
+        // harga per satuan pakai tidak boleh ikut terbagi panjangnya.
+        $this->assertSame(1.0, $baut->basePerUnit());
+        $this->assertSame(2_500.0, $baut->basePrice());
+    }
+
+    public function test_form_menampilkan_isian_jenis_bahan(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(ListProductionItems::class)
+            ->mountAction('create')
+            ->assertMountedActionModalSee([
+                'Jenis Bahan',
+                'Stainless SS201',
+                'Besi galvanis',
+            ]);
+    }
+
     // --------------------------------------------------------------- fixture
 
     private function pipa(array $atribut = []): ProductionItem
