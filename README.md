@@ -102,6 +102,29 @@ docker compose exec app art view:cache   # after editing any .blade.php
 Set `opcache.validate_timestamps = 1` and rebuild (`docker compose build app`)
 to go back to edit-and-refresh while working on something churn-heavy.
 
+### The admin panel theme is compiled
+
+`resources/css/filament/admin/theme.css` is a real Filament theme built by Vite,
+registered with `->viteTheme(...)`. The panel no longer loads the published
+`public/css/filament/` stylesheet at all — that one file is the whole panel.
+
+**Editing it changes nothing until you build:**
+
+```bash
+docker compose --profile dev run --rm --no-deps node npm run build
+```
+
+The build needs `vendor/` — the theme imports Filament's own CSS and Tailwind
+scans Filament's classes — so the `node` service mounts the same `vendor` volume
+as `app`. The copy of `vendor/` on the Windows side is only a snapshot and does
+not contain it.
+
+`public/build` is gitignored, so **production builds it inside the image**: the
+`assets` stage in `docker/php/Dockerfile.prod` runs `npm ci && npm run build` and
+its output is copied into both the runtime and the nginx stages. Without that
+stage Filament cannot find the Vite manifest and the whole panel answers 500 —
+not merely unstyled. `TemaPanelTest` keeps that stage honest.
+
 ### Clear the config cache before testing
 
 `bootstrap/cache/config.php` bakes in the values from `.env`, which means the

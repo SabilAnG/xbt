@@ -35,6 +35,27 @@ COPY . .
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && rm -rf tests .git .github storage/logs/*.log
 
+# ---------------------------------------------------------------- stage: assets
+# Tema panel admin dibangun Vite, jadi `public/build` HARUS ada di image.
+# Tanpa stage ini Filament mencari manifest yang tidak pernah dibuat dan
+# seluruh panel mati dengan 500 — bukan sekadar kehilangan gayanya.
+FROM node:24-alpine AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+# Tailwind 4 memindai kelas di sumbernya, dan sebagian besar kelas panel ada di
+# dalam Filament sendiri. Tanpa vendor/ temanya terbangun tanpa keluhan, hanya
+# separuh gayanya hilang.
+COPY --from=vendor /app/vendor ./vendor
+COPY vite.config.js ./
+COPY resources ./resources
+COPY app ./app
+
+RUN npm run build
+
 # --------------------------------------------------------------- stage: runtime
 FROM php:8.4-fpm AS runtime
 
@@ -53,6 +74,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 WORKDIR /var/www/html
 
 COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+COPY --from=assets --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
 # Direktori yang ditulis saat runtime; isinya akan ditimpa volume di compose,
 # tapi harus ada di image agar volume baru mewarisi struktur & kepemilikannya.
@@ -82,5 +104,6 @@ FROM nginx:1.27-alpine AS web
 
 COPY docker/nginx/prod.conf /etc/nginx/conf.d/default.conf
 COPY --from=vendor /app/public /var/www/html/public
+COPY --from=assets /app/public/build /var/www/html/public/build
 
 RUN mkdir -p /var/www/html/public/uploads

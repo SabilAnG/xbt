@@ -69,10 +69,19 @@ class AdminPanelProvider extends PanelProvider
 
             // Urutan grup dibuat mengikuti alur kerja harian: transaksi dulu,
             // lalu aset & laporan, baru data acuan yang jarang disentuh.
+            //
+            // Produksi dipecah dua. Yang dibuka tiap hari tetap di "Produksi",
+            // urut seperti pekerjaannya berjalan. Yang diisi sekali lalu nyaris
+            // tidak disentuh lagi turun ke "Pengaturan Produksi" yang tertutup.
+            // Sembilan menu dalam satu daftar datar membuat orang baru tidak
+            // tahu harus mulai dari mana, dan yang paling sering dipakai justru
+            // tenggelam di antara yang paling jarang.
             ->navigationGroups([
                 NavigationGroup::make('Partner')->icon('heroicon-o-building-storefront'),
                 NavigationGroup::make('Operasional')->icon('heroicon-o-arrows-right-left'),
                 NavigationGroup::make('Produksi')->icon('heroicon-o-wrench-screwdriver'),
+                NavigationGroup::make('Pengaturan Produksi')
+                    ->icon('heroicon-o-adjustments-horizontal')->collapsed(),
                 NavigationGroup::make('Aset')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Master Data')->icon('heroicon-o-rectangle-stack')->collapsed(),
                 NavigationGroup::make('Toko Online')->icon('heroicon-o-globe-alt')->collapsed(),
@@ -92,12 +101,12 @@ class AdminPanelProvider extends PanelProvider
                 DraftDocuments::class,
             ])
 
-            // Lapisan kaca di atas gaya bawaan Filament, bukan tema yang
-            // dibangun ulang — supaya pembaruan Filament tetap terpakai.
-            ->renderHook(
-                PanelsRenderHook::STYLES_AFTER,
-                fn (): View => view('filament.tema-kaca'),
-            )
+            // Tema dikompilasi Vite, bukan disuntik lewat STYLES_AFTER. Gaya
+            // Filament tetap dipakai apa adanya; berkas tema hanya menumpang
+            // di atasnya, jadi pembaruan Filament tidak perlu disalin ulang.
+            //
+            // Perubahan berkas tema baru terlihat setelah `npm run build`.
+            ->viteTheme('resources/css/filament/admin/theme.css')
 
             // Terang/gelap satu klik di topbar. Pilihan yang sama ada di menu
             // profil, tapi terkubur dua klik ke dalam.

@@ -68,6 +68,11 @@ services:
     volumes:
       - ./:/var/www/html
       - node_modules:/var/www/html/node_modules
+      # Tema panel mengimpor CSS Filament dari vendor/, dan Tailwind memindai
+      # kelas di dalamnya. Volume yang sama dengan app — salinan vendor/ di
+      # host cuma snapshot dan tidak memuat berkas itu, jadi tanpa baris ini
+      # `npm run build` gagal menemukan temanya.
+      - vendor:/var/www/html/vendor
     ports:
       - "5176:5176"
     command: sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port 5176"
