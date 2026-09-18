@@ -13,7 +13,7 @@ class ListFormulas extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Buat Formula'),
+            CreateAction::make()->label('Buat Resep'),
         ];
     }
 }

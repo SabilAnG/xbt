@@ -24,6 +24,12 @@ class HakPartner
     public const GRUP_FITUR = [
         'Operasional' => 'operasional',
         'Produksi' => 'produksi',
+
+        // Pemisahannya urusan tata letak, bukan hak. Partner yang boleh masuk
+        // Produksi harus tetap bisa membuka gudang dan jenis barangnya —
+        // tanpa baris ini keempat menu itu hilang diam-diam dari panelnya,
+        // karena grup yang tidak dikenal ditolak.
+        'Pengaturan Produksi' => 'produksi',
         'Aset' => 'aset',
         'Master Data' => 'master',
         'Toko Online' => 'toko',

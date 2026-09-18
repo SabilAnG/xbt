@@ -22,9 +22,9 @@ class FormulaResource extends BaseResource
 
     protected static ?int $navigationSort = 40;
 
-    protected static ?string $modelLabel = 'Formula';
+    protected static ?string $modelLabel = 'Resep Knalpot';
 
-    protected static ?string $pluralModelLabel = 'Formula';
+    protected static ?string $pluralModelLabel = 'Resep Knalpot';
 
     protected static ?string $recordTitleAttribute = 'name';
 

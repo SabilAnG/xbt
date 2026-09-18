@@ -43,7 +43,7 @@ class Tutorial
             ],
 
             'resources.exhaust-components.index' => [
-                'judul' => 'Komponen Knalpot',
+                'judul' => 'Bagian Knalpot',
                 'ringkas' => 'Daftar bagian penyusun knalpot. Murni daftar — bahan dan ukurannya ada di formula.',
                 'langkah' => [
                     'Daftar utama hanya memuat bagian induknya: Header dan Silincer.',
@@ -53,10 +53,10 @@ class Tutorial
             ],
 
             'resources.formulas.index' => [
-                'judul' => 'Formula',
+                'judul' => 'Resep Knalpot',
                 'ringkas' => 'Resep satu knalpot untuk satu type motor: komponennya apa, bahannya apa, ukurannya berapa.',
                 'langkah' => [
-                    'Formula baru langsung terisi seluruh komponen. Yang tidak dipakai tinggal dihapus barisnya — itu lebih cepat daripada mengingat apa saja yang harus ditambah.',
+                    'Resep baru langsung terisi seluruh bagian. Yang tidak dipakai tinggal dihapus barisnya — itu lebih cepat daripada mengingat apa saja yang harus ditambah.',
                     'Isi kolom Bahan, lalu ukurannya. Barang beli jadi cukup jumlahnya; pipa dan plat minta ukuran potongan.',
                     'Ukuran diketik dalam satuan bengkel: "20 cm x 2 potong", bukan milimeter. Konversinya dikerjakan sendiri.',
                     'Bagian "Biaya Lain-lain" untuk ongkos kerja — chrome, poles, las. Tarifnya diambil dari menu Jasa Produksi.',
@@ -77,7 +77,7 @@ class Tutorial
             ],
 
             'pages.kalkulator-hpp' => [
-                'judul' => 'Kalkulator HPP',
+                'judul' => 'Hitung Modal',
                 'ringkas' => 'Dari resep ke harga jual: modal berapa, dijual berapa, dan dipasang berapa di toko online.',
                 'langkah' => [
                     'Pilih formula dan berapa set yang mau dibuat.',
@@ -280,7 +280,7 @@ class Tutorial
             ],
 
             'resources.production-item-opnames.index' => [
-                'judul' => 'Stok Opname Produksi',
+                'judul' => 'Hitung Ulang Stok',
                 'ringkas' => 'Menghitung fisik stok bahan di satu gudang, lalu mengoreksi selisihnya.',
                 'langkah' => [
                     'Pilih gudang yang dihitung dulu — koreksi stok harus tahu masuk ke gudang mana.',

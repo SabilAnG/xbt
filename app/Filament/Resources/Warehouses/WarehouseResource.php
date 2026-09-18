@@ -19,7 +19,7 @@ class WarehouseResource extends BaseResource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static ?int $navigationSort = 120;
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $modelLabel = 'Gudang';
 
@@ -29,7 +29,7 @@ class WarehouseResource extends BaseResource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Produksi';
+        return 'Pengaturan Produksi';
     }
 
     public static function form(Schema $schema): Schema

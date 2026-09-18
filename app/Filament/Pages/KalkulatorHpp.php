@@ -34,11 +34,11 @@ class KalkulatorHpp extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
 
-    protected static ?string $navigationLabel = 'Kalkulator HPP';
+    protected static ?string $navigationLabel = 'Hitung Modal';
 
-    protected static ?string $title = 'Kalkulator HPP';
+    protected static ?string $title = 'Hitung Modal';
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 50;
 
     protected string $view = 'filament.pages.kalkulator-hpp';
 

@@ -20,11 +20,16 @@ class ProductionItemOpnameResource extends BaseResource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 30;
 
-    protected static ?string $modelLabel = 'Stok Opname';
+    // Menunya memakai kata kerja karena itu yang dicari orang: "saya mau
+    // hitung ulang stok". Nama dokumennya tetap kata benda supaya "Buat
+    // Hitungan Stok" tetap berbunyi seperti kalimat.
+    protected static ?string $navigationLabel = 'Hitung Ulang Stok';
 
-    protected static ?string $pluralModelLabel = 'Stok Opname';
+    protected static ?string $modelLabel = 'Hitungan Stok';
+
+    protected static ?string $pluralModelLabel = 'Hitungan Stok';
 
     protected static ?string $recordTitleAttribute = 'opname_number';
 

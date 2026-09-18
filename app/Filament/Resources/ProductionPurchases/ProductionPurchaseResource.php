@@ -29,7 +29,7 @@ class ProductionPurchaseResource extends BaseResource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static ?int $navigationSort = 15;
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $modelLabel = 'Pembelian Bahan';
 

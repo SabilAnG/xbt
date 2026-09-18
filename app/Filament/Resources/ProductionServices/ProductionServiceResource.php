@@ -22,7 +22,7 @@ class ProductionServiceResource extends BaseResource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 40;
 
     protected static ?string $modelLabel = 'Jasa Produksi';
 
@@ -32,7 +32,7 @@ class ProductionServiceResource extends BaseResource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Produksi';
+        return 'Pengaturan Produksi';
     }
 
     public static function form(Schema $schema): Schema

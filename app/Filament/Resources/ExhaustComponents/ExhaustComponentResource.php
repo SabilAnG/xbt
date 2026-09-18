@@ -21,15 +21,18 @@ class ExhaustComponentResource extends BaseResource
 
     protected static ?int $navigationSort = 30;
 
-    protected static ?string $modelLabel = 'Komponen Knalpot';
+    // "Bagian" sudah jadi kata yang dipakai di dalam menu ini sendiri —
+    // halaman isinya bernama IsiBagian dan tombolnya "Semua Bagian". Namanya
+    // kini ikut menyusul, bukan dua kata untuk satu hal.
+    protected static ?string $modelLabel = 'Bagian Knalpot';
 
-    protected static ?string $pluralModelLabel = 'Komponen Knalpot';
+    protected static ?string $pluralModelLabel = 'Bagian Knalpot';
 
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Produksi';
+        return 'Pengaturan Produksi';
     }
 
     public static function form(Schema $schema): Schema

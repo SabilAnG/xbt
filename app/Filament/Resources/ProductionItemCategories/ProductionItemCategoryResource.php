@@ -18,7 +18,7 @@ class ProductionItemCategoryResource extends BaseResource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
-    protected static ?int $navigationSort = 110;
+    protected static ?int $navigationSort = 10;
 
     protected static ?string $modelLabel = 'Jenis Barang';
 
@@ -26,7 +26,7 @@ class ProductionItemCategoryResource extends BaseResource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Produksi';
+        return 'Pengaturan Produksi';
     }
 
     public static function form(Schema $schema): Schema

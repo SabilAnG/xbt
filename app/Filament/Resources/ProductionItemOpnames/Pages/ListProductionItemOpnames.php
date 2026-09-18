@@ -13,7 +13,7 @@ class ListProductionItemOpnames extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Buat Opname'),
+            CreateAction::make()->label('Mulai Hitung Ulang'),
         ];
     }
 }

@@ -8,8 +8,10 @@ use App\Filament\Resources\Formulas\FormulaResource;
 use App\Filament\Resources\Items\ItemResource;
 use App\Filament\Resources\ItemTypes\ItemTypeResource;
 use App\Filament\Resources\Partners\PartnerResource;
+use App\Filament\Resources\ProductionItemCategories\ProductionItemCategoryResource;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\Wallets\WalletResource;
+use App\Filament\Resources\Warehouses\WarehouseResource;
 use App\Models\Tenant;
 use App\Support\HakPartner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,6 +97,25 @@ class PartnerHakMenuTest extends TestCase
     }
 
     /**
+     * Memecah menu Produksi jadi dua grup adalah urusan tata letak. Partner
+     * yang haknya sama sebelum dan sesudah pemecahan harus melihat menu yang
+     * sama persis — grup yang tidak dikenal ditolak, jadi grup baru yang lupa
+     * dipetakan akan mencabut gudang dan jenis barang tanpa suara.
+     */
+    public function test_pengaturan_produksi_memakai_hak_produksi_yang_sama(): void
+    {
+        $this->sebagaiPartner(['produksi']);
+
+        $this->assertTrue(WarehouseResource::canAccess(), 'Gudang seharusnya ikut hak produksi.');
+        $this->assertTrue(ProductionItemCategoryResource::canAccess(), 'Jenis Barang seharusnya ikut hak produksi.');
+
+        $this->sebagaiPartner(['landing']);
+
+        $this->assertFalse(WarehouseResource::canAccess());
+        $this->assertFalse(ProductionItemCategoryResource::canAccess());
+    }
+
+    /**
      * Menu baru yang lupa didaftarkan lebih baik hilang dari panel partner
      * daripada diam-diam terbuka untuk semua orang.
      */
@@ -110,7 +131,7 @@ class PartnerHakMenuTest extends TestCase
     {
         // Grup yang dipakai resource tapi belum ada di peta akan hilang diam-diam
         // dari panel partner. Lebih baik ketahuan di sini.
-        $dipakai = ['Operasional', 'Produksi', 'Aset', 'Master Data', 'Toko Online', 'Website', 'Partner'];
+        $dipakai = ['Operasional', 'Produksi', 'Pengaturan Produksi', 'Aset', 'Master Data', 'Toko Online', 'Website', 'Partner'];
 
         foreach ($dipakai as $grup) {
             if ($grup === 'Partner') {

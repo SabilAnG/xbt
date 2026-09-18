@@ -13,7 +13,7 @@ class ListExhaustComponents extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Tambah Komponen'),
+            CreateAction::make()->label('Tambah Bagian'),
         ];
     }
 }
