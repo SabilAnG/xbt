@@ -47,11 +47,26 @@ class PengaturanSitusController extends Controller
         ],
     ];
 
-    /** Berkas gambar, ditangani terpisah karena diunggah, bukan diketik. */
+    /**
+     * Berkas gambar, ditangani terpisah karena diunggah, bukan diketik.
+     *
+     * SVG SENGAJA TIDAK DITERIMA. Berkas yang diunggah disimpan di public/ dan
+     * disajikan dari origin yang sama dengan aplikasi. SVG boleh memuat
+     * <script>, dan walau logo dirender lewat <img> — yang tidak menjalankan
+     * skrip — berkasnya tetap bisa dibuka langsung lewat URL-nya. Satu tautan
+     * yang dikirim ke admin lain sudah cukup untuk mencuri sesinya.
+     *
+     * Favicon punya aturannya sendiri: .ico bukan tipe yang diterima aturan
+     * `image` bawaan Laravel (hanya jpg, jpeg, png, bmp, gif, svg, webp), jadi
+     * memakai `image` di sana membuat favicon situs ini — yang memang
+     * favicon.ico — selalu ditolak tanpa sebab yang kelihatan.
+     *
+     * @var array<string, array{0: string, 1: array<int, string>}>
+     */
     private const GAMBAR = [
-        'site.logo' => 'Logo (latar gelap)',
-        'site.logo_light' => 'Logo (latar terang)',
-        'site.favicon' => 'Favicon',
+        'site.logo' => ['Logo (latar gelap)', ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']],
+        'site.logo_light' => ['Logo (latar terang)', ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']],
+        'site.favicon' => ['Favicon', ['nullable', 'file', 'mimes:png,ico,webp', 'max:512']],
     ];
 
     public function index(): View
@@ -68,7 +83,7 @@ class PengaturanSitusController extends Controller
 
         return view('panel.pengaturan.index', [
             'medan' => self::MEDAN,
-            'gambar' => self::GAMBAR,
+            'gambar' => array_map(fn (array $satu) => $satu[0], self::GAMBAR),
             'nilai' => $nilai,
         ]);
     }
@@ -85,8 +100,8 @@ class PengaturanSitusController extends Controller
             };
         }
 
-        foreach (array_keys(self::GAMBAR) as $kunci) {
-            $aturan['gambar.'.$this->aman($kunci)] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,ico,svg', 'max:2048'];
+        foreach (self::GAMBAR as $kunci => [$label, $aturanBerkas]) {
+            $aturan['gambar.'.$this->aman($kunci)] = $aturanBerkas;
         }
 
         $request->validate($aturan);
