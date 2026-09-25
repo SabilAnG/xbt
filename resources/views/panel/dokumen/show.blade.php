@@ -71,6 +71,7 @@
                             <th class="th text-right">{{ $spek['baris']['label_harga'] }}</th>
                             <th class="th text-right">Subtotal</th>
                         @endif
+                        <th class="th w-px"></th>
                     </tr>
                 </thead>
 
@@ -100,14 +101,53 @@
                                 <td class="td text-right text-slate-700">Rp {{ number_format((float) $baris->{$spek['baris']['harga']}, 0, ',', '.') }}</td>
                                 <td class="td text-right font-medium text-slate-800">Rp {{ number_format((float) $baris->subtotal, 0, ',', '.') }}</td>
                             @endif
+
+                            <td class="td text-right">
+                                @unless ($dibukukan)
+                                    <form method="POST" action="{{ route('panel.dokumen.hapus-baris', [$jenis, $nota->id, $baris->id]) }}"
+                                          onsubmit="return confirm('Hapus baris ini?')">
+                                        @csrf @method('DELETE')
+                                        <button class="text-[0.75rem] text-merah-500">hapus</button>
+                                    </form>
+                                @endunless
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-12 text-center text-sm text-slate-500">Nota ini belum punya baris.</td>
+                            <td colspan="5" class="px-4 py-12 text-center text-sm text-slate-500">Nota ini belum punya baris.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+
+            {{-- Tambah baris. Hanya selama draft: nota yang sudah dibukukan
+                 sudah menggerakkan stok, jadi mengubah barisnya diam-diam akan
+                 membuat kartu stok tidak lagi cocok dengan notanya. --}}
+            @unless ($dibukukan)
+                <form method="POST" action="{{ route('panel.dokumen.tambah-baris', [$jenis, $nota->id]) }}"
+                      class="flex flex-wrap items-end gap-2 border-t border-slate-100 p-4">
+                    @csrf
+
+                    <label class="min-w-0 flex-1 basis-56">
+                        <span class="label">Barang</span>
+                        <select name="item_id" class="isian" required>
+                            <option value="">— pilih barang —</option>
+                            @foreach ($daftarBarang as $id => $nama)
+                                <option value="{{ $id }}">{{ $nama }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    @foreach ($spek['baris_isian'] as $medan => [$label, $wajib])
+                        <label class="w-36">
+                            <span class="label">{{ $label }}</span>
+                            <input name="{{ $medan }}" inputmode="decimal" class="isian" @required($wajib)>
+                        </label>
+                    @endforeach
+
+                    <button class="tombol tombol-utama">Tambah baris</button>
+                </form>
+            @endunless
         </div>
     @endif
 

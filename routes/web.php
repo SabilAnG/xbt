@@ -225,7 +225,11 @@ Route::prefix('panel')->name('panel.')->group(function () {
         Route::controller(PanelDokumenController::class)
             ->prefix('nota/{jenis}')->name('dokumen.')->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
                 Route::get('/{id}', 'show')->name('show');
+                Route::post('/{id}/baris', 'tambahBaris')->name('tambah-baris');
+                Route::delete('/{id}/baris/{baris}', 'hapusBaris')->name('hapus-baris');
                 Route::post('/{id}/bukukan', 'bukukan')->name('bukukan');
                 Route::post('/{id}/batalkan', 'batalkan')->name('batalkan');
             });

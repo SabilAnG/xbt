@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\StockOpname;
+use App\Models\Wallet;
 
 /**
  * Daftar nota operasional di panel baru.
@@ -35,6 +36,9 @@ class DaftarDokumen
                 'post' => 'postPurchase',
                 'unpost' => 'unpostPurchase',
                 'baris' => ['qty' => 'qty', 'harga' => 'unit_cost', 'label_harga' => 'Harga Beli'],
+                'tabel' => 'purchases',
+                'kepala' => ['supplier_name' => ['Pemasok', 'teks'], 'wallet_id' => ['Dibayar dari', 'dompet']],
+                'baris_isian' => ['qty' => ['Jumlah', true], 'unit_cost' => ['Harga beli', true]],
             ],
 
             'penjualan' => [
@@ -47,6 +51,13 @@ class DaftarDokumen
                 'post' => 'postSale',
                 'unpost' => 'unpostSale',
                 'baris' => ['qty' => 'qty', 'harga' => 'unit_price', 'label_harga' => 'Harga Jual'],
+                'tabel' => 'sales',
+                'kepala' => [
+                    'customer_name' => ['Pembeli', 'teks'],
+                    'customer_phone' => ['Telepon', 'teks'],
+                    'wallet_id' => ['Masuk ke', 'dompet'],
+                ],
+                'baris_isian' => ['qty' => ['Jumlah', true], 'unit_price' => ['Harga jual', true]],
             ],
 
             'pengeluaran' => [
@@ -61,6 +72,14 @@ class DaftarDokumen
                 'unpost' => 'unpostExpense',
                 // Pengeluaran tidak punya baris barang — nilainya satu angka.
                 'baris' => null,
+                'tabel' => 'expenses',
+                'kepala' => [
+                    'amount' => ['Nilai', 'angka'],
+                    'expense_category_id' => ['Kategori', 'kategori_pengeluaran'],
+                    'paid_to' => ['Dibayar ke', 'teks'],
+                    'wallet_id' => ['Dibayar dari', 'dompet'],
+                    'description' => ['Keterangan', 'teks'],
+                ],
             ],
 
             'opname-toko' => [
@@ -78,6 +97,9 @@ class DaftarDokumen
                 // berarti tombol yang pasti error saat ditekan.
                 'unpost' => null,
                 'baris' => ['selisih' => true],
+                'tabel' => 'stock_opnames',
+                'kepala' => ['counted_by' => ['Dihitung oleh', 'teks']],
+                'baris_isian' => ['physical_qty' => ['Hasil hitung fisik', true]],
             ],
         ];
     }
@@ -91,6 +113,8 @@ class DaftarDokumen
             'total' => 'total',
             'petunjuk' => null,
             'baris' => null,
+            'kepala' => [],
+            'baris_isian' => [],
         ];
     }
 }

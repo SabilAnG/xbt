@@ -1,5 +1,12 @@
 <x-panel.layout :judul="$spek['judul']" :keterangan="$spek['petunjuk']">
 
+    <x-slot:aksi>
+        <a href="{{ route('panel.dokumen.create', $jenis) }}" class="tombol tombol-utama">
+            <x-panel.ikon nama="tambah" kelas="h-4 w-4" />
+            Nota Baru
+        </a>
+    </x-slot:aksi>
+
     <form method="GET" class="kartu mb-4 flex flex-wrap items-center gap-3 p-3">
         <label class="relative min-w-0 flex-1 basis-56">
             <span class="sr-only">Cari</span>
@@ -74,7 +81,7 @@
                                     {{ $cari !== '' || $status ? 'Tidak ada yang cocok' : 'Belum ada nota' }}
                                 </p>
                                 <p class="mt-1 text-[0.8125rem] text-slate-400">
-                                    Nota masih dibuat di panel lama; layar ini menampilkan dan membukukan.
+                                    Tekan tombol Nota Baru untuk membuat draft pertama.
                                 </p>
                             </td>
                         </tr>
