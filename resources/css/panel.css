@@ -1,0 +1,134 @@
+/*
+ * Panel admin — gaya sendiri, tanpa Filament.
+ *
+ * Hampir seluruh tampilan ditulis sebagai utility Tailwind langsung di Blade.
+ * Berkas ini hanya memegang yang tidak pantas diulang di tiap berkas: token
+ * warna, lantai halaman, dan komponen yang muncul di mana-mana.
+ *
+ * Perubahan di sini baru terlihat setelah `npm run build`.
+ */
+
+@import 'tailwindcss';
+
+@source '../views/panel/**/*.blade.php';
+@source '../views/components/panel/**/*.blade.php';
+@source '../js/panel.js';
+
+@theme {
+    /* Ungu pekat untuk sidebar, ungu terang untuk aksen di area isi. */
+    --color-ungu-400: #9b7bff;
+    --color-ungu-500: #7c5cff;
+    --color-ungu-600: #6b45f0;
+    --color-ungu-700: #5a34d6;
+    --color-ungu-800: #4a29b3;
+
+    --color-mint-400: #45e0a8;
+    --color-mint-500: #2ed3a3;
+    --color-mint-600: #16b98a;
+
+    --color-merah-400: #ff7ba6;
+    --color-merah-500: #ff5c8d;
+
+    --color-kuning-400: #ffd93d;
+    --color-kuning-500: #f5c518;
+
+    /* Lantai abu netral — bukan putih. Neumorphism butuh latar yang lebih
+       gelap sedikit dari kartunya, kalau tidak bayangan terangnya tidak
+       kelihatan sama sekali. */
+    --color-lantai: #eef0f6;
+
+    /*
+     * Bayangan neumorphic: gelap di kanan-bawah, TERANG di kiri-atas. Yang
+     * terang itu kuncinya — tanpa dia permukaannya cuma kotak berbayang biasa,
+     * bukan permukaan yang seolah timbul dari lantainya.
+     */
+    --shadow-timbul: 6px 6px 16px rgb(163 177 198 / 0.45), -6px -6px 16px rgb(255 255 255 / 0.9);
+    --shadow-timbul-kecil: 3px 3px 8px rgb(163 177 198 / 0.4), -3px -3px 8px rgb(255 255 255 / 0.85);
+    --shadow-cekung: inset 4px 4px 10px rgb(163 177 198 / 0.4), inset -4px -4px 10px rgb(255 255 255 / 0.9);
+}
+
+@layer base {
+    body {
+        background: var(--color-lantai);
+        min-height: 100dvh;
+    }
+
+    /* Angka rata supaya kolom rupiah terbaca sebagai kolom, bukan sebagai teks
+       yang kebetulan berderet. */
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+@layer components {
+    /*
+     * Permukaan timbul — dipakai kartu, tabel, dan blok apa pun yang berdiri
+     * di atas lantai. Tidak bergaris: yang memisahkannya dari lantai adalah
+     * bayangannya, dan menambah garis justru membatalkan efeknya.
+     */
+    .kartu {
+        @apply rounded-2xl bg-white shadow-[var(--shadow-timbul)];
+    }
+
+    .kartu-kecil {
+        @apply rounded-xl bg-white shadow-[var(--shadow-timbul-kecil)];
+    }
+
+    /* Judul kolom: kapital kecil supaya kepala tabel mundur jadi keterangan
+       dan angkanya yang maju. */
+    .th {
+        @apply sticky top-0 z-10 bg-white px-4 py-2.5 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.07em] text-slate-400;
+    }
+
+    .td {
+        @apply border-t border-slate-100 px-4 py-2.5 text-sm text-slate-700;
+    }
+
+    /* --------------------------------------------------------------- tombol */
+
+    .tombol {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition;
+    }
+
+    .tombol-utama {
+        @apply bg-ungu-500 text-white shadow-[0_8px_18px_-8px_var(--color-ungu-500)] hover:bg-ungu-600;
+    }
+
+    .tombol-mint {
+        @apply bg-mint-500 text-white shadow-[0_8px_18px_-8px_var(--color-mint-500)] hover:bg-mint-600;
+    }
+
+    /* Tombol netral memakai permukaan timbul yang sama dengan kartunya —
+       itu yang membuat tombol terbaca sebagai bagian dari bahan yang sama,
+       bukan tempelan. */
+    .tombol-hening {
+        @apply bg-white text-slate-600 shadow-[var(--shadow-timbul-kecil)] hover:text-ungu-600;
+    }
+
+    /* ---------------------------------------------------------------- isian */
+
+    /*
+     * Isian dibuat CEKUNG, kebalikan dari kartu. Di bahasa rupa ini yang
+     * membedakan "tempat menulis" dari "permukaan yang menampung" tanpa perlu
+     * garis tepi sama sekali.
+     */
+    .isian {
+        @apply w-full rounded-xl border-0 bg-lantai px-4 py-2.5 text-sm text-slate-800 shadow-[var(--shadow-cekung)] outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-ungu-400/40;
+    }
+
+    .label {
+        @apply mb-1.5 block text-[0.8125rem] font-medium text-slate-600;
+    }
+
+    /* ------------------------------------------------------------- sidebar */
+
+    /* Menu di sidebar ungu: garis tipis antar baris, dan yang aktif jadi blok
+       putih transparan selebar sidebar. */
+    .menu-sidebar {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition hover:bg-white/10 hover:text-white;
+    }
+
+    .menu-sidebar-aktif {
+        @apply bg-white/15 font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.15)];
+    }
+}

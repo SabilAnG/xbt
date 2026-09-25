@@ -368,6 +368,35 @@ class BarangProduksiTest extends TestCase
             ]);
     }
 
+    // ------------------------------------------------- hitung ulang stok
+
+    /**
+     * Penjaga bug yang TIDAK BISA dilihat suite ini.
+     *
+     * `recalculateStock()` menjumlahkan kartu stok per gudang. Relasi
+     * `movements()` membawa `orderByDesc('moved_at')` supaya kartu stok terbaca
+     * terbaru-dulu, dan urutan itu ikut terbawa ke query yang dikelompokkan.
+     * MySQL dengan ONLY_FULL_GROUP_BY menolaknya (error 1055), jadi membukukan
+     * pembelian dan opname GAGAL di produksi.
+     *
+     * Suite ini berjalan di SQLite, yang tidak menegakkan aturan itu — tes
+     * perilaku apa pun akan tetap hijau walau produksinya rusak. Karena itu
+     * yang dijaga di sini bentuk kodenya, bukan hasilnya. Tidak ideal, tapi
+     * jauh lebih baik daripada tidak dijaga sama sekali.
+     */
+    public function test_hitung_ulang_stok_membuang_urutan_sebelum_mengelompokkan(): void
+    {
+        $sumber = file_get_contents(app_path('Models/ProductionItem.php'));
+
+        $badan = str($sumber)->after('function recalculateStock')->before('public function');
+
+        $this->assertStringContainsString('->reorder()', (string) $badan);
+        $this->assertTrue(
+            $badan->position('->reorder()') < $badan->position('->groupBy('),
+            'reorder() harus dipanggil SEBELUM groupBy(), kalau tidak urutannya tetap ikut terkirim.'
+        );
+    }
+
     // --------------------------------------------------------------- fixture
 
     private function pipa(array $atribut = []): ProductionItem

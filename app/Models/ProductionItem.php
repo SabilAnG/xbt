@@ -195,6 +195,16 @@ class ProductionItem extends Model
     public function recalculateStock(): void
     {
         $perGudang = $this->movements()
+            // Urutan bawaan relasi HARUS dibuang sebelum dikelompokkan.
+            // movements() mengurutkan menurut moved_at supaya kartu stok
+            // terbaca terbaru-dulu, tapi di sini barisnya justru dijumlahkan
+            // per gudang — dan MySQL dengan ONLY_FULL_GROUP_BY menolak ORDER BY
+            // pada kolom yang tidak ikut dikelompokkan (error 1055).
+            //
+            // Tanpa ini pembukuan pembelian dan opname gagal di MySQL, yaitu di
+            // produksi. Tes tidak pernah melihatnya: suite berjalan di SQLite,
+            // yang tidak menegakkan aturan itu.
+            ->reorder()
             ->selectRaw('warehouse_id, SUM(qty_in) - SUM(qty_out) AS saldo')
             ->groupBy('warehouse_id')
             ->pluck('saldo', 'warehouse_id');

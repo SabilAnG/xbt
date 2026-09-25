@@ -1,41 +1,36 @@
 /*
  * Tema panel admin.
  *
- * Dibangun Vite, bukan disuntik lewat render hook seperti sebelumnya. Bedanya
- * bukan kerapian: berkas ini diimpor SESUDAH gaya Filament dan berada di luar
- * @layer, sementara seluruh gaya Filament ada di dalam layer. Dalam cascade
- * CSS, aturan tanpa layer selalu menang atas aturan berlayer berapa pun
- * spesifisitasnya. Artinya !important yang bertebaran di bawah sudah tidak
- * diperlukan lagi — tapi sengaja dibiarkan untuk sekarang: pemindahan ini
- * dibuat tanpa mengubah satu pun hasil tampilannya, supaya kalau ada yang
- * berubah penyebabnya pasti build-nya, bukan cascade yang ikut diutak-atik.
- * Membuangnya pekerjaan tersendiri, dan perlu dilihat di peramban.
+ * Dibangun Vite, bukan disuntik lewat render hook. Bedanya bukan kerapian:
+ * berkas ini diimpor SESUDAH gaya Filament dan berada di luar @layer, dan
+ * dalam cascade CSS aturan tanpa layer selalu menang atas aturan berlayer
+ * berapa pun spesifisitasnya. Karena itu hampir tidak ada !important di sini.
  *
  * Konsekuensinya satu, dan tidak bisa ditawar: setiap perubahan berkas ini
  * baru terlihat setelah `npm run build`. Lihat README.
  *
  * ---------------------------------------------------------------------------
  *
- * Tampilan panel: kaca gelap dengan cahaya keemasan dari atas.
+ * Tampilan: kartu putih mengambang di atas lantai lavender.
  *
- * Ditulis sebagai satu lapis di atas gaya bawaan Filament, bukan tema yang
- * dibangun ulang: Filament memperbarui gayanya sendiri tiap rilis, dan tema
- * yang menyalin seluruhnya akan tertinggal diam-diam sampai ada yang rusak.
+ * Aturan yang dipegang:
  *
- * Aturan yang dipegang di sini:
- *
- * - Cahaya datang dari satu tempat — atas-tengah, seperti lampu sorot. Glow
- *   yang datang dari mana-mana membuat layar terasa berkabut, bukan mewah.
- * - Kaca hanya di lapisan yang memang mengambang: topbar, sidebar, kartu,
- *   modal. Isi tabel tetap padat, karena angka yang dibaca lama di atas latar
- *   buram melelahkan mata.
- * - Terang dan gelap sama-sama dikerjakan. Tema gelap yang tidak diuji di
- *   mode terang selalu menyisakan teks yang nyaris tidak terbaca di sana.
+ * - Lantainya berwarna, permukaannya putih. Yang membuat kartu terbaca sebagai
+ *   "mengambang" bukan bayangannya, melainkan bedanya dengan latar — kartu
+ *   putih di atas latar putih hanya jadi kotak bergaris.
+ * - Bayangan lebar dan sangat tipis, bukan gelap dan rapat. Bayangan pekat
+ *   membuat layar terasa berat justru saat isinya banyak.
+ * - Sudut membulat besar untuk permukaan, bulat penuh untuk yang bisa ditekan.
+ *   Itu yang memisahkan "wadah" dari "tombol" tanpa perlu garis.
+ * - Isi tabel tetap padat dan tenang. Angka yang dibaca lama tidak boleh
+ *   duduk di atas warna.
+ * - Terang dan gelap sama-sama dikerjakan. Contoh yang ditiru hanya punya mode
+ *   terang, jadi mode gelapnya diturunkan sendiri dengan aksen yang sama.
  *
  * Catatan warna: Filament 5 menyimpan --primary-500 dan kawan-kawan sebagai
  * oklch() utuh, bukan tiga angka kanal. Jadi pengencerannya lewat color-mix,
  * bukan rgb(var(--primary-500) / 0.4) — bentuk terakhir itu tidak sah dan
- * gugur tanpa pesan apa pun, menyisakan panel tanpa cahaya sama sekali.
+ * gugur tanpa pesan apa pun, menyisakan panel tanpa warna sama sekali.
  */
 
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
@@ -44,97 +39,84 @@
 @source '../../../../resources/views/filament/**/*';
 
 :root {
-    --kaca-blur: 18px;
+    --kaca-blur: 14px;
     --kaca-radius: 1.25rem;
-    --kaca-transisi: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    --kaca-radius-kecil: 0.85rem;
+    --kaca-transisi: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Warna cahaya ikut --primary-500, jadi berubah sendiri kalau warna
-       panel diganti. */
+    /* Aksen ikut --primary-500, jadi berubah sendiri kalau palet diganti. */
     --kaca-glow: color-mix(in srgb, var(--primary-500) 40%, transparent);
-    --kaca-glow-lembut: color-mix(in srgb, var(--primary-500) 15%, transparent);
-    --kaca-tepi-nyala: color-mix(in srgb, var(--primary-500) 30%, transparent);
+    --kaca-glow-lembut: color-mix(in srgb, var(--primary-500) 14%, transparent);
+    --kaca-tepi-nyala: color-mix(in srgb, var(--primary-500) 34%, transparent);
 
-    /* Terang */
-    --kaca-bg: rgb(255 255 255 / 0.74);
-    --kaca-bg-topbar: rgb(255 255 255 / 0.82);
-    --kaca-bg-pekat: rgb(255 255 255 / 0.97);
-    --kaca-garis: rgb(255 255 255 / 0.7);
+    /* Terang: permukaan putih, lantai lavender. */
+    --kaca-bg: rgb(255 255 255 / 0.86);
+    --kaca-bg-topbar: rgb(255 255 255 / 0.72);
+    --kaca-bg-pekat: rgb(255 255 255 / 0.98);
+    --kaca-garis: rgb(255 255 255 / 0.9);
+    --kaca-garis-halus: rgb(99 102 160 / 0.1);
 
-    /* Garis kilau di bibir atas permukaan — tempat cahaya jatuh. Ini yang
-       membuat panel terbaca sebagai kaca, bukan sekadar kotak berwarna. */
-    --kaca-kilau: rgb(255 255 255 / 0.9);
-    --kaca-bayang: 0 8px 32px rgb(15 23 42 / 0.08);
-    --kaca-lantai: #f4f4f6;
-    --kaca-sorot: 22%;
+    /* Kilau tipis di bibir atas permukaan — tempat cahaya jatuh. */
+    --kaca-kilau: rgb(255 255 255 / 0.95);
+
+    /* Lebar dan sangat tipis. Warnanya kebiruan, bukan abu netral: bayangan
+       abu di atas lantai berwarna terbaca kotor. */
+    --kaca-bayang: 0 10px 34px rgb(79 70 140 / 0.09);
+    --kaca-bayang-angkat: 0 18px 44px rgb(79 70 140 / 0.16);
+
+    --kaca-lantai: #eceefb;
+    --kaca-lantai-2: #f6f0fb;
+    --kaca-lantai-3: #fdf2f7;
 }
 
 .dark {
     /*
-     * Permukaan kaca di sini adalah lapisan PUTIH tipis, bukan abu-abu
-     * gelap. Abu-abu gelap di atas latar yang hampir hitam menghasilkan
-     * warna yang nyaris sama dengan latarnya — panelnya jadi tak terlihat
-     * terangkat sama sekali, persis seperti bawaan Filament. Putih tipis
-     * mengangkatnya, dan blur di belakangnya baru ada gunanya.
+     * Contoh yang ditiru hanya punya mode terang. Mode gelapnya diturunkan
+     * sendiri: lantai indigo yang sangat gelap, permukaan putih setipis mungkin
+     * supaya tetap terbaca terangkat, aksen ungu yang sama.
      */
-    --kaca-bg: rgb(255 255 255 / 0.055);
-    --kaca-bg-topbar: rgb(13 13 16 / 0.62);
-    --kaca-bg-pekat: rgb(26 26 30 / 0.96);
-    --kaca-garis: rgb(255 255 255 / 0.1);
-    --kaca-kilau: rgb(255 255 255 / 0.07);
-    --kaca-bayang: 0 10px 40px rgb(0 0 0 / 0.55);
-    --kaca-lantai: #0a0a0b;
+    --kaca-bg: rgb(255 255 255 / 0.05);
+    --kaca-bg-topbar: rgb(18 18 28 / 0.72);
+    --kaca-bg-pekat: rgb(26 26 38 / 0.97);
+    --kaca-garis: rgb(255 255 255 / 0.09);
+    --kaca-garis-halus: rgb(255 255 255 / 0.08);
+    --kaca-kilau: rgb(255 255 255 / 0.06);
+    --kaca-bayang: 0 10px 34px rgb(0 0 0 / 0.45);
+    --kaca-bayang-angkat: 0 18px 44px rgb(0 0 0 / 0.6);
 
-    /* Jauh lebih kuat daripada mode terang: topbar dan sidebar berdiri di
-       depan cahaya ini dan menyerap sebagian besarnya, jadi angka yang
-       terlihat wajar di latar putih hilang sama sekali di latar hitam. */
-    --kaca-sorot: 58%;
+    --kaca-lantai: #0d0d16;
+    --kaca-lantai-2: #14101f;
+    --kaca-lantai-3: #170f1c;
 }
 
-/* ---------------------------------------------------------------- latar */
+/* ---------------------------------------------------------------- lantai */
 
+/*
+ * Lantai bergradasi lembut, bukan satu warna datar. Tiga titik warna yang
+ * sangat berdekatan — lavender, ungu muda, merah muda — supaya permukaan putih
+ * di atasnya punya sesuatu untuk dibedakan tanpa layar jadi ramai.
+ */
 .fi-body {
-    background: var(--kaca-lantai) !important;
+    background:
+        radial-gradient(70rem 50rem at 12% -10%, var(--kaca-lantai-2), transparent 60%),
+        radial-gradient(60rem 45rem at 92% 8%, var(--kaca-lantai-3), transparent 62%),
+        var(--kaca-lantai);
+    background-attachment: fixed;
     transition: background-color 260ms ease;
 }
 
 /*
- * Lampu sorot dari atas-tengah. Satu kerucut cahaya, bukan beberapa
- * bulatan: dua sumber cahaya di satu layar membuat mata tidak tahu harus
- * membaca dari mana.
- */
-.fi-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(
-            64rem 38rem at 50% -7rem,
-            color-mix(in srgb, var(--primary-400) var(--kaca-sorot), transparent),
-            transparent 72%
-        ),
-        radial-gradient(
-            26rem 20rem at 50% -4rem,
-            color-mix(in srgb, var(--primary-300) calc(var(--kaca-sorot) * 0.9), transparent),
-            transparent 66%
-        );
-    transition: opacity 260ms ease;
-}
-
-/*
- * Isi halaman harus berada di atas cahaya, bukan tertimbun olehnya.
+ * Isi halaman harus berada di atas lantai, bukan tertimbun olehnya.
  *
- * Cukup .fi-layout. Topbar, sidebar dan isi halaman semuanya ada di
- * dalamnya, jadi satu stacking context di sini mengangkat semuanya
- * sekaligus.
+ * Cukup .fi-layout. Topbar, sidebar dan isi halaman semuanya ada di dalamnya,
+ * jadi satu stacking context di sini mengangkat semuanya sekaligus.
  *
  * JANGAN menambahkan .fi-sidebar ke daftar ini. Di bawah 64rem Filament
  * menjadikan sidebar laci `position: fixed; z-index: 30` yang mengambang di
  * atas halaman. Menimpanya dengan `relative; z-index: 1` mengembalikannya ke
- * aliran normal, dan karena .fi-layout itu flex row, laci yang sedang
- * tertutup tetap memakan lebarnya sendiri — isi halaman terdorong ke luar
- * layar dan panel tampak tidak responsif sama sekali.
+ * aliran normal, dan karena .fi-layout itu flex row, laci yang sedang tertutup
+ * tetap memakan lebarnya sendiri — isi halaman terdorong ke luar layar dan
+ * panel tampak tidak responsif sama sekali.
  */
 .fi-layout {
     position: relative;
@@ -145,118 +127,113 @@
 
 .fi-topbar,
 .fi-sidebar {
-    background: var(--kaca-bg) !important;
-    backdrop-filter: blur(var(--kaca-blur)) saturate(150%);
-    -webkit-backdrop-filter: blur(var(--kaca-blur)) saturate(150%);
-    border-color: var(--kaca-garis) !important;
+    background: var(--kaca-bg);
+    backdrop-filter: blur(var(--kaca-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--kaca-blur)) saturate(140%);
+    border-color: var(--kaca-garis);
 }
 
 .fi-topbar {
-    background: var(--kaca-bg-topbar) !important;
-    border-bottom: 1px solid var(--kaca-garis) !important;
-    box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau);
+    background: var(--kaca-bg-topbar);
+    border-bottom: 1px solid var(--kaca-garis-halus);
+    box-shadow: 0 1px 0 var(--kaca-kilau);
 }
 
+/*
+ * Sidebar dibuat mengambang seperti contohnya: putih, membulat, punya jarak
+ * dari tepi layar. Tepi kanannya dihapus — yang memisahkannya dari isi halaman
+ * sekarang jaraknya, bukan garis.
+ */
 .fi-sidebar {
-    border-inline-end: 1px solid var(--kaca-garis) !important;
+    border-inline-end: 0;
+    box-shadow: var(--kaca-bayang);
+}
+
+@media (min-width: 64rem) {
+    .fi-sidebar {
+        margin: 0.75rem 0 0.75rem 0.75rem;
+        border-radius: var(--kaca-radius);
+        border: 1px solid var(--kaca-garis-halus);
+
+        /*
+         * Tingginya SENGAJA dilepas, bukan dihitung.
+         *
+         * Filament menambatkan sidebar dengan `top: var(--topbar-height)` dan
+         * `inset-block: 0`, lalu memberinya tinggi tetap. Menimpa tinggi itu
+         * dengan hitungan sendiri berarti menebak tambatannya, dan tebakan
+         * yang meleset sedikit saja membuat ujung bawahnya menjorok keluar
+         * layar — sudut membulatnya ikut hilang.
+         *
+         * Dengan `height: auto`, top dan bottom yang menentukan, dan margin
+         * di bawah benar-benar terpakai. Berapa pun tinggi topbar, ujungnya
+         * berhenti 0,75rem di atas tepi layar.
+         */
+        height: auto;
+
+        /* Daftar menu yang panjang menggulir di dalam; tanpa ini isinya
+           menembus sudut membulat di bawah. */
+        overflow: hidden;
+    }
+
+    .fi-main-ctn {
+        padding-inline-start: 0.75rem;
+    }
 }
 
 /*
  * Di bawah 64rem sidebar berhenti menjadi kolom di samping isi halaman:
  * Filament mengubahnya jadi laci yang mengambang di atasnya, dan itulah
- * sebabnya gaya bawaannya memberi latar putih pekat di lebar ini lalu
- * melepasnya di layar lebar.
+ * sebabnya gaya bawaannya memberi latar pekat di lebar ini lalu melepasnya di
+ * layar lebar.
  *
  * Aturan yang sama dengan modal dan menu berlaku di sini — yang mengambang
- * dibuat pekat. Kaca setipis 5,5% putih di mode gelap membuat daftar menu
- * dibaca di atas tabel yang masih terlihat di belakangnya.
+ * dibuat pekat. Kaca tipis membuat daftar menu dibaca di atas tabel yang masih
+ * terlihat di belakangnya.
  */
 @media (max-width: 63.999rem) {
     .fi-sidebar {
-        background: var(--kaca-bg-pekat) !important;
+        background: var(--kaca-bg-pekat);
     }
 }
 
-/* Menu yang sedang dibuka diberi cahaya tipis, bukan sekadar blok warna. */
-.fi-sidebar-item-active > .fi-sidebar-item-btn {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--primary-500) 22%, transparent),
-        color-mix(in srgb, var(--primary-500) 3%, transparent)
-    ) !important;
-    box-shadow: inset 0 0 0 1px var(--kaca-tepi-nyala),
-                0 0 20px -6px var(--kaca-glow);
-}
-
-.fi-sidebar-item-btn {
-    border-radius: 0.7rem;
-    transition: background var(--kaca-transisi),
-                box-shadow var(--kaca-transisi),
-                transform var(--kaca-transisi);
-}
-
-.fi-sidebar-item-btn:hover {
-    transform: translateX(3px);
-}
+/* Isi sidebar diatur sendiri di bagian "Sidebar" paling bawah. */
 
 /* ---------------------------------------------------------------- kartu */
 
 .fi-section,
 .fi-wi-stats-overview-stat,
 .fi-modal-window,
-.fi-dropdown-panel {
-    background: var(--kaca-bg) !important;
-    backdrop-filter: blur(var(--kaca-blur)) saturate(150%);
-    -webkit-backdrop-filter: blur(var(--kaca-blur)) saturate(150%);
-    border: 1px solid var(--kaca-garis) !important;
-    border-radius: var(--kaca-radius) !important;
-    box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau);
+.fi-dropdown-panel,
+.fi-ta-ctn {
+    background: var(--kaca-bg-pekat);
+    border: 1px solid var(--kaca-garis-halus);
+    border-radius: var(--kaca-radius);
+    box-shadow: var(--kaca-bayang);
     transition: box-shadow var(--kaca-transisi),
                 transform var(--kaca-transisi),
-                background var(--kaca-transisi),
                 border-color var(--kaca-transisi);
 }
 
-/*
- * Yang mengambang di atas isi halaman dibuat pekat, bukan kaca tipis.
- * Menu dan modal harus terbaca di atas apa pun yang kebetulan ada di
- * belakangnya — teks tipis di atas teks lain tidak terbaca siapa pun.
- */
+/* Yang mengambang di atas isi halaman tidak boleh tembus pandang sama sekali:
+   teks tipis di atas teks lain tidak terbaca siapa pun. */
 .fi-modal-window,
 .fi-dropdown-panel {
-    background: var(--kaca-bg-pekat) !important;
+    box-shadow: var(--kaca-bayang-angkat);
 }
 
 /*
- * Kartu angka di dashboard. Satu-satunya yang bergerak saat disentuh,
- * karena hanya di sana gerak itu menjelaskan sesuatu: ini bisa diklik.
+ * Kartu angka di dashboard. Satu-satunya yang bergerak saat disentuh, karena
+ * hanya di sana gerak itu menjelaskan sesuatu: ini bisa diklik.
  */
 .fi-wi-stats-overview-stat {
     position: relative;
     overflow: hidden;
 }
 
-/* Garis cahaya tipis di bibir atas kartu — tempat cahaya dari atas jatuh. */
-.fi-wi-stats-overview-stat::before {
-    content: '';
-    position: absolute;
-    inset-inline: 15%;
-    top: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--kaca-glow), transparent);
-    opacity: 0;
-    transition: opacity var(--kaca-transisi);
-}
-
 .fi-wi-stats-overview-stat:hover {
-    transform: translateY(-4px);
-    border-color: var(--kaca-tepi-nyala) !important;
-    box-shadow: var(--kaca-bayang), inset 0 1px 0 var(--kaca-kilau),
-                0 0 34px -12px var(--kaca-glow);
-}
-
-.fi-wi-stats-overview-stat:hover::before {
-    opacity: 1;
+    transform: translateY(-3px);
+    border-color: var(--kaca-tepi-nyala);
+    box-shadow: var(--kaca-bayang-angkat);
 }
 
 /* Angka besar di kartu statistik — itu yang dicari orang lebih dulu. */
@@ -265,20 +242,41 @@
     letter-spacing: -0.02em;
 }
 
-/* Tabel tetap padat: angka yang dibaca lama di atas latar buram melelahkan. */
+/* ---------------------------------------------------------------- tabel */
+
 .fi-ta-ctn {
-    border-radius: var(--kaca-radius) !important;
-    border-color: var(--kaca-garis) !important;
-    box-shadow: var(--kaca-bayang);
     overflow: hidden;
+}
+
+/* Kepala tabel disamarkan supaya angkanya yang menonjol, bukan judul kolom. */
+.fi-ta-header-cell {
+    background: color-mix(in srgb, var(--primary-500) 4%, transparent);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.fi-ta-row {
+    transition: background var(--kaca-transisi);
+}
+
+.fi-ta-row:hover {
+    background: color-mix(in srgb, var(--primary-500) 5%, transparent);
 }
 
 /* --------------------------------------------------------------- tombol */
 
+/*
+ * Bulat penuh. Inilah yang memisahkan "bisa ditekan" dari "wadah" tanpa perlu
+ * garis tambahan — wadah membulat besar, yang ditekan membulat penuh.
+ */
+.fi-btn,
+.fi-badge,
+.fi-tabs-item {
+    border-radius: 999px;
+}
+
 .fi-btn,
 .fi-icon-btn,
-.fi-input,
-.fi-select-input,
 .fi-input-wrp {
     transition: box-shadow var(--kaca-transisi),
                 border-color var(--kaca-transisi),
@@ -292,13 +290,20 @@
 }
 
 .fi-btn.fi-color-primary:hover {
-    box-shadow: 0 0 24px -6px var(--kaca-glow);
+    box-shadow: 0 6px 18px -6px var(--kaca-glow);
+}
+
+/* Isian membulat sedang: lebih lunak dari bawaan, tapi tidak jadi pil —
+   teks panjang di dalam kapsul terbaca sempit. */
+.fi-input-wrp,
+.fi-select-input,
+.fi-fo-field-wrp .fi-input {
+    border-radius: var(--kaca-radius-kecil);
 }
 
 /* Isian yang sedang diketik diberi lingkar cahaya, bukan sekadar garis. */
 .fi-input-wrp:focus-within {
-    box-shadow: 0 0 0 3px var(--kaca-glow-lembut),
-                0 0 22px -8px var(--kaca-glow);
+    box-shadow: 0 0 0 3px var(--kaca-glow-lembut);
 }
 
 /* ------------------------------------------------------ tombol mode terang */
@@ -310,7 +315,7 @@
     width: 2.25rem;
     height: 2.25rem;
     margin-inline-end: 0.5rem;
-    border: 1px solid var(--kaca-garis);
+    border: 1px solid var(--kaca-garis-halus);
     border-radius: 999px;
     background: var(--kaca-bg-pekat);
     color: var(--gray-500);
@@ -322,7 +327,7 @@
 
 .fi-tema-tombol:hover {
     color: var(--primary-500);
-    box-shadow: 0 0 22px -6px var(--kaca-glow);
+    box-shadow: 0 6px 18px -6px var(--kaca-glow);
     transform: rotate(-15deg);
 }
 
@@ -335,7 +340,7 @@
 
 /* ------------------------------------------------------------- perpindahan */
 
-/* Perpindahan terang↔gelap disapukan, bukan berkedip. */
+/* Perpindahan terang - gelap disapukan, bukan berkedip. */
 .fi-body,
 .fi-main,
 .fi-sidebar,
@@ -351,26 +356,13 @@
 /* ------------------------------------------------------------- cadangan */
 
 /*
- * Peramban tanpa backdrop-filter mendapat warna padat. Tanpa ini panel
- * tampil dengan teks di atas latar setengah tembus yang tidak terbaca.
+ * Peramban tanpa backdrop-filter mendapat warna padat. Tanpa ini topbar dan
+ * sidebar tampil dengan teks di atas latar setengah tembus yang tidak terbaca.
  */
 @supports not (backdrop-filter: blur(1px)) {
     .fi-topbar,
-    .fi-sidebar,
-    .fi-section,
-    .fi-wi-stats-overview-stat,
-    .fi-modal-window,
-    .fi-dropdown-panel {
-        background: var(--gray-50) !important;
-    }
-
-    .dark .fi-topbar,
-    .dark .fi-sidebar,
-    .dark .fi-section,
-    .dark .fi-wi-stats-overview-stat,
-    .dark .fi-modal-window,
-    .dark .fi-dropdown-panel {
-        background: #121214 !important;
+    .fi-sidebar {
+        background: var(--kaca-bg-pekat);
     }
 }
 
@@ -383,9 +375,307 @@
         animation-duration: 0.01ms !important;
     }
 
-    .fi-sidebar-item-btn:hover,
     .fi-wi-stats-overview-stat:hover,
     .fi-tema-tombol:hover {
         transform: none;
     }
+}
+
+/* =========================================================================
+   Tulang: kerapatan dan hierarki
+   =========================================================================
+
+   Bagian di atas mengurus kulit — warna, sudut, bayangan. Bagian ini mengurus
+   yang sebenarnya membuat sebuah panel dikenali sebagai "Filament bawaan":
+   proporsi yang seragam di mana-mana.
+
+   Bawaan Filament memberi judul kolom, isi sel, dan label form ukuran yang
+   nyaris sama. Akibatnya tidak ada yang menonjol, dan mata tidak diberi tahu
+   harus membaca dari mana. Yang dikerjakan di sini cuma dua hal: menegakkan
+   hierarki, dan merapatkan yang terlalu longgar.
+
+   Semua nilai di bawah menimpa nilai bawaan yang sudah diperiksa satu per satu
+   di CSS terkompilasi — bukan tebakan. */
+
+/* --------------------------------------------------------- judul halaman */
+
+.fi-header {
+    gap: 0.75rem;
+}
+
+/* Lebih besar dan lebih rapat dari bawaannya. Judul halaman adalah satu-satunya
+   teks yang boleh berteriak; sisanya tidak. */
+.fi-header-heading {
+    font-size: 1.75rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.fi-header-subheading {
+    font-size: 0.8125rem;
+}
+
+.fi-section-header-heading {
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+}
+
+.fi-section-header-description {
+    font-size: 0.8rem;
+}
+
+/* ---------------------------------------------------------------- tabel */
+
+/*
+ * Judul kolom jadi kapital kecil.
+ *
+ * Ini perubahan tunggal yang paling banyak melepas "rasa Filament". Bawaannya
+ * judul kolom berukuran sama dengan isinya dan hanya dibedakan ketebalan, jadi
+ * kepala tabel dan datanya punya bobot yang sama — mata membacanya sebagai satu
+ * blok. Dikecilkan dan direnggangkan, kepala tabel mundur jadi keterangan dan
+ * angkanya yang maju.
+ */
+.fi-ta-header-cell {
+    padding-block: 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+/*
+ * Baris dirapatkan dari 1rem jadi 0,62rem atas-bawah — sekitar sepertiga lebih
+ * pendek, yang berarti tiga sampai empat baris lagi muat di satu layar. Untuk
+ * daftar barang dan nota yang isinya ratusan baris, itu bukan soal selera.
+ */
+.fi-ta-text,
+.fi-ta-icon,
+.fi-ta-color,
+.fi-ta-checkbox {
+    padding-block: 0.62rem;
+}
+
+.fi-ta-header-toolbar {
+    padding-block: 0.6rem;
+}
+
+/*
+ * Digit selebar sama, supaya kolom rupiah terbaca sebagai kolom — bukan sebagai
+ * teks yang kebetulan berderet. Angka yang tidak rata membuat orang harus
+ * membaca tiap baris, bukan memindainya.
+ */
+.fi-ta-text,
+.fi-ta-cell-content {
+    font-variant-numeric: tabular-nums;
+}
+
+.fi-ta-empty-state {
+    padding-block: 2.5rem;
+}
+
+/* ------------------------------------------------------------- paginasi */
+
+/* Paginasi itu alat, bukan isi. Dikecilkan supaya tidak ikut bersaing dengan
+   data di atasnya. */
+.fi-pagination {
+    font-size: 0.8125rem;
+}
+
+.fi-pagination-item-btn {
+    border-radius: 999px;
+}
+
+/* =========================================================================
+   Anatomi: bentuk halaman
+   =========================================================================
+
+   Tingkat ini semula direncanakan dengan menimpa view Blade Filament. Setelah
+   diperiksa, sebagian besarnya tidak perlu — dan itu penting, karena view yang
+   ditimpa berhenti ikut terbarui saat Filament naik versi:
+
+   - Judul halaman SUDAH berdampingan dengan tombolnya di >=40rem. Tidak ada
+     yang perlu disusun ulang di sana.
+   - Yang benar-benar menentukan bentuk justru view besar: sidebar tersebar di
+     tiga berkas (~615 baris), topbar 292, tabel 2.400+. Membekukan itu semua
+     di satu versi Filament ongkosnya jauh lebih mahal daripada hasilnya.
+
+   Jadi yang di bawah ini mengubah anatominya lewat CSS. Hasilnya sama; utangnya
+   tidak ada. */
+
+/* --------------------------------------------------- judul halaman jadi pita */
+
+/*
+ * Judul berhenti mengambang di atas latar dan jadi pita berpembatas — pemisah
+ * antara "di halaman apa saya" dan "isi halamannya" jadi tegas, tanpa perlu
+ * kotak tambahan.
+ */
+.fi-header {
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--kaca-garis-halus);
+}
+
+@media (min-width: 40rem) {
+    /*
+     * Bawaannya memberi jarak atas 1,75rem pada blok tombol — masuk akal untuk
+     * susunan bertumpuk di layar sempit. Tapi di >=40rem susunannya sudah
+     * berdampingan, dan jarak itu tetap terpakai: tombolnya terdorong turun dan
+     * tidak pernah sebaris dengan judulnya.
+     */
+    .fi-header-actions-ctn {
+        margin-top: 0;
+    }
+}
+
+/* ------------------------------------------------- kepala tabel yang menempel */
+
+/*
+ * Kepala tabel ikut menggulir di bawaan Filament. Untuk daftar ratusan baris
+ * itu berarti begitu Anda menggulir, tidak ada lagi yang memberi tahu kolom
+ * mana yang mana — dan orang mulai menghitung kolom dengan jari.
+ *
+ * Latarnya WAJIB pekat, bukan tembus. Kepala yang menempel di atas baris yang
+ * lewat di belakangnya justru lebih buruk daripada kepala yang ikut hilang.
+ */
+.fi-ta-header-cell {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--kaca-bg-pekat);
+    box-shadow: inset 0 -1px 0 var(--kaca-garis-halus);
+}
+
+/* ------------------------------------------------------------ sidebar rapi */
+
+/*
+ * Nama grup disamarkan jadi keterangan, bukan menu. Di bawaannya nama grup dan
+ * nama menu punya bobot mirip, jadi daftar sepanjang tiga puluh baris terbaca
+ * rata — tidak ada yang menolong mata mencari.
+ */
+.fi-sidebar-group-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.fi-sidebar-header {
+    border-bottom: 1px solid var(--kaca-garis-halus);
+}
+
+.fi-sidebar-footer {
+    border-top: 1px solid var(--kaca-garis-halus);
+}
+
+/* ------------------------------------------------------------ garis tabel */
+
+/* Pemisah baris ditipiskan: yang memisahkan baris seharusnya jaraknya, garis
+   hanya penolong. Garis tegas di tiap baris membuat tabel terbaca seperti
+   kisi-kisi. */
+.fi-ta-row {
+    border-color: var(--kaca-garis-halus);
+}
+
+.fi-ta-content-header {
+    background: color-mix(in srgb, var(--primary-500) 5%, transparent);
+}
+
+/* =========================================================================
+   Sidebar
+   =========================================================================
+
+   Satu-satunya bagian panel yang terlihat di SETIAP layar, jadi ia yang paling
+   menentukan panel ini terasa dibuat khusus atau tidak.
+
+   Empat hal yang membuat sidebar bawaan terbaca sebagai template, dan apa
+   gantinya di sini:
+
+   1. Jarak tepi 1,5rem membuat pil menu jadi sempit dan mengambang di tengah.
+      Dirapatkan ke 0,75rem supaya pilnya memakai lebar yang ada.
+   2. Menu aktif hanya diberi latar tipis — hampir tidak terlihat dari sudut
+      mata. Diganti pil padat dengan bayangan berwarna.
+   3. Ikon dan teks punya bobot sama, jadi daftar tiga puluh baris terbaca rata.
+      Ikon disamarkan sampai disentuh atau aktif.
+   4. Batang gulir bawaan peramban memotong tampilan di daftar sepanjang ini.
+      Dibuat tipis dan sewarna aksen. */
+
+.fi-sidebar-nav {
+    padding-inline: 0.75rem;
+    padding-block: 1rem;
+    row-gap: 1.25rem;
+
+    /* Daftar menu di sini panjang dan hampir selalu menggulir. Batang gulir
+       tebal bawaan peramban merusak sisi kanan sidebar yang membulat. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--primary-500) 30%, transparent) transparent;
+}
+
+.fi-sidebar-group-label {
+    padding-inline: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.fi-sidebar-group-items {
+    row-gap: 0.15rem;
+}
+
+/* ------------------------------------------------------------------ menu */
+
+.fi-sidebar-item-btn {
+    border-radius: 0.8rem;
+    padding: 0.5rem 0.7rem;
+    column-gap: 0.7rem;
+    font-size: 0.875rem;
+    transition: background var(--kaca-transisi),
+                box-shadow var(--kaca-transisi),
+                color var(--kaca-transisi);
+}
+
+/* Ikon mundur jadi penanda, bukan hiasan yang ikut bersaing dengan teksnya. */
+.fi-sidebar-item-btn .fi-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    opacity: 0.65;
+    transition: opacity var(--kaca-transisi);
+}
+
+.fi-sidebar-item-btn:hover {
+    background: color-mix(in srgb, var(--primary-500) 9%, transparent);
+}
+
+.fi-sidebar-item-btn:hover .fi-icon {
+    opacity: 1;
+}
+
+/*
+ * Menu aktif: pil padat berbayang, bukan latar tipis.
+ *
+ * Bayangannya memakai warna aksen, bukan hitam — bayangan hitam di bawah warna
+ * pekat terbaca kotor, sementara bayangan sewarna terbaca sebagai cahaya.
+ */
+.fi-sidebar-item-active > .fi-sidebar-item-btn {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    box-shadow: 0 8px 18px -8px var(--kaca-glow);
+    font-weight: 600;
+}
+
+/*
+ * Putih dipaksakan ke tiga tempat sekaligus: tombolnya, labelnya, dan ikonnya.
+ * Filament menyetel warna label dan ikon sendiri-sendiri, jadi mewarnai
+ * tombolnya saja menyisakan teks gelap di atas pil pekat — tidak terbaca.
+ */
+.fi-sidebar-item-active > .fi-sidebar-item-btn,
+.fi-sidebar-item-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item-active > .fi-sidebar-item-btn .fi-icon {
+    color: #fff;
+    opacity: 1;
+}
+
+/* ----------------------------------------------------------------- kepala */
+
+/* Logo digeser ke kiri sejajar dengan menu di bawahnya. Bawaannya di tengah,
+   dan itu membuat sidebar punya dua sumbu yang tidak sejajar. */
+.fi-sidebar-header {
+    justify-content: flex-start;
+    padding-inline: 1.25rem;
 }

@@ -42,12 +42,16 @@ class AdminPanelProvider extends PanelProvider
             ->login(MasukPanel::class)
             ->profile(isSimple: false)
 
-            // Oranye mengikuti --primary-color situs publik.
+            // Ungu-lavender dengan aksen mint, mengikuti contoh tampilan yang
+            // diminta. Catatan: ini MEMUTUS kaitan warna dengan situs publik
+            // Hypersonic, yang oranye (#ff6b00) — dan logo panel masih
+            // beraksen oranye. Kembalikan di sini kalau kaitan itu lebih
+            // penting daripada tampilannya.
             ->colors([
-                'primary' => Color::hex('#ff6b00'),
-                'gray' => Color::Zinc,
-                'danger' => Color::Red,
-                'success' => Color::Emerald,
+                'primary' => Color::hex('#7c5cff'),
+                'gray' => Color::Slate,
+                'danger' => Color::Rose,
+                'success' => Color::hex('#22c7a9'),
                 'warning' => Color::Amber,
                 'info' => Color::Sky,
             ])
