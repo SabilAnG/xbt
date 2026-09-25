@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProductionItem;
 use App\Models\ProductionPurchase;
+use App\Models\Wallet;
+use App\Models\Warehouse;
+use App\Services\DocumentNumber;
 use App\Services\ProductionStockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -56,7 +61,71 @@ class PembelianBahanController extends Controller
     {
         $pembelianBahan->load(['items.item', 'items.warehouse', 'warehouse', 'wallet']);
 
-        return view('panel.pembelian-bahan.show', ['nota' => $pembelianBahan]);
+        return view('panel.pembelian-bahan.show', [
+            'nota' => $pembelianBahan,
+            'daftarBahan' => ProductionItem::where('is_active', true)->orderBy('name')->get(),
+            'daftarGudang' => Warehouse::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('panel.pembelian-bahan.form', [
+            'nomor' => DocumentNumber::next('production_purchases'),
+            'daftarGudang' => Warehouse::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'daftarKas' => Wallet::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'invoice_number' => ['required', 'string', 'max:64', Rule::unique('production_purchases', 'invoice_number')],
+            'purchased_at' => ['required', 'date'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'warehouse_id' => ['required', 'exists:warehouses,id'],
+            'wallet_id' => ['nullable', 'exists:wallets,id'],
+            'notes' => ['nullable', 'string'],
+        ], [
+            'warehouse_id.required' => 'Bahan yang dibeli harus mendarat di sebuah gudang.',
+        ], ['invoice_number' => 'nomor nota', 'warehouse_id' => 'gudang']);
+
+        $nota = ProductionPurchase::create($data + ['status' => 'draft']);
+
+        return redirect()->route('panel.pembelian-bahan.show', $nota)
+            ->with('sukses', 'Nota dibuat sebagai draft. Tambahkan bahannya di sini.');
+    }
+
+    public function tambahBaris(Request $request, ProductionPurchase $pembelianBahan): RedirectResponse
+    {
+        if ($pembelianBahan->isPosted()) {
+            return back()->with('gagal', 'Nota yang sudah dibukukan tidak bisa diubah. Batalkan dulu pembukuannya.');
+        }
+
+        $data = $request->validate([
+            'production_item_id' => ['required', 'exists:production_items,id'],
+            'warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'qty' => ['required', 'numeric', 'min:0.001'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+        ], [], ['production_item_id' => 'bahan', 'qty' => 'jumlah', 'unit_cost' => 'harga']);
+
+        // Gudang baris boleh kosong; yang di kepala nota jadi cadangannya.
+        $pembelianBahan->items()->create($data + ['warehouse_id' => $data['warehouse_id'] ?? $pembelianBahan->warehouse_id]);
+        $pembelianBahan->recalculateTotals();
+
+        return back()->with('sukses', 'Bahan ditambahkan ke nota.');
+    }
+
+    public function hapusBaris(ProductionPurchase $pembelianBahan, int $baris): RedirectResponse
+    {
+        if ($pembelianBahan->isPosted()) {
+            return back()->with('gagal', 'Nota yang sudah dibukukan tidak bisa diubah.');
+        }
+
+        $pembelianBahan->items()->whereKey($baris)->delete();
+        $pembelianBahan->recalculateTotals();
+
+        return back()->with('sukses', 'Baris dihapus.');
     }
 
     /**

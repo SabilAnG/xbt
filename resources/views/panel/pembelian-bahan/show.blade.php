@@ -56,6 +56,7 @@
                     <th class="th text-right">Qty</th>
                     <th class="th text-right">Harga Satuan</th>
                     <th class="th text-right">Subtotal</th>
+                    <th class="th w-px"></th>
                 </tr>
             </thead>
 
@@ -73,16 +74,64 @@
                         </td>
                         <td class="td text-right text-slate-700">Rp {{ number_format((float) $baris->unit_cost, 0, ',', '.') }}</td>
                         <td class="td text-right font-medium text-slate-800">Rp {{ number_format((float) $baris->subtotal, 0, ',', '.') }}</td>
+                        <td class="td text-right">
+                            @unless ($nota->isPosted())
+                                <form method="POST" action="{{ route('panel.pembelian-bahan.hapus-baris', [$nota, $baris->id]) }}"
+                                      onsubmit="return confirm('Hapus baris ini?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-[0.75rem] text-merah-500">hapus</button>
+                                </form>
+                            @endunless
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-12 text-center text-sm text-slate-500">
+                        <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">
                             Nota ini belum punya baris barang.
                         </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
+
+        @unless ($nota->isPosted())
+            <form method="POST" action="{{ route('panel.pembelian-bahan.tambah-baris', $nota) }}"
+                  class="flex flex-wrap items-end gap-2 border-t border-slate-100 p-4">
+                @csrf
+
+                <label class="min-w-0 flex-1 basis-56">
+                    <span class="label">Bahan</span>
+                    <select name="production_item_id" class="isian" required>
+                        <option value="">— pilih bahan —</option>
+                        @foreach ($daftarBahan as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }} ({{ $b->unit }})</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="w-40">
+                    <span class="label">Gudang</span>
+                    <select name="warehouse_id" class="isian">
+                        <option value="">ikut nota</option>
+                        @foreach ($daftarGudang as $id => $nama)
+                            <option value="{{ $id }}">{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="w-28">
+                    <span class="label">Jumlah</span>
+                    <input name="qty" inputmode="decimal" class="isian" required>
+                </label>
+
+                <label class="w-36">
+                    <span class="label">Harga satuan</span>
+                    <input name="unit_cost" inputmode="decimal" class="isian" required>
+                </label>
+
+                <button class="tombol tombol-utama">Tambah</button>
+            </form>
+        @endunless
 
         {{-- Total --}}
         <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3">

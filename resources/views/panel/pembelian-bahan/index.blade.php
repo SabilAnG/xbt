@@ -8,6 +8,13 @@
 <x-panel.layout judul="Pembelian Bahan"
                 keterangan="Nota beli bahan. Stok dan kas baru bergerak setelah nota dibukukan.">
 
+    <x-slot:aksi>
+        <a href="{{ route('panel.pembelian-bahan.create') }}" class="tombol tombol-utama">
+            <x-panel.ikon nama="tambah" kelas="h-4 w-4" />
+            Nota Baru
+        </a>
+    </x-slot:aksi>
+
     <form method="GET" class="kartu mb-4 flex flex-wrap items-center gap-3 p-3">
         <label class="relative min-w-0 flex-1 basis-56">
             <span class="sr-only">Cari nota</span>

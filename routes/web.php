@@ -138,7 +138,11 @@ Route::prefix('panel')->name('panel.')->group(function () {
         Route::controller(PanelPembelianBahanController::class)
             ->prefix('pembelian-bahan')->name('pembelian-bahan.')->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
                 Route::get('/{pembelianBahan}', 'show')->name('show');
+                Route::post('/{pembelianBahan}/baris', 'tambahBaris')->name('tambah-baris');
+                Route::delete('/{pembelianBahan}/baris/{baris}', 'hapusBaris')->name('hapus-baris');
                 Route::post('/{pembelianBahan}/bukukan', 'bukukan')->name('bukukan');
                 Route::post('/{pembelianBahan}/batalkan', 'batalkan')->name('batalkan');
             });
