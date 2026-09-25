@@ -45,6 +45,20 @@ class Shipment extends Model
         return $this->hasMany(ShipmentEvent::class)->orderByDesc('happened_at');
     }
 
+    /**
+     * Apakah kiriman ini dibawa DHL.
+     *
+     * `provider` diketik bebas di menu Orders — "DHL", "DHL Express", "dhl
+     * express id" semuanya muncul di kenyataan. Mencocokkannya persis berarti
+     * satu huruf besar saja sudah membuat pelacakan diam tanpa sebab yang
+     * kelihatan, jadi yang dicari cukup kata "dhl" di dalamnya.
+     */
+    public function pakaiDhl(): bool
+    {
+        return $this->provider !== null
+            && str_contains(mb_strtolower($this->provider), 'dhl');
+    }
+
     public function toTrackingPayload(): array
     {
         return [

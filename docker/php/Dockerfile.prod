@@ -22,13 +22,27 @@ WORKDIR /app
 
 # Lapisan dependensi di-cache selama composer.lock tidak berubah.
 COPY composer.json composer.lock ./
-RUN composer install \
+
+# ihc/dhl-gate diambil dari repo GitHub privat, jadi composer perlu kredensial
+# di sini. Diberikan sebagai build secret — bukan ARG, bukan ENV — supaya
+# tokennya tidak tertinggal di layer image maupun terbaca lewat
+# `docker history`. Lihat deploy/README.md.
+#
+#   docker compose -f compose.prod.yaml build \
+#       --secret id=composer_auth,src=$HOME/.config/composer/auth.json app
+RUN --mount=type=secret,id=composer_auth,target=/tmp/composer-auth.json \
+    if [ -f /tmp/composer-auth.json ]; then \
+        mkdir -p /root/.composer \
+        && cp /tmp/composer-auth.json /root/.composer/auth.json; \
+    fi; \
+    composer install \
         --no-dev \
         --no-scripts \
         --no-autoloader \
         --prefer-dist \
         --no-interaction \
-        --no-progress
+        --no-progress; \
+    hasil=$?; rm -f /root/.composer/auth.json; exit $hasil
 
 COPY . .
 

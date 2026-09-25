@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\BersihkanSesiPartner;
+use App\Services\PelacakanDhl;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -14,7 +15,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Kredensial dibaca sekali di sini supaya tes bisa menukar seluruh
+        // layanannya dengan transport palsu, tanpa menyentuh config global.
+        $this->app->singleton(
+            PelacakanDhl::class,
+            fn () => new PelacakanDhl(config('services.dhl', [])),
+        );
     }
 
     /**

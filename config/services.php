@@ -28,6 +28,31 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+     * DHL Express MyDHL API — dipakai halaman /tracking untuk menyegarkan
+     * status kiriman. Kosongkan username/password untuk mematikan fiturnya:
+     * halaman tetap bekerja dan menyajikan apa yang sudah tersimpan.
+     */
+    'dhl' => [
+        'username' => env('DHL_USERNAME'),
+        'password' => env('DHL_PASSWORD'),
+
+        // "test" atau "production". Kredensial sandbox TIDAK berlaku di
+        // produksi, dan sebaliknya.
+        'environment' => env('DHL_ENVIRONMENT', 'test'),
+
+        'account_number' => env('DHL_ACCOUNT_NUMBER'),
+
+        // Hanya perlu di mesin yang PHP-nya tanpa bundel CA — gejalanya
+        // "unable to get local issuer certificate" di tiap panggilan.
+        'ca_bundle' => env('DHL_CA_BUNDLE'),
+
+        // Berapa lama status dari DHL dianggap masih segar. Status kiriman
+        // tidak berubah semenit sekali, sementara orang yang menunggu paket
+        // menekan tombol lacak berkali-kali.
+        'menit_segar' => env('DHL_TRACKING_CACHE_MINUTES', 15),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

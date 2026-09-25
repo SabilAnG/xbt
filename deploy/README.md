@@ -55,10 +55,32 @@ nano .env          # isi semua yang bertanda GANTI
 
 Wajib diganti: `DB_PASSWORD`, `DB_ROOT_PASSWORD`, dan `APP_URL`.
 
+## 3b. Kredensial composer untuk paket privat
+
+`ihc/dhl-gate` diambil dari repo GitHub **privat**, jadi composer di dalam image
+perlu token. Tanpa ini `build` berhenti di `composer install` dengan
+"Failed to clone ... could not read Username".
+
+Buat `auth.json` di server sekali saja, dengan PAT GitHub ber-scope `repo`
+(read-only sudah cukup):
+
+```bash
+mkdir -p ~/.config/composer
+cat > ~/.config/composer/auth.json <<'JSON'
+{ "github-oauth": { "github.com": "ghp_TOKEN_ANDA" } }
+JSON
+chmod 600 ~/.config/composer/auth.json
+```
+
+Token diteruskan sebagai **build secret**, bukan ARG atau ENV — kalau lewat ARG
+ia tertinggal di layer image dan terbaca siapa pun lewat `docker history`.
+
 ## 4. Build & jalankan
 
 ```bash
-docker compose -f compose.prod.yaml up -d --build
+docker compose -f compose.prod.yaml build \
+    --secret id=composer_auth,src=$HOME/.config/composer/auth.json app web
+docker compose -f compose.prod.yaml up -d
 docker compose -f compose.prod.yaml run --rm app php artisan key:generate --force
 docker compose -f compose.prod.yaml restart app
 ```
@@ -135,7 +157,7 @@ $SRV 'cd /opt/knalpot && grep -c "CREATE TABLE" backup/*.sql | tail -1'
 tar -czf - --exclude=.git --exclude=node_modules --exclude=vendor --exclude=.env --exclude='storage/logs/*' --exclude=backup --exclude='public/uploads' --exclude='storage/framework/cache/*' --exclude='storage/framework/views/*' . | $SRV 'cd /opt/knalpot && tar -xzf -'
 
 # 3. bangun ulang, jalankan, migrasi
-$SRV "cd /opt/knalpot && $DC build app web && $DC up -d && $DC exec -T app php artisan migrate --force"
+$SRV "cd /opt/knalpot && $DC build --secret id=composer_auth,src=\$HOME/.config/composer/auth.json app web && $DC up -d && $DC exec -T app php artisan migrate --force"
 ```
 
 Source tidak di-bind mount ke container produksi — ia disalin ke dalam image.
