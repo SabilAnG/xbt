@@ -22,7 +22,7 @@ class Production extends Model
     ];
 
     protected $fillable = [
-        'production_number', 'produced_at', 'formula_id', 'production_plan_id', 'warehouse_id',
+        'production_number', 'produced_at', 'formula_id', 'item_id', 'worker', 'production_plan_id', 'warehouse_id',
         'batch_qty', 'output_qty',
         'material_cost', 'service_cost', 'machine_cost', 'total_minutes',
         'overhead_cost', 'total_cost', 'hpp_per_unit',
@@ -52,6 +52,12 @@ class Production extends Model
     }
 
     /** Rencana yang melahirkan nota ini, bila dibuat lewat menu Rencana Produksi. */
+    /** Knalpot jadi yang dihasilkan. */
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
+    }
+
     public function plan(): BelongsTo
     {
         return $this->belongsTo(ProductionPlan::class, 'production_plan_id');

@@ -40,7 +40,7 @@ class FormulaMaterial extends Model
     ];
 
     protected $fillable = [
-        'formula_id', 'material_id', 'bom_group', 'input_mode',
+        'formula_id', 'material_id', 'brand', 'bom_group', 'input_mode',
         'piece_length_mm', 'piece_width_mm', 'piece_diameter_mm', 'piece_count',
         'qty', 'waste_percent', 'use_nesting', 'notes', 'sort_order',
     ];
@@ -68,6 +68,22 @@ class FormulaMaterial extends Model
                 $row->qty = $row->computeQty();
             }
         });
+    }
+
+    /**
+     * Apakah baris resep ini dipakai untuk produk bermerek $brand.
+     *
+     * Sama dengan rumus Excel: baris "Semua" dicocokkan dengan wildcard "*",
+     * yang hanya cocok dengan merek yang TERISI. Produk tanpa merek (mis. "PCX
+     * Stainless Data Lama") karena itu tidak memotong bahan sama sekali.
+     */
+    public function appliesToBrand(?string $brand): bool
+    {
+        if ($brand === null || trim($brand) === '') {
+            return false;
+        }
+
+        return $this->brand === null || $this->brand === '' || $this->brand === $brand;
     }
 
     public function formula(): BelongsTo

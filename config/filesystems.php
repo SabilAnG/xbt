@@ -51,7 +51,7 @@ return [
          * Rooted at public/ so a stored path is exactly what asset() expects.
          * The product photos carried over from the live site already live at
          * public/storage/<id>/conversions/..., and images uploaded through
-         * Filament land beside them under the same scheme.
+         * the admin panel land beside them under the same scheme.
          */
         'site' => [
             'driver' => 'local',

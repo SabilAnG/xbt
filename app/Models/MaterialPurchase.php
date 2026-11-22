@@ -20,7 +20,7 @@ class MaterialPurchase extends Model
 
     protected $fillable = [
         'invoice_number', 'purchased_at', 'vendor_id', 'wallet_id',
-        'subtotal', 'discount', 'shipping_cost', 'total',
+        'subtotal', 'discount', 'shipping_cost', 'total', 'recorded_in_expenses', 'paid_from',
         'status', 'posted_at', 'notes',
     ];
 
@@ -33,6 +33,7 @@ class MaterialPurchase extends Model
             'discount' => 'decimal:2',
             'shipping_cost' => 'decimal:2',
             'total' => 'decimal:2',
+            'recorded_in_expenses' => 'boolean',
         ];
     }
 

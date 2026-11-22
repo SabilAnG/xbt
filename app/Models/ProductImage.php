@@ -26,7 +26,7 @@ class ProductImage extends Model
 
     /**
      * Thumbnail variant, falling back to the full image for anything uploaded
-     * through Filament (which stores a single file rather than conversions).
+     * through the admin panel (which stores a single file rather than conversions).
      */
     public function thumb(): string
     {

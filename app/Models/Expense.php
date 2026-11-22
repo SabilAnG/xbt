@@ -19,7 +19,8 @@ class Expense extends Model
 
     protected $fillable = [
         'reference_number', 'spent_at', 'expense_category_id', 'wallet_id',
-        'amount', 'description', 'paid_to', 'status', 'posted_at',
+        'amount', 'description', 'paid_to', 'from_account', 'notes', 'data_status',
+        'status', 'posted_at',
     ];
 
     protected function casts(): array

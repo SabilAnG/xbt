@@ -71,13 +71,13 @@ Migrasi sengaja tidak otomatis — perubahan skema harus disengaja.
 docker compose -f compose.prod.yaml exec app php artisan migrate --force
 docker compose -f compose.prod.yaml exec app php artisan db:seed --class=SiteContentSeeder --force
 docker compose -f compose.prod.yaml exec app php artisan db:seed --class=ProductSeeder --force
-docker compose -f compose.prod.yaml exec app php artisan db:seed --class=InventorySeeder --force
+docker compose -f compose.prod.yaml exec app php artisan db:seed --class=KnalpotWorkbookSeeder --force
 ```
 
 Buat akun admin dengan password sungguhan:
 
 ```bash
-docker compose -f compose.prod.yaml exec app php artisan make:filament-user
+docker compose -f compose.prod.yaml exec app php artisan admin:user admin@domain-anda.com
 ```
 
 ## 6. Reverse proxy + TLS

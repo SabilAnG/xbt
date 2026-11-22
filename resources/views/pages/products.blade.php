@@ -121,8 +121,17 @@
                                         </a>
                                     </h3>
                                     <div class="atr__main-price">
-                                        ${{ number_format($product->price, 2) }}
+                                        {{ $product->formattedPrice() }}
                                     </div>
+                                    @if ($product->item)
+                                        <p class="small mb-2" style="opacity:.75">
+                                            {{ $product->availableStock() > 0 ? 'Stok tersedia' : 'Pre-order' }}
+                                        </p>
+                                    @endif
+                                    <a class="btn-main btn-small mt-2" target="_blank" rel="noopener"
+                                        href="{{ route('redirect.product-checkout', ['product' => $product->slug, 'customer_support' => 1]) }}">
+                                        <span><i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp</span>
+                                    </a>
                                                                     </div>
                             </div>
                             <!-- product item end -->

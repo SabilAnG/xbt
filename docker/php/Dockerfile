@@ -4,7 +4,7 @@ FROM php:8.4-fpm
 COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-# intl is required by Filament; pdo_mysql/gd/zip/bcmath are the usual Laravel set
+# intl is used for number/locale formatting; pdo_mysql/gd/zip/bcmath are the usual Laravel set
 RUN install-php-extensions \
         pdo_mysql \
         mbstring \

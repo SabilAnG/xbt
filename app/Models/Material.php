@@ -59,7 +59,7 @@ class Material extends Model
         'sku', 'name', 'material_category_id', 'source', 'role', 'dimension_type', 'unit',
         'length_mm', 'sheet_length_mm', 'sheet_width_mm', 'weight_gram', 'volume_ml',
         'diameter_mm', 'thickness_mm',
-        'cost_price', 'stock', 'min_stock', 'min_reusable', 'notes', 'is_active',
+        'cost_price', 'opening_stock', 'stock', 'min_stock', 'min_reusable', 'notes', 'is_active',
     ];
 
     protected function casts(): array
@@ -73,6 +73,7 @@ class Material extends Model
             'diameter_mm' => 'decimal:2',
             'thickness_mm' => 'decimal:2',
             'cost_price' => 'decimal:2',
+            'opening_stock' => 'decimal:3',
             'stock' => 'decimal:3',
             'min_stock' => 'decimal:3',
             'min_reusable' => 'decimal:3',
@@ -376,14 +377,33 @@ class Material extends Model
 
     // ------------------------------------------------------------------ stok
 
+    /** SISA STOK = stok awal + masuk − terpakai ± penyesuaian. */
     public function computedStock(): float
     {
-        return (float) $this->movements()->sum('qty_in') - (float) $this->movements()->sum('qty_out');
+        return (float) $this->opening_stock + (float) $this->movements()->sum('qty_in') - (float) $this->movements()->sum('qty_out');
     }
 
+    /** Hitung ulang stok dan saldo berjalan kartu stok, urut tanggal. */
     public function recalculateStock(): void
     {
-        $this->forceFill(['stock' => $this->computedStock()])->save();
+        $balance = (float) $this->opening_stock;
+
+        foreach (MaterialMovement::where('material_id', $this->id)->orderBy('moved_at')->orderBy('id')->get() as $movement) {
+            $balance += (float) $movement->qty_in - (float) $movement->qty_out;
+
+            if (round((float) $movement->balance_after, 3) !== round($balance, 3)) {
+                $movement->forceFill(['balance_after' => $balance])->save();
+            }
+        }
+
+        $this->forceFill(['stock' => $balance])->save();
+    }
+
+    /** HABIS / MENIPIS / AMAN, sama dengan kolom Status di buku kerja. */
+    public function stockStatus(): string
+    {
+        // Excel membulatkan sisa ke 2 desimal sebelum menentukan status.
+        return stock_status(round((float) $this->stock, 2), (float) $this->min_stock);
     }
 
     public function scopeLowStock(Builder $query): Builder

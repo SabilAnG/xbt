@@ -6,6 +6,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -14,10 +15,12 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
+        'item_id',
         'name',
         'slug',
         'fitment',
         'price',
+        'currency',
         'description',
         'is_active',
         'sort_order',
@@ -31,15 +34,34 @@ class Product extends Model
         ];
     }
 
+    /** Knalpot di Stok Produk yang dijual lewat halaman ini (opsional). */
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
+    }
+
+    /** Harga untuk ditampilkan di website: "Rp 890.000" atau "$910.00". */
+    public function formattedPrice(): string
+    {
+        return $this->currency === 'IDR'
+            ? rupiah($this->price)
+            : '$'.number_format((float) $this->price, 2);
+    }
+
+    /** Stok knalpot yang masih tersedia, bila produk ini tertaut ke stok. */
+    public function availableStock(): ?float
+    {
+        return $this->item ? max((float) $this->item->stock, 0) : null;
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
 
-    // NOTE: deliberately no getRouteKeyName() override. Setting it to 'slug'
-    // globally also changes how Filament resolves records, which breaks the
-    // admin panel's /admin/products/{id}/edit URLs. The public route binds the
-    // slug explicitly instead: /products/{product:slug}.
+    // NOTE: deliberately no getRouteKeyName() override. The admin panel edits
+    // products by id (/admin/website/produk/{id}/edit); the public route binds
+    // the slug explicitly instead: /products/{product:slug}.
 
     public function scopeActive(Builder $query): Builder
     {

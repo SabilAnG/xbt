@@ -108,8 +108,13 @@
                     <div class="d-flex mb-4 align-items-center">
                                                 <div>
                             <h3 class="fs-32 mb-0 me-2">
-                                ${{ number_format($product->price, 2) }}
+                                {{ $product->formattedPrice() }}
                             </h3>
+                            @if ($product->item)
+                                <p class="mb-0 mt-1" style="opacity:.75">
+                                    {{ $product->availableStock() > 0 ? 'Stok tersedia: '.qty($product->availableStock()).' unit' : 'Stok habis — bisa pre-order' }}
+                                </p>
+                            @endif
                         </div>
                                             </div>
 

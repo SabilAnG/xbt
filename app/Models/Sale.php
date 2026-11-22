@@ -19,8 +19,8 @@ class Sale extends Model
     ];
 
     protected $fillable = [
-        'invoice_number', 'sold_at', 'customer_name', 'customer_phone', 'wallet_id',
-        'subtotal', 'discount', 'shipping_cost', 'total', 'total_cost',
+        'invoice_number', 'sold_at', 'customer_name', 'customer_phone', 'channel', 'wallet_id',
+        'subtotal', 'discount', 'shipping_cost', 'total', 'total_cost', 'paid_amount',
         'status', 'posted_at', 'notes',
     ];
 
@@ -34,7 +34,19 @@ class Sale extends Model
             'shipping_cost' => 'decimal:2',
             'total' => 'decimal:2',
             'total_cost' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
         ];
+    }
+
+    /** Sisa piutang = total − uang masuk (minus bila pembeli membayar lebih). */
+    public function receivable(): float
+    {
+        return (float) $this->total - (float) $this->paid_amount;
+    }
+
+    public function isPaidOff(): bool
+    {
+        return $this->receivable() <= 0;
     }
 
     public function items(): HasMany

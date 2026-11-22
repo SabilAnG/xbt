@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -51,14 +53,26 @@ class RedirectController extends Controller
         $slug = (string) $request->query('product', '');
         $desk = (int) $request->query('customer_support', 1);
 
+        // Nomor diatur di admin (Pengaturan Situs → WhatsApp); config hanya cadangan.
         $numbers = config('site.whatsapp.sales', []);
-        $number = $numbers[$desk - 1] ?? config('site.whatsapp.primary');
+        $number = Setting::get("whatsapp.sales{$desk}")
+            ?: ($numbers[$desk - 1] ?? null)
+            ?: Setting::get('whatsapp.primary', config('site.whatsapp.primary'));
 
-        $product = $slug !== ''
-            ? ucwords(str_replace('-', ' ', $slug))
-            : 'your products';
+        $product = $slug !== '' ? Product::where('slug', $slug)->first() : null;
 
-        $text = sprintf('Hello Hypersonic Speed Tech, I am interested in %s.', $product);
+        if ($product?->currency === 'IDR') {
+            $text = sprintf(
+                "Halo %s, saya mau pesan:\n%s\nHarga: %s\n%s",
+                Setting::get('site.name', 'Hypersonic Speed Tech'),
+                $product->name,
+                $product->formattedPrice(),
+                route('products.show', $product->slug),
+            );
+        } else {
+            $name = $product?->name ?? ($slug !== '' ? ucwords(str_replace('-', ' ', $slug)) : 'your products');
+            $text = sprintf('Hello Hypersonic Speed Tech, I am interested in %s.', $name);
+        }
 
         return redirect()->away(
             'https://wa.me/'.$number.'?text='.rawurlencode($text)

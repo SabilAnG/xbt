@@ -1,6 +1,6 @@
 # Hypersonic Speed Tech — Laravel rebuild
 
-Laravel 13 + Filament v5, running entirely in Docker. The public pages are a
+Laravel 12 + admin panel Blade (tanpa Filament), running in Docker or locally. The public pages are a
 port of the current hypersonic.id front-end.
 
 ## Stack
@@ -8,8 +8,8 @@ port of the current hypersonic.id front-end.
 | Piece    | Version                         |
 | -------- | ------------------------------- |
 | PHP      | 8.4 (fpm)                       |
-| Laravel  | 13.30                           |
-| Filament | 5.7 (admin panel)               |
+| Laravel  | 12.x                            |
+| Admin    | Blade + Tailwind 4 (no Filament) |
 | MySQL    | 8.4                             |
 | Mailpit  | latest (catches outgoing mail)  |
 
@@ -21,7 +21,7 @@ were taken).
 | URL                       | What                     |
 | ------------------------- | ------------------------ |
 | http://localhost:8000     | the site                 |
-| http://localhost:8000/admin | Filament admin         |
+| http://localhost:8000/admin | Admin panel (inventory) |
 | http://localhost:8025     | Mailpit inbox            |
 | `127.0.0.1:3307`          | MySQL (user/pass `knalpot` / `secret`) |
 
@@ -146,27 +146,62 @@ Re-seeding is safe — rows are matched on `slug` and updated in place.
 
 Image paths are stored relative to `public/`, which is why `config/filesystems.php`
 defines a `site` disk rooted there: the photos carried over from the old site
-(`storage/<id>/conversions/...`) and anything uploaded through Filament both
+(`storage/<id>/conversions/...`) and any uploaded image both
 resolve through plain `asset()`.
 
 Two things worth knowing before editing a product:
 
 - Saving a description through the rich editor rewrites its HTML in the editor's
   own format, so it will no longer match the imported markup byte for byte.
-- `Product` deliberately has no `getRouteKeyName()` override. Setting it to
-  `slug` also changes how Filament resolves records and breaks
-  `/admin/products/{id}/edit`; the public route binds the slug explicitly.
+- `Product` deliberately has no `getRouteKeyName()` override. The public route
+  binds the slug explicitly.
+
+## Admin panel (inventory)
+
+Filament has been removed. `/admin` is a plain Laravel Blade panel built on the
+workbook **Manajemen Produksi & Penjualan Knalpot.xlsx**:
+
+| Menu | Sheet in the workbook |
+| ---- | --------------------- |
+| Dashboard | Ringkasan (KPIs, per month, expenses per category, low stock) |
+| Stok Produk / Stok Bahan / Resep BOM | Stok Produk, Stok Bahan, Resep BOM |
+| Produksi / Penjualan | Produksi, Penjualan — stock moves automatically |
+| Pembelian Bahan / Penyesuaian Bahan | Pembelian Bahan, Penyesuaian Bahan |
+| Pengeluaran | Pengeluaran (status ESTIMASI / PERLU DIRINCI) |
+| Jam Live / Gaji Host | Jam Live, Gaji Host (jam × tarif) |
+| Absen Tukang / Gaji Tukang | Absen Tukang, Gaji Tukang (hari × upah + tambahan − potongan) |
+| Data Host & Tukang / Daftar Pilihan | Daftar (tarif, upah, rekening, dropdown) |
+| Riwayat Pengadaan | Riwayat Pengadaan (arsip, read-only) |
+
+Calculations follow the workbook formulas exactly: material usage is recipe ×
+production computed live (editing a recipe or a product recalculates history),
+"Semua" recipe lines only apply to products that have a brand (Excel's `*`
+wildcard), and the dashboard mirrors every cell of the Ringkasan sheet.
+
+**Marketplace:** Website → Katalog Produk → *Upload dari stok* publishes a
+knalpot from Stok Produk to `/products`. The website price is set per product
+(the form shows HPP, online/offline price, stock and margin to the admin only);
+visitors order through WhatsApp using the numbers in Pengaturan Situs.
+
+The workbook data lives in `database/data/knalpot-workbook.json` and is loaded
+by `KnalpotWorkbookSeeder` (part of `db:seed`). Transactions are only imported
+into empty tables, so re-seeding does not duplicate them.
+
+```bash
+php artisan migrate:fresh --seed     # admin@hypersonic.id / password
+php artisan admin:user you@example.com   # create/reset an admin account
+```
 
 ## Editing the site
 
-The admin panel is grouped into **Website** and **Shop**.
+Under **Website** in the same `/admin` panel:
 
 | Page | What it controls |
 | ---- | ---------------- |
-| Website → Site settings | Website name, tagline, logo, favicon, contact email/phone, the four WhatsApp numbers, social links |
-| Website → Page content | 156 text and image blocks, grouped by page and filterable |
-| Shop → Products | Catalogue, gallery, pricing, ordering |
-| Shop → Orders | Orders, shipments and the tracking timeline |
+| Website → Pengaturan Situs | Website name, tagline, logo, favicon, contact email/phone, the four WhatsApp numbers, social links |
+| Website → Konten Halaman | 156 text and image blocks, grouped by page and filterable |
+| Website → Katalog Produk | Catalogue, gallery, pricing, ordering |
+| Website → Pesanan & Tracking | Orders, shipments and the tracking timeline |
 
 ```bash
 docker compose exec app php artisan db:seed --class=SiteContentSeeder
