@@ -17,13 +17,14 @@
             </select>
         </div>
         <div class="lg:col-span-2">
-            <label class="label">Merek</label>
-            <select name="{{ $n }}[brand]" class="input">
-                <option value="">Semua</option>
+            <label class="label">Merek <span class="font-normal text-slate-400">(kosong = semua)</span></label>
+            <div class="flex min-h-9.5 flex-wrap items-center gap-1.5">
                 @foreach ($brands as $brand)
-                    <option value="{{ $brand }}" @selected($val('brand') === $brand)>{{ $brand }}</option>
+                    <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-200 px-2 py-1 text-xs has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700">
+                        <input type="checkbox" name="{{ $n }}[brands][]" value="{{ $brand }}" class="size-3.5" @checked(in_array($brand, (array) $val('brands', []), true))> {{ $brand }}
+                    </label>
                 @endforeach
-            </select>
+            </div>
         </div>
         <div class="lg:col-span-3">
             <label class="label">Bagian</label>
@@ -85,7 +86,7 @@
                 @if ($label = $saved->cuttingLabel())<span>{{ $label }}</span>@endif
                 <span>Biaya: <strong>{{ rupiah($saved->subtotal()) }}</strong></span>
                 @isset($producedFor)
-                    @php $produced = $producedFor($saved->brand); @endphp
+                    @php $produced = $producedFor($saved->brandList()); @endphp
                     <span title="Sama dengan kolom Knalpot Diproduksi / Total Terpakai di Excel">Diproduksi {{ qty($produced) }} → terpakai <strong>{{ qty($produced * (float) $saved->qty) }}</strong></span>
                 @endisset
             @else

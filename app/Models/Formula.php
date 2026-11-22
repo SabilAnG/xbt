@@ -59,7 +59,7 @@ class Formula extends Model
     {
         return Item::query()->where('formula_id', $this->id)->whereNotNull('brand')->where('brand', '!=', '')
             ->distinct()->orderBy('brand')->pluck('brand')
-            ->merge($this->materials->pluck('brand')->filter())
+            ->merge($this->materials->flatMap(fn (FormulaMaterial $line) => $line->brandList()))
             ->unique()->sort()->values();
     }
 
@@ -72,7 +72,7 @@ class Formula extends Model
     {
         $copy = clone $this;
         $copy->setRelation('materials', $this->materials->filter(
-            fn (FormulaMaterial $line) => blank($line->brand) || $line->brand === $brand
+            fn (FormulaMaterial $line) => $line->brandList() === [] || in_array($brand, $line->brandList(), true)
         )->values());
 
         return $copy;

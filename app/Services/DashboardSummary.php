@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Brand;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\HostPayroll;
@@ -13,6 +14,7 @@ use App\Models\Sale;
 use App\Models\WorkerPayroll;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Angka untuk dashboard admin — padanan sheet "Ringkasan" di buku kerja,
@@ -112,6 +114,38 @@ class DashboardSummary
         }
 
         return $rows;
+    }
+
+    /**
+     * Ringkasan per merek: jumlah produk, stok, nilai stok, diproduksi, terjual, omzet.
+     *
+     * @return Collection<int, array{name: string, color: string, products: int, stock: float, stock_value: float, produced: float, sold: float, revenue: float}>
+     */
+    public function byBrand(): Collection
+    {
+        $items = Item::query()->get(['id', 'brand', 'stock', 'cost_price'])->groupBy(fn (Item $item) => (string) $item->brand);
+        $produced = Production::query()->posted()->join('items', 'items.id', '=', 'productions.item_id')
+            ->selectRaw('items.brand AS brand, SUM(productions.output_qty) AS qty')->groupBy('items.brand')->pluck('qty', 'brand');
+        $sales = DB::table('sale_items')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')->where('sales.status', 'posted')
+            ->join('items', 'items.id', '=', 'sale_items.item_id')
+            ->selectRaw('items.brand AS brand, SUM(sale_items.qty) AS qty, SUM(sale_items.subtotal) AS revenue')
+            ->groupBy('items.brand')->get()->keyBy('brand');
+
+        return Brand::query()->ordered()->get()->map(function (Brand $brand) use ($items, $produced, $sales) {
+            $rows = $items->get($brand->name, collect());
+
+            return [
+                'name' => $brand->name,
+                'color' => $brand->color,
+                'products' => $rows->count(),
+                'stock' => (float) $rows->sum('stock'),
+                'stock_value' => (float) $rows->sum(fn (Item $item) => $item->stockValue()),
+                'produced' => (float) ($produced[$brand->name] ?? 0),
+                'sold' => (float) ($sales->get($brand->name)->qty ?? 0),
+                'revenue' => (float) ($sales->get($brand->name)->revenue ?? 0),
+            ];
+        });
     }
 
     /**

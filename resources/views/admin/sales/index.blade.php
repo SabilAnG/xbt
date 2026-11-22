@@ -36,7 +36,7 @@
                         </td>
                         <td class="num {{ ($line?->qty ?? 0) < 0 ? 'text-rose-600' : '' }}">{{ qty($line?->qty) }}</td>
                         <td class="num">{{ rupiah($line?->unit_price) }}</td>
-                        <td>{{ $sale->channel ?? '—' }}</td>
+                        <td>{{ $sale->channel ?? '—' }}@if ($sale->wallet)<p class="text-[11px] text-slate-400">→ {{ $sale->wallet->name }}</p>@endif</td>
                         <td>{{ $sale->customer_name ?? '—' }}</td>
                         <td class="num font-semibold">{{ rupiah($sale->total) }}</td>
                         <td class="num">{{ rupiah($sale->paid_amount) }}</td>

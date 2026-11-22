@@ -47,6 +47,7 @@
                 <span>Bila status "Sudah", catat juga ke Pengeluaran (kategori {{ $isHost ? 'Host Live' : 'Gaji Tukang' }})
                     <span class="block text-xs text-slate-500">Di Excel ini dicatat manual. Jangan dicentang bila sudah dicatat sendiri, supaya tidak dobel.</span></span>
             </label>
+            <x-admin.wallet-select name="wallet_id" label="Dibayar dari dompet (bila dicatat ke Pengeluaran)" class="max-w-md" />
         @endif
 
         @if ($row->exists)

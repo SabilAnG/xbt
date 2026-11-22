@@ -141,6 +141,7 @@ class InventoryService
                 'sold_at' => $date->toDateString(),
                 'customer_name' => $extra['customer_name'] ?? null,
                 'channel' => $extra['channel'] ?? null,
+                'wallet_id' => $extra['wallet_id'] ?? null,
                 'subtotal' => $total,
                 'total' => $total,
                 'total_cost' => $hpp * $qty,
@@ -167,6 +168,7 @@ class InventoryService
     public function deleteSale(Sale $sale): void
     {
         DB::transaction(function () use ($sale) {
+            app(WalletService::class)->forget($sale);
             $this->forgetMovements($sale);
             $sale->items()->delete();
             $sale->delete();
@@ -195,6 +197,7 @@ class InventoryService
                 'subtotal' => $total,
                 'total' => $total,
                 'recorded_in_expenses' => (bool) ($extra['recorded_in_expenses'] ?? false),
+                'wallet_id' => $extra['wallet_id'] ?? null,
                 'paid_from' => $extra['paid_from'] ?? null,
                 'status' => 'posted',
                 'posted_at' => now(),
@@ -218,6 +221,7 @@ class InventoryService
     public function deleteMaterialPurchase(MaterialPurchase $purchase): void
     {
         DB::transaction(function () use ($purchase) {
+            app(WalletService::class)->forget($purchase);
             $materials = $purchase->items()->with('material')->get()->pluck('material');
 
             $this->forgetMovements($purchase);

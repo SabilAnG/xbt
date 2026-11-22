@@ -5,7 +5,7 @@
     // Baris yang ditampilkan: isian lama (setelah gagal validasi) atau data tersimpan.
     $materialRows = collect(old('materials', $formula->materials->map(fn ($line) => [
         'id' => $line->id,
-        'material_id' => $line->material_id, 'brand' => $line->brand, 'bom_group' => $line->bom_group,
+        'material_id' => $line->material_id, 'brands' => $line->brandList(), 'bom_group' => $line->bom_group,
         'input_mode' => $line->input_mode, 'piece_length_mm' => $line->piece_length_mm, 'piece_width_mm' => $line->piece_width_mm,
         'piece_diameter_mm' => $line->piece_diameter_mm, 'qty' => $line->qty, 'piece_count' => $line->piece_count,
         'waste_percent' => $line->waste_percent, 'use_nesting' => $line->use_nesting, 'notes' => $line->notes,
@@ -28,8 +28,10 @@
     ]]);
     $componentMeta = $components->mapWithKeys(fn ($c) => [$c->id => ['hourly' => $c->isHourly(), 'minutes' => (float) $c->default_minutes]]);
 
-    $producedFor = fn (?string $brand) => $brand
-        ? (float) ($producedByBrand[$brand] ?? 0)
+    // "Knalpot diproduksi" per baris: semua produk bermerek bila baris berlaku untuk semua merek,
+    // selain itu jumlah produksi merek-merek yang disebut baris itu.
+    $producedFor = fn (array $brands) => $brands
+        ? (float) collect($brands)->sum(fn ($b) => (float) ($producedByBrand[$b] ?? 0))
         : (float) $producedByBrand->filter(fn ($q, $b) => trim((string) $b) !== '')->sum();
 @endphp
 
@@ -91,7 +93,7 @@
         {{-- ---------------------------------------------------------- Bahan --}}
         <section data-panel="bahan" class="space-y-4">
             <p class="text-sm text-slate-600">Isi ukuran apa adanya — pipa dalam mm, plat dalam ukuran potongan, endcap cukup diameternya. Sistem menghitung luas, sisa potong, dan biayanya.
-                Kolom <strong>Merek</strong> berasal dari Resep BOM Excel: kosong = semua produk bermerek, FD/XBT = hanya produk merek itu.</p>
+                Kolom <strong>Merek</strong>: tidak dicentang = berlaku untuk semua produk bermerek; centang satu atau beberapa merek = hanya produk merek itu. Merek dikelola di menu <a href="{{ route('admin.brands.index') }}" class="link">Merek</a>.</p>
             <div id="material-rows" class="space-y-3">
                 @foreach ($materialRows as $i => $row)
                     @include('admin.formulas._material-row', ['i' => $i, 'row' => $row, 'saved' => $savedMaterials->get($row['id'] ?? null)])

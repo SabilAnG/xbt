@@ -383,10 +383,69 @@
     </style>
 @endpush
 
+
+@push('head')
+<style>
+    .m-track-head, .m-track-label, .m-track-help { display: none; }
+
+    @media (max-width: 767px) {
+        .m-track-head { display: flex; align-items: center; gap: 14px; padding: 18px 16px 6px; }
+        .m-track-icon { display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 48px; border-radius: 14px; background: rgba(249, 115, 22, .14); color: var(--primary-color, #f97316); }
+        .m-track-icon svg { width: 26px; height: 26px; }
+        .m-track-head h1 { font-size: 20px !important; line-height: 1.2 !important; margin: 0 0 3px !important; color: #fff; text-transform: none; letter-spacing: 0; }
+        .m-track-head p { margin: 0; font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .6); }
+
+        .m-track-section { padding: 12px 0 24px !important; }
+        .m-track-section > .container { padding-left: 16px; padding-right: 16px; }
+        .tracking-card { padding: 16px !important; border-radius: 18px !important; box-shadow: none !important; background: rgba(255, 255, 255, .04) !important; border: 1px solid rgba(255, 255, 255, .08) !important; }
+        .m-track-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .8); }
+        .tracking-form { grid-template-columns: 1fr !important; gap: 10px !important; }
+        .tracking-input { height: 50px; font-size: 16px !important; border-radius: 12px !important; background: rgba(255, 255, 255, .06) !important; border-color: rgba(255, 255, 255, .12) !important; text-transform: uppercase; letter-spacing: .02em; }
+        .tracking-input:focus { border-color: var(--primary-color, #f97316) !important; box-shadow: 0 0 0 4px rgba(249, 115, 22, .15); outline: none; }
+        .btn-track { width: 100%; height: 50px; justify-content: center; border-radius: 12px !important; font-size: 15px !important; }
+
+        .tracking-result { margin-top: 16px !important; padding: 14px !important; border-radius: 16px !important; }
+        .result-header { flex-wrap: wrap; align-items: flex-start !important; }
+        .result-left { min-width: 0; flex: 1; }
+        .result-left h5 { font-size: 15px !important; }
+        .shipment-tabs { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; margin: 0 -14px 12px; padding: 0 14px; gap: 8px; }
+        .shipment-tabs::-webkit-scrollbar { display: none; }
+        .shipment-tab { flex: 0 0 auto; }
+        .shipment-info { grid-template-columns: 1fr 1fr !important; gap: 10px !important; padding: 12px !important; }
+        .info-value { font-size: 13.5px; word-break: break-word; }
+        .timeline-content p { font-size: 13.5px; line-height: 1.45; }
+
+        .m-track-help { display: block; margin-top: 16px; padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08); }
+        .m-track-help h2 { font-size: 15px !important; margin: 0 0 12px !important; color: #fff; text-transform: none; letter-spacing: 0; }
+        .m-track-help ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+        .m-track-help li { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .75); }
+        .m-track-help li span { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 999px; background: var(--primary-color, #f97316); color: #fff; font-size: 12px; font-weight: 700; }
+        .m-track-help li p { margin: 0; color: inherit; font-size: inherit; }
+        .tracking-input::placeholder { text-transform: none; letter-spacing: 0; }
+        .provider-badge { align-self: flex-start; }
+        .timeline { margin: 14px 0 0 !important; padding: 0 !important; list-style: none; gap: 0 !important; }
+        .timeline-item { position: relative; padding: 0 0 16px 0; gap: 12px !important; }
+        .timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 5px; top: 18px; bottom: 0; width: 2px; background: rgba(255, 255, 255, .1); }
+        .timeline-bullet { background: rgba(255, 255, 255, .25) !important; margin-top: 4px !important; }
+        .timeline-item.active .timeline-bullet { background: var(--primary-color, #f97316) !important; box-shadow: 0 0 0 4px rgba(249, 115, 22, .2) !important; }
+        html[data-theme='light'] .timeline-item:not(:last-child)::before { background: #e5e7eb; }
+        html[data-theme='light'] .timeline-bullet { background: #d1d5db !important; }
+        .m-track-wa { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; margin-top: 16px; border-radius: 12px; background: rgba(37, 211, 102, .12); color: #25d366 !important; font-size: 13.5px; font-weight: 600; text-decoration: none; }
+
+        html[data-theme='light'] .m-track-head h1, html[data-theme='light'] .m-track-help h2 { color: #111418 !important; }
+        html[data-theme='light'] .m-track-head p, html[data-theme='light'] .m-track-help li { color: #4b5563 !important; }
+        html[data-theme='light'] .m-track-label { color: #374151; }
+        html[data-theme='light'] .tracking-card, html[data-theme='light'] .m-track-help { background: #fff !important; border-color: #e5e7eb !important; }
+        html[data-theme='light'] .tracking-input { background: #f5f6f8 !important; border-color: #e5e7eb !important; }
+        html[data-theme='light'] .m-track-wa { background: #dcfce7; color: #15803d !important; }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="no-bottom no-top" id="content">
             <div id="top"></div>
-                <section class="bg-dark text-light relative jarallax">
+                <section class="bg-dark text-light relative jarallax m-hide-mobile">
     <div class="de-gradient-edge-top"></div>
     <img src="{{ content_image('tracking.image.1', 'assets/images/2345.png') }}" class="jarallax-img" alt="">
     <div class="container relative z-2">
@@ -409,17 +468,28 @@
 </section>
 
     <!-- HERO -->
-    <div class="tracking-hero">
+    <div class="m-track-head">
+        <span class="m-track-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 6h11v10H3zm11 4h4l3 3v3h-7M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>
+        </span>
+        <div>
+            <h1>{{ content('mobile.tracking.title', 'Lacak Pesanan') }}</h1>
+            <p>{{ content('mobile.tracking.subtitle', 'Masukkan nomor pesanan untuk melihat status pengiriman terbaru.') }}</p>
+        </div>
+    </div>
+
+    <div class="tracking-hero m-hide-mobile">
         <h1>{{ content('tracking.text.3', 'Real Time Tracking Orders') }}</h1>
         <p>{{ content('tracking.text.4', 'Enter your Order Number below to view the latest shipment status.') }}</p>
     </div>
 
     <!-- TRACKING -->
-    <section class="py-5">
+    <section class="py-5 m-track-section">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <div class="tracking-card">
+                        <label for="trackingNumber" class="m-track-label">{{ content('mobile.tracking.label', 'Nomor pesanan') }}</label>
 
                         <!-- FORM -->
                         <form id="trackingForm" class="tracking-form" autocomplete="off" novalidate>
@@ -467,6 +537,18 @@
                         </div>
 
                     </div>
+                    <div class="m-track-help">
+                        <h2>{{ content('mobile.tracking.help_title', 'Cara melacak') }}</h2>
+                        <ol>
+                            <li><span>1</span><p>{{ content('mobile.tracking.step.1', 'Cari nomor pesanan di chat konfirmasi WhatsApp dari admin.') }}</p></li>
+                            <li><span>2</span><p>{{ content('mobile.tracking.step.2', 'Ketik nomornya di kolom di atas, lalu tekan Track.') }}</p></li>
+                            <li><span>3</span><p>{{ content('mobile.tracking.step.3', 'Lihat status & riwayat perjalanan paket tiap pengiriman.') }}</p></li>
+                        </ol>
+                        <a class="m-track-wa" href="https://wa.me/{{ setting('whatsapp.primary', config('site.whatsapp.primary')) }}?text={{ rawurlencode(content('mobile.tracking.wa_message', 'Halo, saya mau tanya status pesanan saya.')) }}" target="_blank" rel="noopener">
+                            <i class="fa-brands fa-whatsapp"></i> {{ content('mobile.tracking.wa_button', 'Tidak tahu nomornya? Tanya admin') }}
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -680,7 +762,7 @@
 
                         const dhlShipment = shipment.tracking_details.shipments[0];
                         shipment.events = dhlShipment.events || [];
-                    } else {
+                    } else if (!Array.isArray(shipment.events)) {
                         shipment.events = [];
                     }
                 });
@@ -715,7 +797,7 @@
 
                     const data = await response.json();
 
-                    if (data.status === 'success') {
+                    if (data.status === true || data.status === 'success') {
                         const parsedData = parseApiResponse(data.data);
                         renderResult(orderNumber, parsedData);
                     } else {

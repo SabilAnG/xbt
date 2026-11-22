@@ -13,6 +13,7 @@
             <x-admin.select name="channel" label="Saluran" :options="collect($channels)->mapWithKeys(fn ($c) => [$c => $c])" />
             <x-admin.field name="customer_name" label="Pembeli" class="sm:col-span-2" />
             <x-admin.field name="paid_amount" label="Uang masuk" type="number" step="any" min="0" hint="Kosongkan bila belum dibayar." />
+            <x-admin.wallet-select name="wallet_id" label="Uang masuk ke dompet" class="sm:col-span-3" hint="Saldo dompet bertambah sebesar uang masuk." />
         </div>
         <x-admin.field name="notes" label="Keterangan" type="textarea" />
 

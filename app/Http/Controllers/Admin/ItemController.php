@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Formula;
 use App\Models\Item;
 use App\Models\ListOption;
@@ -48,7 +49,7 @@ class ItemController extends Controller
         return view('admin.items.index', [
             'items' => $items,
             'flow' => $flow,
-            'brands' => Item::query()->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand'),
+            'brands' => Brand::names(),
         ]);
     }
 
@@ -110,8 +111,9 @@ class ItemController extends Controller
      */
     private function options(): array
     {
-        return collect(['model_motor', 'finishing', 'tipe', 'ukuran', 'merek'])
+        return collect(['model_motor', 'finishing', 'tipe', 'ukuran'])
             ->mapWithKeys(fn (string $list) => [$list => ListOption::valuesFor($list)])
+            ->put('merek', Brand::query()->ordered()->where('is_active', true)->pluck('name'))
             ->all();
     }
 
@@ -126,7 +128,7 @@ class ItemController extends Controller
             'finishing' => ['nullable', 'string', 'max:100'],
             'variant' => ['nullable', 'string', 'max:100'],
             'size' => ['nullable', 'string', 'max:50'],
-            'brand' => ['nullable', 'string', 'max:50'],
+            'brand' => ['nullable', 'string', Rule::exists('brands', 'name')],
             'name' => ['nullable', 'string', 'max:255'],
             'formula_id' => ['nullable', 'exists:formulas,id'],
             'cost_price' => ['required', 'numeric', 'min:0'],

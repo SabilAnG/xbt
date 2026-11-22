@@ -42,7 +42,7 @@
                         <tr>
                             <td>{{ $line->material?->name }}</td>
                             <td class="num">{{ qty($line->qty) }} {{ $line->material?->unit }}</td>
-                            <td class="text-xs text-slate-500">{{ $line->brand ?? 'Semua merek' }}</td>
+                            <td class="text-xs text-slate-500">{{ $line->brandList() ? implode(', ', $line->brandList()) : 'Semua merek' }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="3" class="text-center text-slate-500">Produk ini belum punya resep, jadi belum bisa diproduksi.</td></tr>

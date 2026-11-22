@@ -62,13 +62,15 @@ class AdminNavigation
                 $item('Stok Produk', 'admin.items.index', 'admin.items.*', 'box'),
                 $item('Stok Bahan', 'admin.materials.index', 'admin.materials.*', 'layers'),
                 $item('Formula (HPP)', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
+                $item('Merek', 'admin.brands.index', 'admin.brands.*', 'tag'),
             ]],
             ['label' => 'Transaksi', 'items' => [
                 $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
                 $item('Penjualan', 'admin.sales.index', 'admin.sales.*', 'cart'),
                 $item('Pembelian Bahan', 'admin.purchases.index', 'admin.purchases.*', 'bag'),
                 $item('Penyesuaian Bahan', 'admin.adjustments.index', 'admin.adjustments.*', 'sliders'),
-                $item('Pengeluaran', 'admin.expenses.index', 'admin.expenses.*', 'wallet'),
+                $item('Pengeluaran', 'admin.expenses.index', 'admin.expenses.*', 'banknote'),
+                $item('Dompet', 'admin.wallets.index', 'admin.wallets.*', 'wallet'),
             ]],
             ['label' => 'Host Live & Tukang', 'items' => [
                 $item('Jam Live', 'admin.live-sessions.index', 'admin.live-sessions.*', 'video'),

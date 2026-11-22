@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Services\DocumentNumber;
+use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,7 +23,7 @@ class ExpenseController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Expense::query()->with('category')
+        $query = Expense::query()->with(['category', 'wallet'])
             ->when($request->input('month'), fn ($query, $month) => $query->where('spent_at', 'like', "{$month}%"))
             ->when($request->input('category'), fn ($query, $category) => $query->where('expense_category_id', $category))
             ->when($request->input('data_status'), fn ($query, $status) => $query->where('data_status', $status))
@@ -47,12 +48,14 @@ class ExpenseController extends Controller
     {
         $data = $this->validated($request);
 
-        Expense::create([
+        $expense = Expense::create([
             ...$data,
             'reference_number' => DocumentNumber::next('expenses', Carbon::parse($data['spent_at'])),
             'status' => 'posted',
             'posted_at' => now(),
         ]);
+
+        $this->syncWallet($expense);
 
         return redirect()->route('admin.expenses.index')->with('status', 'Pengeluaran dicatat.');
     }
@@ -65,12 +68,14 @@ class ExpenseController extends Controller
     public function update(Request $request, Expense $expense): RedirectResponse
     {
         $expense->update($this->validated($request));
+        $this->syncWallet($expense->refresh());
 
         return redirect()->route('admin.expenses.index')->with('status', 'Pengeluaran diperbarui.');
     }
 
     public function destroy(Expense $expense): RedirectResponse
     {
+        app(WalletService::class)->forget($expense);
         $expense->delete();
 
         return redirect()->route('admin.expenses.index')->with('status', 'Pengeluaran dihapus.');
@@ -99,6 +104,16 @@ class ExpenseController extends Controller
             'from_account' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'data_status' => ['nullable', Rule::in(self::DATA_STATUSES)],
+            'wallet_id' => ['nullable', 'exists:wallets,id'],
         ]);
+    }
+
+    /** Uang keluar dari dompet yang dipilih. */
+    private function syncWallet(Expense $expense): void
+    {
+        app(WalletService::class)->sync(
+            $expense, $expense->wallet_id, 'out', (float) $expense->amount, $expense->spent_at,
+            ($expense->category?->name ? $expense->category->name.': ' : '').$expense->description,
+        );
     }
 }

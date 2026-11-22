@@ -46,7 +46,8 @@
         <section class="card p-5 text-sm text-slate-600">
             <h2 class="card-title mb-2">Pilihan lain di sheet Daftar</h2>
             <ul class="list-disc space-y-1 pl-5">
-                <li><strong>Resep BOM</strong> dan <strong>Merek BOM</strong> → menu <a href="{{ route('admin.formulas.index') }}" class="link">Resep BOM</a></li>
+                <li><strong>Merek</strong> → menu <a href="{{ route('admin.brands.index') }}" class="link">Merek</a></li>
+                <li><strong>Resep BOM</strong> → menu <a href="{{ route('admin.formulas.index') }}" class="link">Formula (HPP)</a></li>
                 <li><strong>Data host</strong> & <strong>data tukang</strong> → menu <a href="{{ route('admin.hosts.index') }}" class="link">Data Host &amp; Tukang</a></li>
                 <li><strong>Status transfer</strong>: Belum / Sudah (tetap)</li>
             </ul>

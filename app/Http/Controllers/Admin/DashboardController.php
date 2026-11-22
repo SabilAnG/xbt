@@ -26,6 +26,7 @@ class DashboardController extends Controller
             'headline' => $summary->headline(),
             'monthly' => $summary->monthly(),
             'byCategory' => $summary->expensesByCategory(),
+            'byBrand' => $summary->byBrand(),
             'alertMaterials' => $alertMaterials,
             'lowProducts' => $lowProducts,
             'topStock' => Item::query()->where('stock', '>', 0)->orderByDesc('stock')->limit(8)->get(),

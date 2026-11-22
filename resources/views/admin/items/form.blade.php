@@ -11,11 +11,12 @@
             <x-admin.field name="finishing" label="Finishing" :value="$item->finishing" list="finishing-list" />
             <x-admin.field name="variant" label="Tipe" :value="$item->variant" list="variant-list" />
             <x-admin.field name="size" label="Ukuran" :value="$item->size" list="size-list" />
-            <x-admin.field name="brand" label="Merek" :value="$item->brand" list="brand-list" hint="Menentukan baris resep FD/XBT yang dipakai." />
+            <x-admin.select name="brand" label="Merek" :value="$item->brand" :options="$options['merek']->mapWithKeys(fn ($b) => [$b => $b])" placeholder="— tanpa merek —"
+                hint="Menentukan baris resep yang dipakai. Kelola di menu Merek." />
             <x-admin.field name="name" label="Nama produk" :value="$item->name" class="sm:col-span-2" hint="Kosongkan agar dibuat otomatis dari model + finishing + tipe + ukuran + merek." />
         </div>
 
-        @foreach (['model-list' => 'model_motor', 'finishing-list' => 'finishing', 'variant-list' => 'tipe', 'size-list' => 'ukuran', 'brand-list' => 'merek'] as $listId => $list)
+        @foreach (['model-list' => 'model_motor', 'finishing-list' => 'finishing', 'variant-list' => 'tipe', 'size-list' => 'ukuran'] as $listId => $list)
             <datalist id="{{ $listId }}">
                 @foreach ($options[$list] as $option)
                     <option value="{{ $option }}">

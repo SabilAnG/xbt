@@ -10,7 +10,8 @@
             <x-admin.field name="amount" label="Nominal" type="number" step="any" min="0" :value="$expense->amount ? (float) $expense->amount : null" required />
             <x-admin.field name="description" label="Keterangan" :value="$expense->description" required class="sm:col-span-3" />
             <x-admin.field name="paid_to" label="Ke rekening" :value="$expense->paid_to" />
-            <x-admin.field name="from_account" label="Dari rekening" :value="$expense->from_account" />
+            <x-admin.wallet-select name="wallet_id" label="Dibayar dari dompet" :value="$expense->wallet_id" hint="Saldo dompet berkurang sebesar nominal." />
+            <x-admin.field name="from_account" label="Dari rekening (catatan)" :value="$expense->from_account" />
             <x-admin.select name="data_status" label="Status data" :options="collect($dataStatuses)->mapWithKeys(fn ($s) => [$s => $s])" :value="$expense->data_status" placeholder="OK" hint="PERLU DIRINCI = isi belanja belum jelas." />
         </div>
         <x-admin.field name="notes" label="Catatan" type="textarea" :value="$expense->notes" />

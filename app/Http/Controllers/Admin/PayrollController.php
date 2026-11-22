@@ -10,6 +10,7 @@ use App\Models\HostPayroll;
 use App\Models\Worker;
 use App\Models\WorkerPayroll;
 use App\Services\DocumentNumber;
+use App\Services\WalletService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -140,6 +141,7 @@ class PayrollController extends Controller
             'status' => ['required', Rule::in(['Belum', 'Sudah'])],
             'paid_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'wallet_id' => ['nullable', 'exists:wallets,id'],
         ];
 
         if ($kind === 'tukang') {
@@ -148,6 +150,7 @@ class PayrollController extends Controller
         }
 
         $data = $request->validate($rules);
+        unset($data['wallet_id']);
 
         if ($kind === 'tukang') {
             $data['bonus'] = $data['bonus'] ?? 0;
@@ -173,15 +176,18 @@ class PayrollController extends Controller
 
         $date = $row->paid_at ?? now();
 
-        Expense::create([
+        $expense = Expense::create([
             'reference_number' => DocumentNumber::next('expenses', $date),
             'spent_at' => $date->toDateString(),
             'expense_category_id' => $category->id,
             'amount' => $row->amountDue(),
             'description' => "{$config['title']} {$person?->name} {$row->period_start->format('d/m')}–{$row->period_end->format('d/m/Y')}",
             'paid_to' => $person?->account,
+            'wallet_id' => $request->input('wallet_id') ?: null,
             'status' => 'posted',
             'posted_at' => now(),
         ]);
+
+        app(WalletService::class)->sync($expense, $expense->wallet_id, 'out', (float) $expense->amount, $expense->spent_at, $expense->description);
     }
 }

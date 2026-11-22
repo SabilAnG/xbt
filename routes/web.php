@@ -75,6 +75,7 @@ Route::prefix('admin')->group(function () {
 
         Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
         Route::resource('bahan', Admin\MaterialController::class)->names('materials')->parameters(['bahan' => 'material']);
+        Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
         Route::resource('resep', Admin\FormulaController::class)->except('show')->names('formulas')->parameters(['resep' => 'formula']);
         Route::resource('produksi', Admin\ProductionController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('productions')->parameters(['produksi' => 'production']);
@@ -83,6 +84,13 @@ Route::prefix('admin')->group(function () {
             ->names('purchases')->parameters(['pembelian-bahan' => 'purchase']);
         Route::resource('penyesuaian-bahan', Admin\AdjustmentController::class)->only(['index', 'create', 'store', 'destroy'])
             ->names('adjustments')->parameters(['penyesuaian-bahan' => 'adjustment']);
+        Route::get('dompet/transfer', [Admin\WalletController::class, 'createTransfer'])->name('wallets.transfer');
+        Route::post('dompet/transfer', [Admin\WalletController::class, 'storeTransfer'])->name('wallets.transfer.store');
+        Route::delete('dompet/transfer/{transfer}', [Admin\WalletController::class, 'destroyTransfer'])->name('wallets.transfers.destroy');
+        Route::get('dompet/mutasi', [Admin\WalletController::class, 'createManual'])->name('wallets.manual');
+        Route::post('dompet/mutasi', [Admin\WalletController::class, 'storeManual'])->name('wallets.manual.store');
+        Route::delete('dompet/mutasi/{transaction}', [Admin\WalletController::class, 'destroyTransaction'])->name('wallets.transactions.destroy');
+        Route::resource('dompet', Admin\WalletController::class)->names('wallets')->parameters(['dompet' => 'wallet']);
         Route::resource('pengeluaran', Admin\ExpenseController::class)->except('show')->names('expenses')->parameters(['pengeluaran' => 'expense']);
 
         // Website

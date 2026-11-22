@@ -83,7 +83,19 @@ class FormulaMaterial extends Model
             return false;
         }
 
-        return $this->brand === null || $this->brand === '' || $this->brand === $brand;
+        $brands = $this->brandList();
+
+        return $brands === [] || in_array($brand, $brands, true);
+    }
+
+    /**
+     * Merek yang dituju baris ini; kosong = semua merek.
+     *
+     * @return list<string>
+     */
+    public function brandList(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) $this->brand))));
     }
 
     public function formula(): BelongsTo

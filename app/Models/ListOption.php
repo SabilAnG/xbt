@@ -16,7 +16,6 @@ class ListOption extends Model
         'finishing' => 'Finishing',
         'tipe' => 'Tipe',
         'ukuran' => 'Ukuran',
-        'merek' => 'Merek',
         'saluran' => 'Saluran Jual',
     ];
 

@@ -34,7 +34,7 @@
                         <td class="text-xs whitespace-nowrap">{{ $expense->category?->name }}</td>
                         <td class="min-w-48">{{ $expense->description }}</td>
                         <td class="num font-semibold">{{ rupiah($expense->amount) }}</td>
-                        <td class="max-w-40 truncate text-xs" title="{{ $expense->paid_to }}">{{ $expense->paid_to ?? '—' }}</td>
+                        <td class="max-w-40 truncate text-xs" title="{{ $expense->paid_to }}">{{ $expense->paid_to ?? '—' }}@if ($expense->wallet)<p class="text-[11px] text-slate-400">dari {{ $expense->wallet->name }}</p>@endif</td>
                         <td class="max-w-xs text-xs text-slate-500">{{ $expense->notes }}</td>
                         <td><x-admin.status :value="$expense->data_status ?? 'OK'" /></td>
                         <td class="text-right whitespace-nowrap">

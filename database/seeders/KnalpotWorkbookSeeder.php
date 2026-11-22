@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AttendanceDay;
+use App\Models\Brand;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseType;
@@ -68,7 +69,12 @@ class KnalpotWorkbookSeeder extends Seeder
     /** Sheet Daftar: pilihan dropdown. */
     private function listOptions(): void
     {
-        $map = ['model_motor' => 'model_motor', 'finishing' => 'finishing', 'tipe' => 'tipe', 'ukuran' => 'ukuran', 'merek' => 'merek', 'saluran' => 'saluran'];
+        $map = ['model_motor' => 'model_motor', 'finishing' => 'finishing', 'tipe' => 'tipe', 'ukuran' => 'ukuran', 'saluran' => 'saluran'];
+
+        // Merek punya master sendiri.
+        foreach ($this->data['daftar']['merek'] as $order => $name) {
+            Brand::firstOrCreate(['name' => $name], ['code' => strtoupper($name), 'sort_order' => $order]);
+        }
 
         foreach ($map as $list => $key) {
             foreach ($this->data['daftar'][$key] as $order => $value) {

@@ -101,7 +101,7 @@ class FormulaHppTest extends TestCase
         $this->put(route('admin.formulas.update', $formula), [
             'name' => $formula->name, 'code' => $formula->code, 'output_qty' => 1, 'output_unit' => 'pcs', 'is_active' => 1,
             'materials' => $formula->materials->map(fn ($line) => [
-                'material_id' => $line->material_id, 'brand' => $line->brand, 'bom_group' => $line->bom_group,
+                'material_id' => $line->material_id, 'brands' => $line->brandList(), 'bom_group' => $line->bom_group,
                 'input_mode' => 'direct', 'qty' => (float) $line->qty, 'piece_count' => 1, 'waste_percent' => 0,
             ])->all(),
         ])->assertRedirect()->assertSessionHasNoErrors();

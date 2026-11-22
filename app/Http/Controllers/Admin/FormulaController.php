@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\CostComponent;
 use App\Models\Formula;
 use App\Models\FormulaMaterial;
@@ -135,7 +136,7 @@ class FormulaController extends Controller
             'components' => CostComponent::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'machines' => Machine::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'motorcycleModels' => MotorcycleModel::with('brand')->orderBy('name')->get(),
-            'brands' => Item::query()->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand'),
+            'brands' => Brand::names(),
             'products' => $formula->exists ? Item::where('formula_id', $formula->id)->orderBy('sku')->get() : collect(),
             'formulaBrands' => $brands,
             'hppBrand' => $hppBrand,
@@ -162,7 +163,8 @@ class FormulaController extends Controller
 
             'materials' => ['array'],
             'materials.*.material_id' => ['nullable', 'exists:materials,id'],
-            'materials.*.brand' => ['nullable', 'string', 'max:50'],
+            'materials.*.brands' => ['nullable', 'array'],
+            'materials.*.brands.*' => ['string', Rule::exists('brands', 'name')],
             'materials.*.bom_group' => ['nullable', Rule::in(array_keys(FormulaMaterial::BOM_GROUPS))],
             'materials.*.input_mode' => ['nullable', Rule::in(array_keys(FormulaMaterial::INPUT_MODES))],
             'materials.*.piece_length_mm' => ['nullable', 'numeric', 'min:0'],
@@ -226,7 +228,8 @@ class FormulaController extends Controller
         foreach ($data['materials'] as $order => $row) {
             $formula->materials()->create([
                 'material_id' => $row['material_id'],
-                'brand' => ($row['brand'] ?? null) ?: null,
+                // Kosong = semua merek; beberapa merek disimpan dipisah koma.
+                'brand' => collect($row['brands'] ?? [])->filter()->unique()->implode(',') ?: null,
                 'bom_group' => $row['bom_group'] ?? 'other',
                 'input_mode' => $row['input_mode'] ?? 'direct',
                 'piece_length_mm' => $row['piece_length_mm'] ?? null,

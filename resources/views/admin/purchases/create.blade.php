@@ -10,7 +10,8 @@
             <x-admin.field name="qty" label="Qty" type="number" step="any" min="0" required />
             <x-admin.field name="unit_price" label="Harga satuan" type="number" step="any" min="0" required />
             <x-admin.field name="supplier" label="Toko / supplier" />
-            <x-admin.field name="paid_from" label="Dibayar dari" class="sm:col-span-2" />
+            <x-admin.wallet-select name="wallet_id" label="Dibayar dari dompet" class="sm:col-span-2" hint="Tidak dipotong bila dicentang 'sudah dicatat di Pengeluaran'." />
+            <x-admin.field name="paid_from" label="Dibayar dari (catatan)" class="sm:col-span-3" />
         </div>
         <label class="flex items-start gap-2 text-sm text-slate-700">
             <input type="checkbox" name="recorded_in_expenses" value="1" class="mt-0.5 rounded border-slate-300" @checked(old('recorded_in_expenses'))>

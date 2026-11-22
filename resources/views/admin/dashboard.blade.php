@@ -64,6 +64,34 @@
         </div>
     </section>
 
+    {{-- Per merek --}}
+    @if ($byBrand->isNotEmpty())
+        <section class="card overflow-hidden">
+            <div class="card-header">
+                <h2 class="card-title">Ringkasan per merek</h2>
+                <a href="{{ route('admin.brands.index') }}" class="btn btn-ghost btn-sm">Kelola merek</a>
+            </div>
+            <div class="scrollbar-thin overflow-x-auto">
+                <table class="table">
+                    <thead><tr><th>Merek</th><th class="num">Produk</th><th class="num">Sisa stok</th><th class="num">Nilai stok</th><th class="num">Diproduksi</th><th class="num">Terjual</th><th class="num">Omzet</th></tr></thead>
+                    <tbody>
+                    @foreach ($byBrand as $row)
+                        <tr>
+                            <td class="whitespace-nowrap"><span class="mr-2 inline-block size-2.5 rounded-full align-middle" style="background: {{ $row['color'] }}"></span><a href="{{ route('admin.items.index', ['brand' => $row['name']]) }}" class="link">{{ $row['name'] }}</a></td>
+                            <td class="num">{{ qty($row['products']) }}</td>
+                            <td class="num font-semibold">{{ qty($row['stock']) }}</td>
+                            <td class="num">{{ rupiah($row['stock_value']) }}</td>
+                            <td class="num">{{ qty($row['produced']) }}</td>
+                            <td class="num">{{ qty($row['sold']) }}</td>
+                            <td class="num">{{ rupiah($row['revenue']) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
     {{-- Grafik + kategori --}}
     <section class="grid gap-4 sm:gap-6 xl:grid-cols-3">
         <div class="card flex flex-col xl:col-span-2">
