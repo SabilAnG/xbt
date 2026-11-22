@@ -36,6 +36,20 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative \
     && rm -rf tests .git .github storage/logs/*.log
 
 # --------------------------------------------------------------- stage: runtime
+# ---------------------------------------------------------------------------
+# Aset admin (Tailwind via Vite). public/build tidak ikut konteks build
+# (.dockerignore), jadi dibangun di sini. Tailwind memindai view pagination
+# Laravel, jadi folder itu disalin dari stage vendor.
+# ---------------------------------------------------------------------------
+FROM node:24-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --no-audit --no-fund
+COPY vite.config.js ./
+COPY resources ./resources
+COPY --from=vendor /app/vendor/laravel/framework/src/Illuminate/Pagination/resources/views ./vendor/laravel/framework/src/Illuminate/Pagination/resources/views
+RUN npm run build
+
 FROM php:8.4-fpm AS runtime
 
 COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
@@ -53,6 +67,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 WORKDIR /var/www/html
 
 COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+COPY --from=assets --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
 # Direktori yang ditulis saat runtime; isinya akan ditimpa volume di compose,
 # tapi harus ada di image agar volume baru mewarisi struktur & kepemilikannya.
@@ -82,5 +97,6 @@ FROM nginx:1.27-alpine AS web
 
 COPY docker/nginx/prod.conf /etc/nginx/conf.d/default.conf
 COPY --from=vendor /app/public /var/www/html/public
+COPY --from=assets /app/public/build /var/www/html/public/build
 
 RUN mkdir -p /var/www/html/public/uploads
