@@ -55,7 +55,7 @@ class Product extends Model
      */
     public function cartPayload(): array
     {
-        $image = $this->images->first();
+        $image = $this->cardImage();
 
         return [
             'slug' => $this->slug,
@@ -93,10 +93,10 @@ class Product extends Model
     }
 
     /**
-     * The image the listing card uses — the first gallery image's thumbnail.
+     * The image the listing card uses — the first gallery photo (videos are skipped).
      */
     public function cardImage(): ?ProductImage
     {
-        return $this->images->first();
+        return $this->images->first(fn (ProductImage $media) => ! $media->isVideo());
     }
 }

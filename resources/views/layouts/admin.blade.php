@@ -222,5 +222,6 @@
         document.querySelector('.nav-item[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
     })();
 </script>
+@stack('scripts')
 </body>
 </html>

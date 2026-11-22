@@ -95,15 +95,26 @@
                     <div id="sync1" class="owl-carousel owl-theme">
                         @foreach ($product->images as $image)
                             <div class="item">
-                                <img src="{{ asset($image->path) }}" class="w-100" alt="N/A">
+                                @if ($image->isVideo())
+                                    <video controls playsinline preload="metadata" class="w-100" style="aspect-ratio:1;object-fit:contain;background:#000">
+                                        <source src="{{ asset($image->path) }}#t=0.1" type="{{ $image->videoMime() }}">
+                                    </video>
+                                @else
+                                    <img src="{{ asset($image->path) }}" class="w-100" alt="N/A">
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
                     <div id="sync2" class="owl-carousel owl-theme mt-3">
                         @foreach ($product->images as $image)
-                            <div class="item">
-                                <img src="{{ asset($image->thumb()) }}" class="w-100" alt="{{ $loop->first ? 'N/A' : '' }}">
+                            <div class="item" style="position:relative">
+                                @if ($image->isVideo())
+                                    <video src="{{ asset($image->path) }}#t=0.5" muted playsinline preload="metadata" class="w-100" style="aspect-ratio:1;object-fit:cover;pointer-events:none"></video>
+                                    <span style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;pointer-events:none"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+                                @else
+                                    <img src="{{ asset($image->thumb()) }}" class="w-100" alt="{{ $loop->first ? 'N/A' : '' }}">
+                                @endif
                             </div>
                         @endforeach
                     </div>

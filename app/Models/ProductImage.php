@@ -14,6 +14,7 @@ class ProductImage extends Model
 
     protected $fillable = [
         'product_id',
+        'type',
         'path',
         'thumb_path',
         'sort_order',
@@ -28,6 +29,21 @@ class ProductImage extends Model
      * Thumbnail variant, falling back to the full image for anything uploaded
      * through the admin panel (which stores a single file rather than conversions).
      */
+    public function isVideo(): bool
+    {
+        return $this->type === 'video';
+    }
+
+    /** MIME untuk tag <source> video. */
+    public function videoMime(): string
+    {
+        return match (strtolower(pathinfo($this->path, PATHINFO_EXTENSION))) {
+            'webm' => 'video/webm',
+            'mov' => 'video/quicktime',
+            default => 'video/mp4',
+        };
+    }
+
     public function thumb(): string
     {
         return $this->thumb_path ?: $this->path;

@@ -99,6 +99,7 @@ Route::prefix('admin')->group(function () {
         Route::resource('website/konten', Admin\ContentBlockController::class)->only(['index', 'edit', 'update'])
             ->names('content-blocks')->parameters(['konten' => 'contentBlock']);
         Route::get('website/produk/dari-stok', [Admin\WebProductController::class, 'fromStock'])->name('web-products.from-stock');
+        Route::post('website/produk/pratinjau', [Admin\WebProductController::class, 'preview'])->name('web-products.preview');
         Route::post('website/produk/dari-stok/{item}', [Admin\WebProductController::class, 'storeFromStock'])->name('web-products.from-stock.store');
         Route::resource('website/produk', Admin\WebProductController::class)->except('show')
             ->names('web-products')->parameters(['produk' => 'webProduct']);

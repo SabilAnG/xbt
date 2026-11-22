@@ -29,7 +29,12 @@
         .m-pdp-gallery { position: relative; background: #000; }
         .m-pdp-slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; aspect-ratio: 1; }
         .m-pdp-slides::-webkit-scrollbar { display: none; }
-        .m-pdp-slides img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; display: block; }
+        .m-pdp-slides img, .m-pdp-slides video { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; display: block; }
+        .m-pdp-slides video { object-fit: contain; background: #000; }
+        .m-pdp-thumbs button { position: relative; }
+        .m-pdp-thumbs video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+        .m-pdp-play { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .35); color: #fff; }
+        .m-pdp-play svg { width: 16px; height: 16px; }
         .m-pdp-counter {
             position: absolute; right: 12px; bottom: 12px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
             background: rgba(0, 0, 0, .55); color: #fff; backdrop-filter: blur(6px);
@@ -104,7 +109,13 @@
     <div class="m-pdp-gallery">
         <div class="m-pdp-slides" id="m-pdp-slides">
             @forelse ($images as $image)
-                <img src="{{ asset($image->path) }}" alt="{{ $product->name }} — foto {{ $loop->iteration }}" @if (! $loop->first) loading="lazy" @endif>
+                @if ($image->isVideo())
+                    <video controls playsinline preload="metadata" aria-label="{{ $product->name }} — video">
+                        <source src="{{ asset($image->path) }}#t=0.1" type="{{ $image->videoMime() }}">
+                    </video>
+                @else
+                    <img src="{{ asset($image->path) }}" alt="{{ $product->name }} — foto {{ $loop->iteration }}" @if (! $loop->first) loading="lazy" @endif>
+                @endif
             @empty
                 <img src="{{ asset('assets/images/workshop/fallback-1000x1000.webp') }}" alt="{{ $product->name }}">
             @endforelse
@@ -116,8 +127,13 @@
     @if ($images->count() > 1)
         <div class="m-pdp-thumbs" id="m-pdp-thumbs">
             @foreach ($images as $image)
-                <button type="button" @class(['is-active' => $loop->first]) data-index="{{ $loop->index }}" aria-label="Foto {{ $loop->iteration }}">
-                    <img src="{{ asset($image->thumb()) }}" alt="" loading="lazy">
+                <button type="button" @class(['is-active' => $loop->first]) data-index="{{ $loop->index }}" aria-label="{{ $image->isVideo() ? 'Video' : 'Foto' }} {{ $loop->iteration }}">
+                    @if ($image->isVideo())
+                        <video src="{{ asset($image->path) }}#t=0.5" muted playsinline preload="metadata"></video>
+                        <span class="m-pdp-play"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+                    @else
+                        <img src="{{ asset($image->thumb()) }}" alt="" loading="lazy">
+                    @endif
                 </button>
             @endforeach
         </div>
@@ -196,6 +212,8 @@
         if (slides) {
             slides.addEventListener('scroll', function () {
                 var i = Math.round(slides.scrollLeft / slides.clientWidth);
+                // Video yang digeser keluar layar dihentikan.
+                slides.querySelectorAll('video').forEach(function (v, n) { if (!v.paused && v.parentNode.children[i] !== v) v.pause(); });
                 if (index) index.textContent = i + 1;
                 thumbs.forEach(function (t, n) { t.classList.toggle('is-active', n === i); });
             }, { passive: true });
