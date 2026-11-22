@@ -54,7 +54,7 @@
                     <th class="num">Stok</th>
                     <th class="num">Min.</th>
                     <th>Status</th>
-                    <th class="num">{{ $warehouse->type === 'setengah_jadi' ? 'Biaya bahan / unit' : 'HPP / unit' }}</th>
+                    <th class="num">{{ $warehouse->type === 'setengah_jadi' ? 'Harga / unit' : 'HPP / unit' }}</th>
                     <th class="num">Nilai stok</th>
                     @if ($warehouse->type === 'setengah_jadi')<th></th>@endif
                 </tr>
@@ -64,7 +64,7 @@
                     @php
                         [$code, $link, $group, $unitCost] = match ($warehouse->type) {
                             'bahan_baku' => [$row->sku, route('admin.materials.show', $row), $row->category?->name, (float) $row->cost_price],
-                            'setengah_jadi' => [$row->code, route('admin.components.show', $row), $row->groupLabel(), $row->materialCost()],
+                            'setengah_jadi' => [$row->code, route('admin.components.show', $row), $row->groupLabel(), $row->unitCost()],
                             default => [$row->sku, route('admin.items.show', $row), $row->brand, (float) $row->cost_price],
                         };
                         $stock = round((float) $row->stock, 2);

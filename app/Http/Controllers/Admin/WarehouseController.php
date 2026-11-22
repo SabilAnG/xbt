@@ -118,6 +118,10 @@ class WarehouseController extends Controller
 
     public function destroyMovement(ComponentMovement $movement, ComponentStockService $stock): RedirectResponse
     {
+        if (! $movement->isManual()) {
+            return back()->with('error', 'Mutasi ini berasal dari pembelian. Hapus pembeliannya di menu Pembelian Bahan.');
+        }
+
         $stock->delete($movement);
 
         return back()->with('status', 'Mutasi dihapus. Stok komponen dan bahan baku dihitung ulang.');

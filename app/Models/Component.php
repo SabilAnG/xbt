@@ -20,13 +20,14 @@ class Component extends Model
         'lainnya' => 'Lainnya',
     ];
 
-    protected $fillable = ['code', 'name', 'group', 'unit', 'min_stock', 'description', 'is_active', 'sort_order'];
+    protected $fillable = ['code', 'name', 'group', 'unit', 'min_stock', 'cost_price', 'description', 'is_active', 'sort_order'];
 
     protected function casts(): array
     {
         return [
             'stock' => 'decimal:3',
             'min_stock' => 'decimal:3',
+            'cost_price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
@@ -52,9 +53,18 @@ class Component extends Model
         return (float) $this->materials->sum(fn (ComponentMaterial $line) => (float) $line->qty * (float) $line->material?->cost_price);
     }
 
+    /**
+     * Harga per unit: dari bahan penyusun bila diisi, selain itu harga
+     * rata-rata pembelian komponen jadi.
+     */
+    public function unitCost(): float
+    {
+        return $this->materials->isNotEmpty() ? $this->materialCost() : (float) $this->cost_price;
+    }
+
     public function stockValue(): float
     {
-        return (float) $this->stock * $this->materialCost();
+        return (float) $this->stock * $this->unitCost();
     }
 
     public function stockStatus(): string

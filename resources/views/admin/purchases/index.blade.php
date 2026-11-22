@@ -25,8 +25,11 @@
                     <tr>
                         <td class="whitespace-nowrap">{{ $purchase->purchased_at->translatedFormat('d M Y') }}</td>
                         <td class="font-mono text-xs">{{ $purchase->invoice_number }}</td>
-                        <td class="min-w-48">{{ $line?->material?->name }}</td>
-                        <td class="num">{{ qty($line?->qty) }} {{ $line?->material?->unit }}</td>
+                        <td class="min-w-48">
+                            {{ $line?->goodsName() }}
+                            @if ($line?->component_id)<span class="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">KOMPONEN</span>@endif
+                        </td>
+                        <td class="num">{{ qty($line?->qty) }} {{ $line?->goodsUnit() }}</td>
                         <td class="num">{{ rupiah($line?->unit_cost) }}</td>
                         <td class="num font-semibold">{{ rupiah($purchase->total) }}</td>
                         <td>{{ $purchase->vendor?->name ?? '—' }}</td>

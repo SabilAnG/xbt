@@ -21,7 +21,7 @@
                     @if ($showComponent)
                         <td class="whitespace-nowrap"><a href="{{ route('admin.components.show', $movement->component_id) }}" class="link">{{ $movement->component?->name }}</a></td>
                     @endif
-                    <td class="whitespace-nowrap">{{ \App\Models\ComponentMovement::TYPES[$movement->type] ?? $movement->type }}</td>
+                    <td class="whitespace-nowrap">{{ \App\Models\ComponentMovement::LABELS[$movement->type] ?? $movement->type }}</td>
                     <td class="min-w-48 text-xs">
                         {{ $movement->notes }}
                         @if ($movement->consumes_materials)<span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">bahan baku terpotong</span>@endif
@@ -30,7 +30,11 @@
                     <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
                     <td class="num font-semibold">{{ qty($movement->balance_after) }}</td>
                     <td class="text-right">
-                        <x-admin.delete-button :action="route('admin.warehouses.movements.destroy', $movement)" confirm="Hapus mutasi ini? Bahan baku yang terpotong akan dikembalikan." />
+                        @if ($movement->isManual())
+                            <x-admin.delete-button :action="route('admin.warehouses.movements.destroy', $movement)" confirm="Hapus mutasi ini? Bahan baku yang terpotong akan dikembalikan." />
+                        @else
+                            <a href="{{ route('admin.purchases.index') }}" class="text-xs text-slate-400 hover:text-slate-600" title="Hapus lewat menu Pembelian Bahan">dari pembelian</a>
+                        @endif
                     </td>
                 </tr>
             @empty

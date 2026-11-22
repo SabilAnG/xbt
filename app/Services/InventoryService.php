@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Component;
+use App\Models\ComponentMovement;
 use App\Models\Formula;
 use App\Models\Item;
 use App\Models\Material;
@@ -187,28 +189,12 @@ class InventoryService
         $date = Carbon::parse($date);
 
         return DB::transaction(function () use ($material, $qty, $unitPrice, $date, $extra) {
-            $supplier = trim((string) ($extra['supplier'] ?? ''));
-            $total = $qty * $unitPrice;
-
-            $purchase = MaterialPurchase::create([
-                'invoice_number' => DocumentNumber::next('material_purchases', $date),
-                'purchased_at' => $date->toDateString(),
-                'vendor_id' => $supplier !== '' ? Vendor::firstOrCreate(['name' => $supplier])->id : null,
-                'subtotal' => $total,
-                'total' => $total,
-                'recorded_in_expenses' => (bool) ($extra['recorded_in_expenses'] ?? false),
-                'wallet_id' => $extra['wallet_id'] ?? null,
-                'paid_from' => $extra['paid_from'] ?? null,
-                'status' => 'posted',
-                'posted_at' => now(),
-                'notes' => $extra['notes'] ?? null,
-            ]);
+            $purchase = $this->createPurchaseHeader($qty * $unitPrice, $date, $extra);
 
             $purchase->items()->create([
                 'material_id' => $material->id,
                 'qty' => $qty,
                 'unit_cost' => $unitPrice,
-                'subtotal' => $total,
             ]);
 
             $this->moveMaterial($material, $qty, 0, $unitPrice, 'purchase', $purchase, $date, $purchase->invoice_number);
@@ -218,17 +204,60 @@ class InventoryService
         });
     }
 
+    /**
+     * Beli komponen jadi (leheran, tutup silencer, …): langsung menambah stok
+     * gudang setengah jadi.
+     *
+     * @param  array{supplier?: ?string, recorded_in_expenses?: bool, wallet_id?: ?int, paid_from?: ?string, notes?: ?string}  $extra
+     */
+    public function recordComponentPurchase(Component $component, float $qty, float $unitPrice, CarbonInterface|string $date, array $extra = []): MaterialPurchase
+    {
+        if ($qty <= 0) {
+            throw new InvalidArgumentException('Qty pembelian harus lebih dari 0.');
+        }
+
+        $date = Carbon::parse($date);
+
+        return DB::transaction(function () use ($component, $qty, $unitPrice, $date, $extra) {
+            $purchase = $this->createPurchaseHeader($qty * $unitPrice, $date, $extra);
+
+            $purchase->items()->create([
+                'component_id' => $component->id,
+                'qty' => $qty,
+                'unit_cost' => $unitPrice,
+            ]);
+
+            $component->movements()->create([
+                'source_type' => MaterialPurchase::class,
+                'source_id' => $purchase->id,
+                'type' => 'pembelian',
+                'qty_in' => $qty,
+                'moved_at' => $date->toDateString(),
+                'notes' => $purchase->invoice_number,
+            ]);
+            $component->recalculateStock();
+            $this->refreshComponentCost($component);
+
+            return $purchase;
+        });
+    }
+
     public function deleteMaterialPurchase(MaterialPurchase $purchase): void
     {
         DB::transaction(function () use ($purchase) {
             app(WalletService::class)->forget($purchase);
-            $materials = $purchase->items()->with('material')->get()->pluck('material');
+            $items = $purchase->items()->with('material', 'component')->get();
 
             $this->forgetMovements($purchase);
+            ComponentMovement::where('source_type', MaterialPurchase::class)->where('source_id', $purchase->id)->delete();
             $purchase->items()->delete();
             $purchase->delete();
 
-            $materials->filter()->each(fn (Material $material) => $this->refreshAverageCost($material));
+            $items->pluck('material')->filter()->each(fn (Material $material) => $this->refreshAverageCost($material));
+            $items->pluck('component')->filter()->each(function (Component $component) {
+                $component->recalculateStock();
+                $this->refreshComponentCost($component);
+            });
         });
     }
 
@@ -262,6 +291,39 @@ class InventoryService
             $movement->delete();
             $material?->recalculateStock();
         });
+    }
+
+    /**
+     * @param  array{supplier?: ?string, recorded_in_expenses?: bool, wallet_id?: ?int, paid_from?: ?string, notes?: ?string}  $extra
+     */
+    private function createPurchaseHeader(float $total, CarbonInterface $date, array $extra): MaterialPurchase
+    {
+        $supplier = trim((string) ($extra['supplier'] ?? ''));
+
+        return MaterialPurchase::create([
+            'invoice_number' => DocumentNumber::next('material_purchases', $date),
+            'purchased_at' => $date->toDateString(),
+            'vendor_id' => $supplier !== '' ? Vendor::firstOrCreate(['name' => $supplier])->id : null,
+            'subtotal' => $total,
+            'total' => $total,
+            'recorded_in_expenses' => (bool) ($extra['recorded_in_expenses'] ?? false),
+            'wallet_id' => $extra['wallet_id'] ?? null,
+            'paid_from' => $extra['paid_from'] ?? null,
+            'status' => 'posted',
+            'posted_at' => now(),
+            'notes' => $extra['notes'] ?? null,
+        ]);
+    }
+
+    /** Harga komponen jadi = rata-rata tertimbang semua pembelian komponen itu. */
+    public function refreshComponentCost(Component $component): void
+    {
+        $totals = DB::table('material_purchase_items')
+            ->where('component_id', $component->id)
+            ->selectRaw('COALESCE(SUM(qty), 0) AS qty, COALESCE(SUM(subtotal), 0) AS total')
+            ->first();
+
+        $component->forceFill(['cost_price' => (float) $totals->qty > 0 ? round((float) $totals->total / (float) $totals->qty, 2) : 0])->save();
     }
 
     /** Harga pokok bahan = rata-rata tertimbang semua pembelian. */

@@ -23,7 +23,7 @@
                     <th>Nama komponen</th>
                     <th>Kelompok</th>
                     <th>Bahan baku penyusun</th>
-                    <th class="num">Biaya bahan / unit</th>
+                    <th class="num">Harga / unit</th>
                     <th class="num">Stok</th>
                     <th>Status</th>
                     <th></th>
@@ -42,7 +42,7 @@
                                 <span class="text-amber-600">Belum diisi</span>
                             @endforelse
                         </td>
-                        <td class="num">{{ $part->materials->isNotEmpty() ? rupiah($part->materialCost()) : '—' }}</td>
+                        <td class="num">{{ $part->unitCost() > 0 ? rupiah($part->unitCost()) : '—' }}</td>
                         <td class="num font-semibold">{{ qty((float) $part->stock) }} <span class="text-xs font-normal text-slate-400">{{ $part->unit }}</span></td>
                         <td><x-admin.status :value="$part->is_active ? $part->stockStatus() : 'NONAKTIF'" /></td>
                         <td class="text-right whitespace-nowrap">

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MaterialPurchaseItem extends Model
 {
     protected $fillable = [
-        'material_purchase_id', 'material_id', 'rack_id', 'qty', 'unit_cost', 'subtotal',
+        'material_purchase_id', 'material_id', 'component_id', 'rack_id', 'qty', 'unit_cost', 'subtotal',
     ];
 
     protected function casts(): array
@@ -35,6 +35,23 @@ class MaterialPurchaseItem extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    /** Komponen jadi yang dibeli (masuk gudang setengah jadi); kosong bila baris bahan baku. */
+    public function component(): BelongsTo
+    {
+        return $this->belongsTo(Component::class);
+    }
+
+    /** Nama barang di baris ini, bahan atau komponen. */
+    public function goodsName(): ?string
+    {
+        return $this->material?->name ?? $this->component?->name;
+    }
+
+    public function goodsUnit(): ?string
+    {
+        return $this->material?->unit ?? $this->component?->unit;
     }
 
     public function rack(): BelongsTo

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Component;
 use App\Models\Material;
+use App\Models\MaterialPurchase;
 use App\Models\User;
 use Database\Seeders\ComponentSeeder;
 use Database\Seeders\KnalpotWorkbookSeeder;
@@ -74,6 +75,40 @@ class ComponentWarehouseTest extends TestCase
         $this->assertSame($before, (float) $material->refresh()->stock);
 
         $this->delete(route('admin.components.destroy', $component))->assertSessionHas('error');
+    }
+
+    public function test_buying_finished_components_fills_the_semi_finished_warehouse(): void
+    {
+        $component = Component::where('code', 'KMP-TTB')->firstOrFail();
+        $material = Material::query()->firstOrFail();
+        $materialStock = (float) $material->stock;
+
+        $this->get(route('admin.purchases.create', ['component' => $component->id]))->assertOk()->assertSee('Gudang Setengah Jadi');
+
+        $this->post(route('admin.purchases.store'), [
+            'destination' => 'setengah_jadi', 'component_id' => $component->id, 'material_id' => $material->id,
+            'purchased_at' => '2026-11-22', 'qty' => 10, 'unit_price' => 15_000, 'supplier' => 'Toko Knalpot Jaya',
+        ])->assertRedirect(route('admin.purchases.index'));
+
+        $component->refresh();
+        $this->assertSame(10.0, (float) $component->stock);
+        $this->assertSame(15_000.0, (float) $component->cost_price);
+        $this->assertSame(150_000.0, $component->stockValue());
+        $this->assertSame($materialStock, (float) $material->refresh()->stock);
+
+        $this->get(route('admin.purchases.index'))->assertOk()->assertSee('Tutup Silencer Belakang')->assertSee('KOMPONEN');
+
+        // Mutasi dari pembelian hanya bisa dihapus lewat pembeliannya.
+        $movement = $component->movements()->firstOrFail();
+        $this->delete(route('admin.warehouses.movements.destroy', $movement))->assertSessionHas('error');
+
+        $purchase = MaterialPurchase::latest('id')->firstOrFail();
+        $this->delete(route('admin.purchases.destroy', $purchase))->assertRedirect();
+        $this->assertSame(0.0, (float) $component->refresh()->stock);
+
+        $this->post(route('admin.purchases.store'), [
+            'destination' => 'setengah_jadi', 'purchased_at' => '2026-11-22', 'qty' => 1, 'unit_price' => 1,
+        ])->assertSessionHasErrors('component_id');
     }
 
     public function test_warehouse_pages_show_the_three_warehouses(): void

@@ -9,7 +9,7 @@
     <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <x-admin.stat label="Stok di gudang setengah jadi" :value="qty((float) $part->stock).' '.$part->unit" :tone="match ($part->stockStatus()) { 'HABIS' => 'danger', 'MENIPIS' => 'warning', default => 'success' }" :hint="'Status '.$part->stockStatus()" />
         <x-admin.stat label="Stok minimum" :value="qty((float) $part->min_stock).' '.$part->unit" />
-        <x-admin.stat label="Biaya bahan / unit" :value="rupiah($part->materialCost())" hint="Dari harga rata-rata bahan baku" />
+        <x-admin.stat label="Harga / unit" :value="rupiah($part->unitCost())" :hint="$part->materials->isNotEmpty() ? 'Dari harga rata-rata bahan baku' : 'Rata-rata harga beli komponen jadi'" />
         <x-admin.stat label="Nilai stok" :value="rupiah($part->stockValue())" />
     </section>
 
@@ -17,6 +17,7 @@
         <a href="{{ route('admin.warehouses.movements.create', ['component' => $part->id, 'type' => 'masuk']) }}" class="btn">+ Catat hasil dibuat</a>
         <a href="{{ route('admin.warehouses.movements.create', ['component' => $part->id, 'type' => 'keluar']) }}" class="btn">− Dipakai rakit</a>
         <a href="{{ route('admin.warehouses.movements.create', ['component' => $part->id, 'type' => 'penyesuaian']) }}" class="btn">± Penyesuaian</a>
+        <a href="{{ route('admin.purchases.create', ['component' => $part->id]) }}" class="btn">+ Beli komponen jadi</a>
     </div>
 
     <section class="card">
