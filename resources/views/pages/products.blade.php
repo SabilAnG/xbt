@@ -6,7 +6,7 @@
 @section('content')
 <div class="no-bottom no-top" id="content">
             <div id="top"></div>
-                <section class="bg-dark text-light relative jarallax m-products-hero">
+                <section class="bg-dark text-light relative jarallax m-products-hero m-hide-mobile">
     <div class="de-gradient-edge-top"></div>
     <img src="{{ content_image('products.image.1', 'assets/images/2345.png') }}" class="jarallax-img" alt="">
     <div class="container relative z-2">
@@ -28,7 +28,8 @@
     <div class="sw-overlay"></div>
 </section>
 
-    <section class="m-products-section">
+    @include('partials.m-plp', ['products' => $products])
+    <section class="m-products-section m-hide-mobile">
         <div class="container">
             <div class="row g-4">
                 <div class="col-lg-3">

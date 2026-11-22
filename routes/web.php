@@ -28,6 +28,8 @@ Route::view('/tracking', 'pages.tracking')->name('tracking');
 Route::view('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
 Route::view('/terms-and-conditions', 'pages.terms-and-conditions')->name('terms-and-conditions');
 
+Route::view('/keranjang', 'pages.cart')->name('cart');
+
 Route::get('/products', function () {
     return view('pages.products', [
         'products' => Product::with(['images', 'item'])->active()->ordered()->get(),

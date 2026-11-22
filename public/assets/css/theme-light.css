@@ -167,6 +167,7 @@ html[data-theme='light'] .subfooter { background: var(--lt-bg-softer) !important
     html[data-theme='light'] .m-buybar { background: rgba(255, 255, 255, .96); border-top-color: var(--lt-border); }
     html[data-theme='light'] .m-buybar .m-buybar-price strong { color: var(--lt-heading); }
     html[data-theme='light'] .m-buybar .m-buybar-price small { color: var(--lt-muted); opacity: 1; }
+    html[data-theme='light'] .m-card-cart { background: #fff; }
     html[data-theme='light'] .m-buybar .m-buybar-chat { background: var(--lt-bg-soft); border-color: var(--lt-border); color: var(--lt-heading); }
 }
 

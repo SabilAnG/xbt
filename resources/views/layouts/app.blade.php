@@ -49,6 +49,28 @@
         document.body.classList.remove('dark-scheme');
         document.body.classList.add('theme-light');
     }
+    // Tombol kembali: mundur bila entri riwayat sebelumnya memang halaman situs ini;
+    // bila tidak (tab baru, dibuka dari luar), buka halaman asal atau halaman cadangan.
+    window.goBack = function (fallback) {
+        var ref = document.referrer;
+        var refSameSite = ref.indexOf(location.origin) === 0 && ref !== location.href;
+        var prevIsOurs = null;
+        try {
+            if (window.navigation && navigation.currentEntry) {
+                var i = navigation.currentEntry.index;
+                var prev = i > 0 ? navigation.entries()[i - 1] : null;
+                prevIsOurs = !!(prev && prev.url && prev.url.indexOf(location.origin) === 0);
+            }
+        } catch (e) {}
+        if (prevIsOurs === true || (prevIsOurs === null && refSameSite && history.length > 1)) {
+            var here = location.href;
+            history.back();
+            setTimeout(function () { if (location.href === here) location.href = refSameSite ? ref : fallback; }, 400);
+        } else {
+            location.href = refSameSite ? ref : fallback;
+        }
+        return false;
+    };
     window.toggleSiteTheme = function () {
         var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
         try { localStorage.setItem('site-theme', next); } catch (e) {}
@@ -71,6 +93,8 @@
 @yield('content')
 
 @include('partials.footer')
+@include('partials.m-footer')
+@include('partials.m-cart')
 
     </div>
 

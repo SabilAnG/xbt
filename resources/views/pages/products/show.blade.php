@@ -2,7 +2,7 @@
 
 @section('title', $product->name)
 @section('body-class', 'has-buybar')
-@section('m-back', route('products.index'))
+@section('m-back', route('products.index', [], false))
 @section('m-title', $product->name)
 
 @push('head')
@@ -84,8 +84,8 @@
     @include('partials.m-pdp', ['product' => $product, 'others' => $others])
                 <section class="pt-120 sm-pt-0 m-detail-section m-hide-mobile">
         <div class="container">
-            <a href="{{ route('products.index') }}" class="d-none d-md-inline-flex align-items-center gap-2 mb-4 product-back-link"
-                onclick="if (document.referrer.indexOf(location.origin) === 0 && history.length > 1) { history.back(); return false; }">
+            <a href="{{ route('products.index', [], false) }}" class="d-none d-md-inline-flex align-items-center gap-2 mb-4 product-back-link"
+                onclick="return goBack(this.getAttribute('href'))">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 18 9 12l6-6"/></svg>
                 Kembali ke produk
             </a>
@@ -127,8 +127,13 @@
                         </div>
                                             </div>
 
+                    <button type="button" class="btn-add-cart w-100 mt-4" data-cart-add='@json($product->cartPayload())'>
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 8H6.2M9 20.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm8 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"/></svg>
+                        Tambah ke keranjang
+                    </button>
+
                     <!-- Buy Action -->
-                    <a class="btn-main mt-4 w-100" id="btn-buy-now" href="javascript:void(0)">
+                    <a class="btn-main mt-3 w-100" id="btn-buy-now" href="javascript:void(0)">
                         <span>Buy Now</span>
                     </a>
 
@@ -165,15 +170,15 @@
 
 @push('mobile-bar')
     <div class="m-buybar">
-        <div class="m-buybar-price">
-            <small>{{ $product->item ? ($product->availableStock() > 0 ? 'Stok tersedia' : 'Pre-order') : 'Harga' }}</small>
-            <strong>{{ $product->formattedPrice() }}</strong>
-        </div>
         <a class="m-buybar-chat" href="{{ route('redirect.product-checkout', ['product' => $product->slug, 'customer_support' => 2]) }}" target="_blank" rel="noopener" aria-label="Chat admin 2">
             <i class="fa-regular fa-comment-dots" style="font-size:18px"></i>
         </a>
+        <button type="button" class="m-buybar-cart" data-cart-add='@json($product->cartPayload())'>
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 8H6.2M9 20.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm8 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"/></svg>
+            + Keranjang
+        </button>
         <a class="m-buybar-buy" href="{{ route('redirect.product-checkout', ['product' => $product->slug, 'customer_support' => 1]) }}" target="_blank" rel="noopener">
-            <i class="fa-brands fa-whatsapp" style="font-size:18px"></i> Pesan via WhatsApp
+            <i class="fa-brands fa-whatsapp" style="font-size:18px"></i> Beli
         </a>
     </div>
 @endpush

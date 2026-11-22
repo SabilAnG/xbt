@@ -20,6 +20,7 @@
     @media (max-width: 767px) {
         :root { --m-accent: var(--primary-color, #f97316); --m-bar: 64px; }
 
+        html, body { overflow-x: hidden; max-width: 100%; }
         body { padding-bottom: calc(var(--m-bar) + env(safe-area-inset-bottom)); -webkit-tap-highlight-color: transparent; }
         body.has-buybar { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
         #back-to-top { display: none !important; }
@@ -135,7 +136,11 @@
             font-size: 14px; font-weight: 600; text-decoration: none;
         }
         .m-buybar .m-buybar-chat { width: 46px; background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .1); }
-        .m-buybar .m-buybar-buy { padding: 0 18px; background: #25d366; color: #fff; box-shadow: 0 6px 18px -6px rgba(37, 211, 102, .7); }
+        .m-buybar .m-buybar-buy { flex: 1; padding: 0 14px; background: #25d366; color: #fff; box-shadow: 0 6px 18px -6px rgba(37, 211, 102, .7); }
+        .m-buybar .m-buybar-cart {
+            flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 46px; padding: 0 12px; border-radius: 12px;
+            border: 1px solid var(--m-accent); background: transparent; color: var(--m-accent); font-size: 14px; font-weight: 600;
+        }
 
         /* ------------------------------------------------ beranda katalog */
         .m-hide-mobile { display: none !important; }
@@ -181,12 +186,26 @@
         .m-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 
         .m-card { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; text-decoration: none; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
-        .m-card:active { transform: scale(.98); }
+        .m-card-link { display: flex; flex-direction: column; flex: 1; text-decoration: none; }
+        .m-card-link:active { opacity: .85; }
+        .m-card[hidden] { display: none; }
+        .m-card-actions { display: flex; gap: 6px; margin: 0 10px 10px; }
+        .m-card-cart {
+            flex: 0 0 36px; display: grid; place-items: center; height: 34px; padding: 0; border-radius: 10px;
+            border: 1px solid var(--m-accent); background: transparent; color: var(--m-accent); cursor: pointer;
+        }
+        .m-card-cart svg { width: 18px; height: 18px; }
+        .m-card-cart:active { background: var(--m-accent); color: #fff; }
+        .m-card-buy {
+            flex: 1; display: grid; place-items: center; height: 34px; border-radius: 10px;
+            background: var(--m-accent); color: #fff !important; font-size: 13px; font-weight: 600; text-decoration: none;
+        }
+        .m-card-buy:active { filter: brightness(.9); }
         .m-card-img { position: relative; display: block; aspect-ratio: 1; background: #1a1a1d; }
         .m-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .m-card-badge { position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; background: #16a34a; color: #fff; }
         .m-card-badge.is-out { background: rgba(0,0,0,.65); }
-        .m-card-body { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px 11px; }
+        .m-card-body { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px 10px; flex: 1; }
         .m-card-name { font-size: 12.5px; line-height: 1.35; color: #fff; font-weight: 500; min-height: 2.7em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .m-card-fit { font-size: 11px; opacity: .5; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .m-card-price { font-size: 14.5px; font-weight: 700; color: var(--m-accent); margin-top: 2px; }

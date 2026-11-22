@@ -48,6 +48,25 @@ class Product extends Model
             : '$'.number_format((float) $this->price, 2);
     }
 
+    /**
+     * Data untuk tombol "+ Keranjang" (keranjang disimpan di browser).
+     *
+     * @return array{slug: string, name: string, price: float, currency: string, image: ?string, url: string}
+     */
+    public function cartPayload(): array
+    {
+        $image = $this->images->first();
+
+        return [
+            'slug' => $this->slug,
+            'name' => $this->name,
+            'price' => (float) $this->price,
+            'currency' => $this->currency ?: 'USD',
+            'image' => $image ? asset($image->thumb()) : null,
+            'url' => route('products.show', $this->slug, false),
+        ];
+    }
+
     /** Stok knalpot yang masih tersedia, bila produk ini tertaut ke stok. */
     public function availableStock(): ?float
     {
