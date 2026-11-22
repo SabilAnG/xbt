@@ -23,7 +23,7 @@
                     <h2 class="card-title">Tertaut ke Stok Produk: <a href="{{ route('admin.items.show', $stockItem) }}" class="link">{{ $stockItem->sku }}</a></h2>
                     <x-admin.status :value="$stockItem->stockStatus()" />
                 </div>
-                <dl class="grid grid-cols-2 gap-px bg-zinc-100 sm:grid-cols-5">
+                <dl class="grid grid-cols-2 gap-px bg-slate-100 sm:grid-cols-5">
                     @foreach ([
                         'Harga modal (HPP)' => rupiah($hpp),
                         'Harga jual online' => rupiah($stockItem->sell_price_online),
@@ -32,12 +32,12 @@
                         'Untung per unit (harga web − HPP)' => $margin === null ? '—' : rupiah($margin).($hpp > 0 ? ' ('.round($margin / $hpp * 100).'%)' : ''),
                     ] as $label => $value)
                         <div class="bg-white px-4 py-3">
-                            <dt class="text-xs text-zinc-500">{{ $label }}</dt>
-                            <dd @class(['mt-1 text-sm font-semibold tabular-nums', 'text-red-600' => $margin !== null && $margin < 0 && $loop->last])>{{ $value }}</dd>
+                            <dt class="text-xs text-slate-500">{{ $label }}</dt>
+                            <dd @class(['mt-1 text-sm font-semibold tabular-nums', 'text-rose-600' => $margin !== null && $margin < 0 && $loop->last])>{{ $value }}</dd>
                         </div>
                     @endforeach
                 </dl>
-                <p class="px-5 py-3 text-xs text-zinc-500">Harga modal dan harga jual hanya terlihat di admin. Website menampilkan <strong>Harga website</strong> di bawah.</p>
+                <p class="px-5 py-3 text-xs text-slate-500">Harga modal dan harga jual hanya terlihat di admin. Website menampilkan <strong>Harga website</strong> di bawah.</p>
             </section>
         @endif
 
@@ -56,9 +56,9 @@
             <div class="grid grid-cols-2 gap-4">
                 <x-admin.field name="sort_order" label="Urutan" type="number" min="0" :value="$product->sort_order" required />
                 <div class="flex items-end pb-2">
-                    <label class="flex items-center gap-2 text-sm text-zinc-700">
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
                         <input type="hidden" name="is_active" value="0">
-                        <input type="checkbox" name="is_active" value="1" class="rounded border-zinc-300" @checked(old('is_active', $product->is_active))> Tampilkan
+                        <input type="checkbox" name="is_active" value="1" class="rounded border-slate-300" @checked(old('is_active', $product->is_active))> Tampilkan
                     </label>
                 </div>
             </div>
@@ -69,18 +69,18 @@
         <section class="card">
             <div class="card-header">
                 <h2 class="card-title">Galeri foto</h2>
-                <p class="text-xs text-zinc-500">Foto dengan urutan terkecil jadi foto utama.</p>
+                <p class="text-xs text-slate-500">Foto dengan urutan terkecil jadi foto utama.</p>
             </div>
             <div class="space-y-5 p-5">
                 @if ($product->exists && $product->images->isNotEmpty())
                     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                         @foreach ($product->images as $image)
-                            <div class="rounded-lg border border-zinc-200 p-2">
-                                <img src="{{ asset($image->thumb()) }}" alt="" class="aspect-square w-full rounded-md bg-zinc-100 object-cover">
+                            <div class="rounded-lg border border-slate-200 p-2">
+                                <img src="{{ asset($image->thumb()) }}" alt="" class="aspect-square w-full rounded-md bg-slate-100 object-cover">
                                 <div class="mt-2 flex items-center gap-2">
                                     <input type="number" min="0" name="images[{{ $image->id }}][sort_order]" value="{{ $image->sort_order }}" class="input w-20 py-1 text-xs" aria-label="Urutan">
-                                    <label class="ml-auto flex items-center gap-1 text-xs text-red-600">
-                                        <input type="checkbox" name="images[{{ $image->id }}][delete]" value="1" class="rounded border-zinc-300"> Hapus
+                                    <label class="ml-auto flex items-center gap-1 text-xs text-rose-600">
+                                        <input type="checkbox" name="images[{{ $image->id }}][delete]" value="1" class="rounded border-slate-300"> Hapus
                                     </label>
                                 </div>
                             </div>

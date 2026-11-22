@@ -20,14 +20,14 @@
                         <td class="text-xs whitespace-nowrap">{{ $pages[$block->page] ?? $block->page }}</td>
                         <td class="min-w-40">
                             {{ $block->label }}
-                            <p class="font-mono text-[11px] text-zinc-400">{{ $block->key }}</p>
+                            <p class="font-mono text-[11px] text-slate-400">{{ $block->key }}</p>
                         </td>
                         <td class="max-w-md">
                             @if ($block->type === 'image')
                                 @if ($block->value)
-                                    <img src="{{ asset($block->value) }}" alt="" class="h-12 max-w-40 rounded border border-zinc-200 bg-zinc-100 object-contain">
+                                    <img src="{{ asset($block->value) }}" alt="" class="h-12 max-w-40 rounded border border-slate-200 bg-slate-100 object-contain">
                                 @else
-                                    <span class="text-xs text-zinc-400">— gambar bawaan —</span>
+                                    <span class="text-xs text-slate-400">— gambar bawaan —</span>
                                 @endif
                             @else
                                 <span class="line-clamp-2 text-sm">{{ \Illuminate\Support\Str::limit(strip_tags((string) $block->value), 160) ?: '— teks bawaan —' }}</span>
@@ -37,7 +37,7 @@
                         <td class="text-right"><a href="{{ route('admin.content-blocks.edit', [$block, 'page' => request('page')]) }}" class="btn btn-sm">Ubah</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="py-8 text-center text-zinc-500">Tidak ada konten yang cocok.</td></tr>
+                    <tr><td colspan="5" class="py-8 text-center text-slate-500">Tidak ada konten yang cocok.</td></tr>
                 @endforelse
                 </tbody>
             </table>

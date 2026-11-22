@@ -16,10 +16,10 @@
             <div>
                 <p class="label">Gambar saat ini</p>
                 @if ($block->value)
-                    <img src="{{ asset($block->value) }}" alt="" class="max-h-56 rounded-lg border border-zinc-200 bg-zinc-100 object-contain">
+                    <img src="{{ asset($block->value) }}" alt="" class="max-h-56 rounded-lg border border-slate-200 bg-slate-100 object-contain">
                     <p class="hint font-mono">{{ $block->value }}</p>
                 @else
-                    <p class="text-sm text-zinc-500">Memakai gambar bawaan halaman.</p>
+                    <p class="text-sm text-slate-500">Memakai gambar bawaan halaman.</p>
                 @endif
             </div>
             <div>
@@ -32,7 +32,7 @@
                 :hint="$block->type === 'html' ? 'Ditampilkan tanpa escape: tanda & dan kutip tetap seperti diketik, tag HTML akan dirender.' : 'Kosongkan untuk memakai teks bawaan halaman.'" />
         @endif
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.content-blocks.index', ['page' => request('page')]) }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

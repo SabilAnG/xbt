@@ -29,9 +29,9 @@
             <x-admin.field name="min_stock" label="Stok minimum" type="number" step="any" min="0" :value="(float) $item->min_stock" required />
             <x-admin.field name="opening_stock" label="Stok awal" type="number" step="any" :value="(float) $item->opening_stock" hint="Hasil hitung fisik sebelum pencatatan." />
             <div class="flex items-end pb-2">
-                <label class="flex items-center gap-2 text-sm text-zinc-700">
+                <label class="flex items-center gap-2 text-sm text-slate-700">
                     <input type="hidden" name="is_active" value="0">
-                    <input type="checkbox" name="is_active" value="1" class="rounded border-zinc-300" @checked(old('is_active', $item->is_active ?? true))> Aktif
+                    <input type="checkbox" name="is_active" value="1" class="rounded border-slate-300" @checked(old('is_active', $item->is_active ?? true))> Aktif
                 </label>
             </div>
             <x-admin.field name="cost_price" label="HPP / unit" type="number" step="any" min="0" :value="(float) $item->cost_price" required />
@@ -41,7 +41,7 @@
 
         <x-admin.field name="notes" label="Catatan" type="textarea" :value="$item->notes" />
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ $item->exists ? route('admin.items.show', $item) : route('admin.items.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

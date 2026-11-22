@@ -10,7 +10,7 @@
         <x-admin.select name="category" label="Kategori" :options="$categories->mapWithKeys(fn ($c) => [$c => $c])" :value="request('category')" placeholder="Semua" />
     </x-admin.filters>
 
-    <div class="flex items-center justify-between rounded-xl bg-zinc-900 px-5 py-3 text-sm text-zinc-300">
+    <div class="flex items-center justify-between rounded-xl bg-slate-900 px-5 py-3 text-sm text-slate-300">
         <span>Total sesuai filter</span>
         <span class="text-base font-semibold text-white tabular-nums">{{ rupiah($total) }}</span>
     </div>
@@ -27,7 +27,7 @@
                 <tbody>
                 @foreach ($rows as $row)
                     <tr>
-                        <td class="num text-zinc-400">{{ $row->number }}</td>
+                        <td class="num text-slate-400">{{ $row->number }}</td>
                         <td class="whitespace-nowrap">{{ $row->date->translatedFormat('d M Y') }}</td>
                         <td class="text-xs whitespace-nowrap">{{ $row->period }}</td>
                         <td class="min-w-44 font-medium">{{ $row->name }}</td>
@@ -41,7 +41,7 @@
                         <td class="text-xs">{{ $row->unit }}</td>
                         <td class="num">{{ rupiah($row->unit_price) }}</td>
                         <td class="num font-semibold">{{ rupiah($row->total) }}</td>
-                        <td class="min-w-64 text-xs text-zinc-500">{{ $row->description }}</td>
+                        <td class="min-w-64 text-xs text-slate-500">{{ $row->description }}</td>
                     </tr>
                 @endforeach
                 </tbody>

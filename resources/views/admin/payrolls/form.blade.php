@@ -18,10 +18,10 @@
             <p class="label">{{ $isHost ? 'Host' : 'Tukang' }}{{ $row->exists ? '' : ' (bisa pilih beberapa sekaligus)' }}</p>
             <div class="flex flex-wrap gap-2">
                 @foreach ($people as $person)
-                    <label class="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                        <input type="{{ $row->exists ? 'radio' : 'checkbox' }}" name="people[]" value="{{ $person->id }}" class="border-zinc-300" @checked($selected->contains($person->id))>
+                    <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <input type="{{ $row->exists ? 'radio' : 'checkbox' }}" name="people[]" value="{{ $person->id }}" class="border-slate-300" @checked($selected->contains($person->id))>
                         {{ $person->name }}
-                        <span class="text-xs text-zinc-400">{{ rupiah($isHost ? $person->hourly_rate : $person->daily_wage) }}/{{ $isHost ? 'jam' : 'hari' }}</span>
+                        <span class="text-xs text-slate-400">{{ rupiah($isHost ? $person->hourly_rate : $person->daily_wage) }}/{{ $isHost ? 'jam' : 'hari' }}</span>
                     </label>
                 @endforeach
             </div>
@@ -42,15 +42,15 @@
         </div>
 
         @if (! $row->exists || $row->status !== 'Sudah')
-            <label class="flex items-start gap-2 text-sm text-zinc-700">
-                <input type="checkbox" name="record_expense" value="1" class="mt-0.5 rounded border-zinc-300" @checked(old('record_expense'))>
+            <label class="flex items-start gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="record_expense" value="1" class="mt-0.5 rounded border-slate-300" @checked(old('record_expense'))>
                 <span>Bila status "Sudah", catat juga ke Pengeluaran (kategori {{ $isHost ? 'Host Live' : 'Gaji Tukang' }})
-                    <span class="block text-xs text-zinc-500">Di Excel ini dicatat manual. Jangan dicentang bila sudah dicatat sendiri, supaya tidak dobel.</span></span>
+                    <span class="block text-xs text-slate-500">Di Excel ini dicatat manual. Jangan dicentang bila sudah dicatat sendiri, supaya tidak dobel.</span></span>
             </label>
         @endif
 
         @if ($row->exists)
-            <div class="rounded-lg bg-zinc-50 p-4 text-sm">
+            <div class="rounded-lg bg-slate-50 p-4 text-sm">
                 @if ($isHost)
                     Total jam <strong>{{ qty($row->totalHours(), 2) }}</strong> × {{ rupiah($row->rate()) }} = <strong>{{ rupiah($row->amountDue()) }}</strong>
                 @else
@@ -59,7 +59,7 @@
             </div>
         @endif
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.payrolls.index', $kind) }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

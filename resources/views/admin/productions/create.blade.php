@@ -11,7 +11,7 @@
             <x-admin.field name="worker" label="Tukang" class="sm:col-span-2" />
         </div>
         <x-admin.field name="notes" label="Catatan" type="textarea" />
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.productions.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan produksi</button>
         </div>

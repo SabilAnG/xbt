@@ -46,10 +46,10 @@
         <input type="hidden" name="tab" value="{{ $tab }}" id="current-tab">
 
         @if ($errors->any())
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
+            <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>
         @endif
 
-        <nav class="flex gap-1 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-sm">
+        <nav class="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             @foreach (['identitas' => 'Identitas', 'bahan' => 'Bahan ('.$materialRows->count().')', 'proses' => 'Proses & Mesin ('.($costRows->count() + $machineRows->count()).')', 'hasil' => 'Hasil / HPP'] as $key => $label)
                 <button type="button" data-tab="{{ $key }}" class="tab-button shrink-0 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap">{{ $label }}</button>
             @endforeach
@@ -66,9 +66,9 @@
                 <x-admin.field name="output_qty" label="Hasil per resep" type="number" step="any" min="0" :value="(float) $formula->output_qty" required class="sm:col-span-1" />
                 <x-admin.field name="output_unit" label="Satuan hasil" :value="$formula->output_unit" required class="sm:col-span-1" />
                 <div class="flex items-end pb-2 sm:col-span-1">
-                    <label class="flex items-center gap-2 text-sm text-zinc-700">
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
                         <input type="hidden" name="is_active" value="0">
-                        <input type="checkbox" name="is_active" value="1" class="rounded border-zinc-300" @checked(old('is_active', $formula->is_active ?? true))> Aktif
+                        <input type="checkbox" name="is_active" value="1" class="rounded border-slate-300" @checked(old('is_active', $formula->is_active ?? true))> Aktif
                     </label>
                 </div>
                 <x-admin.field name="notes" label="Catatan" type="textarea" :value="$formula->notes" class="sm:col-span-6" />
@@ -79,9 +79,9 @@
                     <div class="card-header"><h3 class="card-title">Produk stok yang memakai formula ini ({{ $products->count() }})</h3></div>
                     <div class="flex flex-wrap gap-2 p-4">
                         @forelse ($products as $item)
-                            <a href="{{ route('admin.items.show', $item) }}" class="rounded-full bg-zinc-100 px-3 py-1 text-xs hover:bg-brand-50">{{ $item->name }}</a>
+                            <a href="{{ route('admin.items.show', $item) }}" class="rounded-full bg-slate-100 px-3 py-1 text-xs hover:bg-brand-50">{{ $item->name }}</a>
                         @empty
-                            <p class="text-sm text-zinc-500">Belum ada. Pilih formula ini di form produk (Stok Produk → Resep BOM).</p>
+                            <p class="text-sm text-slate-500">Belum ada. Pilih formula ini di form produk (Stok Produk → Resep BOM).</p>
                         @endforelse
                     </div>
                 </div>
@@ -90,7 +90,7 @@
 
         {{-- ---------------------------------------------------------- Bahan --}}
         <section data-panel="bahan" class="space-y-4">
-            <p class="text-sm text-zinc-600">Isi ukuran apa adanya — pipa dalam mm, plat dalam ukuran potongan, endcap cukup diameternya. Sistem menghitung luas, sisa potong, dan biayanya.
+            <p class="text-sm text-slate-600">Isi ukuran apa adanya — pipa dalam mm, plat dalam ukuran potongan, endcap cukup diameternya. Sistem menghitung luas, sisa potong, dan biayanya.
                 Kolom <strong>Merek</strong> berasal dari Resep BOM Excel: kosong = semua produk bermerek, FD/XBT = hanya produk merek itu.</p>
             <div id="material-rows" class="space-y-3">
                 @foreach ($materialRows as $i => $row)
@@ -103,7 +103,7 @@
         {{-- -------------------------------------------------- Proses & Mesin --}}
         <section data-panel="proses" class="space-y-6">
             <div class="space-y-3">
-                <h3 class="text-sm font-semibold text-zinc-900">Proses kerja <span class="font-normal text-zinc-500">— isi menit untuk tarif per jam, jumlah untuk borongan. Tarif dari <a href="{{ route('admin.masters.index', 'komponen-biaya') }}" class="link">Komponen Biaya</a>.</span></h3>
+                <h3 class="text-sm font-semibold text-slate-900">Proses kerja <span class="font-normal text-slate-500">— isi menit untuk tarif per jam, jumlah untuk borongan. Tarif dari <a href="{{ route('admin.masters.index', 'komponen-biaya') }}" class="link">Komponen Biaya</a>.</span></h3>
                 <div id="cost-rows" class="space-y-3">
                     @foreach ($costRows as $i => $row)
                         @include('admin.formulas._cost-row', ['i' => $i, 'row' => $row, 'saved' => $savedCosts->get($row['id'] ?? null)])
@@ -112,7 +112,7 @@
                 <button type="button" class="btn" data-add="cost">+ Tambah proses</button>
             </div>
             <div class="space-y-3">
-                <h3 class="text-sm font-semibold text-zinc-900">Pemakaian mesin <span class="font-normal text-zinc-500">— berapa menit mesin menyala. Biaya per jam dari <a href="{{ route('admin.masters.index', 'mesin') }}" class="link">Mesin</a>.</span></h3>
+                <h3 class="text-sm font-semibold text-slate-900">Pemakaian mesin <span class="font-normal text-slate-500">— berapa menit mesin menyala. Biaya per jam dari <a href="{{ route('admin.masters.index', 'mesin') }}" class="link">Mesin</a>.</span></h3>
                 <div id="machine-rows" class="space-y-3">
                     @foreach ($machineRows as $i => $row)
                         @include('admin.formulas._machine-row', ['i' => $i, 'row' => $row, 'saved' => $savedMachines->get($row['id'] ?? null)])
@@ -126,24 +126,24 @@
         <section data-panel="hasil" class="space-y-6">
             @if ($formula->exists)
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-xs text-zinc-500">Angka dihitung dari data tersimpan. Simpan dulu bila baru mengubah isian.</p>
+                    <p class="text-xs text-slate-500">Angka dihitung dari data tersimpan. Simpan dulu bila baru mengubah isian.</p>
                     @if ($formulaBrands->count() > 0)
                         <div class="flex items-center gap-1 text-sm">
-                            <span class="mr-1 text-xs text-zinc-500">HPP untuk merek:</span>
+                            <span class="mr-1 text-xs text-slate-500">HPP untuk merek:</span>
                             @foreach ($formulaBrands as $brand)
                                 <a href="{{ route('admin.formulas.edit', [$formula, 'tab' => 'hasil', 'merek' => $brand]) }}"
-                                    @class(['rounded-lg px-3 py-1 text-xs font-medium', 'bg-zinc-900 text-white' => $brand === $hppBrand, 'bg-white ring-1 ring-zinc-200' => $brand !== $hppBrand])>{{ $brand }}</a>
+                                    @class(['rounded-lg px-3 py-1 text-xs font-medium', 'bg-slate-900 text-white' => $brand === $hppBrand, 'bg-white ring-1 ring-slate-200' => $brand !== $hppBrand])>{{ $brand }}</a>
                             @endforeach
                         </div>
                     @endif
                 </div>
                 @include('admin.formulas._hpp', ['formula' => $hppFormula])
             @else
-                <div class="card p-8 text-center text-sm text-zinc-500">Simpan formula ini dulu untuk melihat HPP, harga jual, dan kapasitasnya.</div>
+                <div class="card p-8 text-center text-sm text-slate-500">Simpan formula ini dulu untuk melihat HPP, harga jual, dan kapasitasnya.</div>
             @endif
         </section>
 
-        <div class="flex items-center justify-between gap-2 border-t border-zinc-200 pt-4">
+        <div class="flex items-center justify-between gap-2 border-t border-slate-200 pt-4">
             <div>
                 @if ($formula->exists)
                     <button form="delete-formula" class="btn btn-danger">Hapus formula</button>
@@ -177,9 +177,9 @@
                 document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
                 document.querySelectorAll('.tab-button').forEach(b => {
                     const active = b.dataset.tab === name;
-                    b.classList.toggle('bg-zinc-900', active);
+                    b.classList.toggle('bg-slate-900', active);
                     b.classList.toggle('text-white', active);
-                    b.classList.toggle('text-zinc-600', !active);
+                    b.classList.toggle('text-slate-600', !active);
                 });
                 document.getElementById('current-tab').value = name;
             };

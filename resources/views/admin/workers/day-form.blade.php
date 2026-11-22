@@ -11,7 +11,7 @@
         <div class="grid gap-3 sm:grid-cols-2">
             @foreach ($workers as $worker)
                 @php $value = old('values.'.$worker->id, $day->exists ? $day->valueFor($worker) : 1); @endphp
-                <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-4 py-3">
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
                     <span class="font-medium">{{ $worker->name }}</span>
                     <select name="values[{{ $worker->id }}]" class="input w-40">
                         <option value="1" @selected((string) $value === '1' || (float) $value === 1.0)>1 — masuk</option>
@@ -22,7 +22,7 @@
             @endforeach
         </div>
         @error('values.*')<p class="error">{{ $message }}</p>@enderror
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.attendance.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan absen</button>
         </div>

@@ -23,24 +23,24 @@
                     <tr>
                         <td>
                             @if ($image = $product->cardImage())
-                                <img src="{{ asset($image->thumb()) }}" alt="" class="size-12 rounded-md border border-zinc-200 object-cover">
+                                <img src="{{ asset($image->thumb()) }}" alt="" class="size-12 rounded-md border border-slate-200 object-cover">
                             @else
-                                <div class="size-12 rounded-md bg-zinc-100"></div>
+                                <div class="size-12 rounded-md bg-slate-100"></div>
                             @endif
                         </td>
                         <td>
                             <a href="{{ route('admin.web-products.edit', $product) }}" class="link">{{ $product->name }}</a>
-                            <p class="font-mono text-[11px] text-zinc-400">/products/{{ $product->slug }}</p>
+                            <p class="font-mono text-[11px] text-slate-400">/products/{{ $product->slug }}</p>
                         </td>
                         <td class="text-xs">{{ $product->fitment }}</td>
                         <td class="text-xs whitespace-nowrap">
                             @if ($product->item)
                                 <a href="{{ route('admin.items.show', $product->item) }}" class="link">{{ $product->item->sku }}</a> · {{ qty($product->item->stock) }} unit
                             @else
-                                <span class="text-zinc-400">—</span>
+                                <span class="text-slate-400">—</span>
                             @endif
                         </td>
-                        <td class="num text-zinc-500">{{ $product->item ? rupiah($product->item->cost_price) : '—' }}</td>
+                        <td class="num text-slate-500">{{ $product->item ? rupiah($product->item->cost_price) : '—' }}</td>
                         <td class="num font-semibold">{{ $product->formattedPrice() }}</td>
                         <td class="num">{{ $product->sort_order }}</td>
                         <td><x-admin.status :value="$product->is_active ? 'AKTIF' : 'NONAKTIF'" /></td>
@@ -50,7 +50,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="py-8 text-center text-zinc-500">Belum ada produk.</td></tr>
+                    <tr><td colspan="9" class="py-8 text-center text-slate-500">Belum ada produk.</td></tr>
                 @endforelse
                 </tbody>
             </table>

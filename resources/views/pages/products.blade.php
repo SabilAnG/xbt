@@ -5,7 +5,7 @@
 @section('content')
 <div class="no-bottom no-top" id="content">
             <div id="top"></div>
-                <section class="bg-dark text-light relative jarallax">
+                <section class="bg-dark text-light relative jarallax m-products-hero">
     <div class="de-gradient-edge-top"></div>
     <img src="{{ content_image('products.image.1', 'assets/images/2345.png') }}" class="jarallax-img" alt="">
     <div class="container relative z-2">
@@ -27,8 +27,12 @@
     <div class="sw-overlay"></div>
 </section>
 
-    <section>
+    <section class="m-products-section">
         <div class="container">
+            <label class="m-search">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z"/></svg>
+                <input type="search" id="m-product-search" placeholder="Cari knalpot…" autocomplete="off">
+            </label>
             <div class="row g-4">
                 <div class="col-lg-3">
                     <div class="item_filter_group">
@@ -95,10 +99,10 @@
                 </div>
 
                 <div class="col-lg-9">
-                    <div class="row g-4">
+                    <div class="row g-4 m-product-grid">
                                                     @foreach ($products as $product)
                                                     <!-- product item begin -->
-                            <div class="col-xl-3 col-lg-4 col-md-6">
+                            <div class="col-xl-3 col-lg-4 col-md-6" data-name="{{ strtolower($product->name.' '.$product->fitment) }}">
                                 <div class="de__pcard text-center">
                                     <div class="atr__images">
                                         <a href="{{ route('products.show', $product) }}">
@@ -124,7 +128,7 @@
                                         {{ $product->formattedPrice() }}
                                     </div>
                                     @if ($product->item)
-                                        <p class="small mb-2" style="opacity:.75">
+                                        <p class="small mb-2 m-stock" style="opacity:.75">
                                             {{ $product->availableStock() > 0 ? 'Stok tersedia' : 'Pre-order' }}
                                         </p>
                                     @endif
@@ -138,6 +142,7 @@
                                                     @endforeach
                         
                                             </div>
+                    <p class="m-empty" id="m-product-empty">Produk tidak ditemukan.</p>
                 </div>
             </div>
 
@@ -188,6 +193,18 @@
             }
 
             syncFromUrl();
+
+            // Cari produk di layar HP (tanpa memuat ulang halaman).
+            $('#m-product-search').on('input', function() {
+                const q = this.value.trim().toLowerCase();
+                let shown = 0;
+                $('.m-product-grid > [data-name]').each(function() {
+                    const match = !q || this.dataset.name.includes(q);
+                    $(this).toggle(match);
+                    if (match) shown++;
+                });
+                $('#m-product-empty').toggle(shown === 0);
+            });
 
             $(".cat-filter, .brand-filter, #cat_all, #brand_all").change(function() {
                 let brands = [];

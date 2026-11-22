@@ -27,14 +27,14 @@
                         <td class="num">{{ $session->manual_hours !== null ? qty($session->manual_hours, 2) : '' }}</td>
                         <td class="num font-semibold">{{ qty($session->totalHours(), 2) }}</td>
                         <td>{{ $session->store_account }}</td>
-                        <td class="text-xs text-zinc-500">{{ $session->notes }}</td>
+                        <td class="text-xs text-slate-500">{{ $session->notes }}</td>
                         <td class="text-right whitespace-nowrap">
                             <a href="{{ route('admin.live-sessions.edit', $session) }}" class="btn btn-sm">Ubah</a>
                             <x-admin.delete-button :action="route('admin.live-sessions.destroy', $session)" />
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="py-8 text-center text-zinc-500">Belum ada sesi live tercatat.</td></tr>
+                    <tr><td colspan="9" class="py-8 text-center text-slate-500">Belum ada sesi live tercatat.</td></tr>
                 @endforelse
                 </tbody>
             </table>

@@ -12,12 +12,12 @@
             <x-admin.field name="supplier" label="Toko / supplier" />
             <x-admin.field name="paid_from" label="Dibayar dari" class="sm:col-span-2" />
         </div>
-        <label class="flex items-start gap-2 text-sm text-zinc-700">
-            <input type="checkbox" name="recorded_in_expenses" value="1" class="mt-0.5 rounded border-zinc-300" @checked(old('recorded_in_expenses'))>
-            <span>Uangnya sudah dicatat di Pengeluaran <span class="block text-xs text-zinc-500">Centang agar tidak dihitung dobel di dashboard. Belanja baru: biarkan kosong.</span></span>
+        <label class="flex items-start gap-2 text-sm text-slate-700">
+            <input type="checkbox" name="recorded_in_expenses" value="1" class="mt-0.5 rounded border-slate-300" @checked(old('recorded_in_expenses'))>
+            <span>Uangnya sudah dicatat di Pengeluaran <span class="block text-xs text-slate-500">Centang agar tidak dihitung dobel di dashboard. Belanja baru: biarkan kosong.</span></span>
         </label>
         <x-admin.field name="notes" label="Catatan" type="textarea" />
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.purchases.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan pembelian</button>
         </div>

@@ -17,11 +17,11 @@
     <section class="grid gap-6 xl:grid-cols-3">
         <div class="card">
             <div class="card-header"><h2 class="card-title">Detail</h2></div>
-            <dl class="divide-y divide-zinc-100 text-sm">
+            <dl class="divide-y divide-slate-100 text-sm">
                 @foreach (['Stok awal' => qty($item->opening_stock), '+ Produksi' => qty($item->producedQty()), '− Terjual' => qty($item->soldQty()), 'Model motor' => $item->model_motor, 'Finishing' => $item->finishing, 'Tipe' => $item->variant, 'Ukuran' => $item->size, 'Merek' => $item->brand, 'Catatan' => $item->notes] as $label => $value)
                     <div class="flex justify-between gap-4 px-5 py-2.5">
-                        <dt class="text-zinc-500">{{ $label }}</dt>
-                        <dd class="text-right font-medium text-zinc-800">{{ $value ?: '—' }}</dd>
+                        <dt class="text-slate-500">{{ $label }}</dt>
+                        <dd class="text-right font-medium text-slate-800">{{ $value ?: '—' }}</dd>
                     </div>
                 @endforeach
             </dl>
@@ -42,10 +42,10 @@
                         <tr>
                             <td>{{ $line->material?->name }}</td>
                             <td class="num">{{ qty($line->qty) }} {{ $line->material?->unit }}</td>
-                            <td class="text-xs text-zinc-500">{{ $line->brand ?? 'Semua merek' }}</td>
+                            <td class="text-xs text-slate-500">{{ $line->brand ?? 'Semua merek' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="3" class="text-center text-zinc-500">Produk ini belum punya resep, jadi belum bisa diproduksi.</td></tr>
+                        <tr><td colspan="3" class="text-center text-slate-500">Produk ini belum punya resep, jadi belum bisa diproduksi.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -65,11 +65,11 @@
                         <td>{{ \App\Models\StockMovement::TYPES[$movement->type] ?? $movement->type }}</td>
                         <td class="font-mono text-xs">{{ $movement->notes }}</td>
                         <td class="num text-emerald-600">{{ (float) $movement->qty_in ? '+'.qty($movement->qty_in) : '' }}</td>
-                        <td class="num text-red-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
+                        <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
                         <td class="num font-semibold">{{ qty($movement->balance_after) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center text-zinc-500">Belum ada pergerakan stok.</td></tr>
+                    <tr><td colspan="6" class="text-center text-slate-500">Belum ada pergerakan stok.</td></tr>
                 @endforelse
                 </tbody>
             </table>

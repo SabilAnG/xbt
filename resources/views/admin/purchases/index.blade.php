@@ -25,7 +25,7 @@
                     <tr>
                         <td class="whitespace-nowrap">{{ $purchase->purchased_at->translatedFormat('d M Y') }}</td>
                         <td class="font-mono text-xs">{{ $purchase->invoice_number }}</td>
-                        <td>{{ $line?->material?->name }}</td>
+                        <td class="min-w-48">{{ $line?->material?->name }}</td>
                         <td class="num">{{ qty($line?->qty) }} {{ $line?->material?->unit }}</td>
                         <td class="num">{{ rupiah($line?->unit_cost) }}</td>
                         <td class="num font-semibold">{{ rupiah($purchase->total) }}</td>
@@ -33,16 +33,16 @@
                         <td class="text-xs">{{ $purchase->paid_from ?? '—' }}</td>
                         <td>
                             @if ($purchase->recorded_in_expenses)
-                                <span class="text-xs text-zinc-500" title="Uangnya sudah dicatat di Pengeluaran, tidak dihitung dobel">Ya</span>
+                                <span class="text-xs text-slate-500" title="Uangnya sudah dicatat di Pengeluaran, tidak dihitung dobel">Ya</span>
                             @else
                                 <span class="text-xs font-medium text-brand-700">Belum</span>
                             @endif
                         </td>
-                        <td class="max-w-xs truncate text-xs text-zinc-500" title="{{ $purchase->notes }}">{{ $purchase->notes }}</td>
+                        <td class="max-w-xs truncate text-xs text-slate-500" title="{{ $purchase->notes }}">{{ $purchase->notes }}</td>
                         <td class="text-right"><x-admin.delete-button :action="route('admin.purchases.destroy', $purchase)" confirm="Hapus pembelian ini? Stok bahan akan dikurangi kembali." /></td>
                     </tr>
                 @empty
-                    <tr><td colspan="11" class="py-8 text-center text-zinc-500">Belum ada pembelian.</td></tr>
+                    <tr><td colspan="11" class="py-8 text-center text-slate-500">Belum ada pembelian.</td></tr>
                 @endforelse
                 </tbody>
             </table>

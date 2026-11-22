@@ -14,9 +14,9 @@
             <x-admin.field name="opening_stock" label="Stok awal (hitung fisik)" type="number" step="any" :value="(float) $material->opening_stock" />
             <x-admin.field name="cost_price" label="Harga rata-rata" type="number" step="any" min="0" :value="(float) $material->cost_price" hint="Diperbarui otomatis setiap ada pembelian." />
             <div class="flex items-end pb-2">
-                <label class="flex items-center gap-2 text-sm text-zinc-700">
+                <label class="flex items-center gap-2 text-sm text-slate-700">
                     <input type="hidden" name="is_active" value="0">
-                    <input type="checkbox" name="is_active" value="1" class="rounded border-zinc-300" @checked(old('is_active', $material->is_active ?? true))> Aktif
+                    <input type="checkbox" name="is_active" value="1" class="rounded border-slate-300" @checked(old('is_active', $material->is_active ?? true))> Aktif
                 </label>
             </div>
         </div>
@@ -34,7 +34,7 @@
 
         <x-admin.field name="notes" label="Catatan" type="textarea" :value="$material->notes" />
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ $material->exists ? route('admin.materials.show', $material) : route('admin.materials.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

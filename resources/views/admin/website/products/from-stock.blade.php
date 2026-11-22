@@ -10,8 +10,8 @@
             <label class="label" for="q">Cari</label>
             <input id="q" name="q" value="{{ request('q') }}" class="input" placeholder="Nama knalpot">
         </div>
-        <label class="flex items-center gap-2 pb-2 text-sm text-zinc-700">
-            <input type="checkbox" name="available" value="1" class="rounded border-zinc-300" @checked(request('available'))> Hanya yang ada stok
+        <label class="flex items-center gap-2 pb-2 text-sm text-slate-700">
+            <input type="checkbox" name="available" value="1" class="rounded border-slate-300" @checked(request('available'))> Hanya yang ada stok
         </label>
     </x-admin.filters>
 
@@ -29,18 +29,18 @@
                 @forelse ($items as $item)
                     @php $product = $published->get($item->id); @endphp
                     <tr>
-                        <td class="font-mono text-xs whitespace-nowrap text-zinc-500">{{ $item->sku }}</td>
+                        <td class="font-mono text-xs whitespace-nowrap text-slate-500">{{ $item->sku }}</td>
                         <td class="min-w-56">{{ $item->name }}</td>
-                        <td class="num font-semibold {{ $item->stock <= 0 ? 'text-red-600' : '' }}">{{ qty($item->stock) }}</td>
+                        <td class="num font-semibold {{ $item->stock <= 0 ? 'text-rose-600' : '' }}">{{ qty($item->stock) }}</td>
                         <td class="num">{{ rupiah($item->cost_price) }}</td>
                         <td class="num">{{ rupiah($item->sell_price_online) }}</td>
-                        <td class="num text-zinc-500">{{ rupiah($item->sell_price) }}</td>
+                        <td class="num text-slate-500">{{ rupiah($item->sell_price) }}</td>
                         <td class="whitespace-nowrap">
                             @if ($product)
                                 <x-admin.status :value="$product->is_active ? 'AKTIF' : 'NONAKTIF'" />
-                                <span class="ml-1 text-xs tabular-nums text-zinc-600">{{ $product->formattedPrice() }}</span>
+                                <span class="ml-1 text-xs tabular-nums text-slate-600">{{ $product->formattedPrice() }}</span>
                             @else
-                                <span class="text-xs text-zinc-400">belum</span>
+                                <span class="text-xs text-slate-400">belum</span>
                             @endif
                         </td>
                         <td class="text-right whitespace-nowrap">
@@ -55,7 +55,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="py-8 text-center text-zinc-500">Tidak ada knalpot.</td></tr>
+                    <tr><td colspan="8" class="py-8 text-center text-slate-500">Tidak ada knalpot.</td></tr>
                 @endforelse
                 </tbody>
             </table>

@@ -11,7 +11,7 @@
 @endsection
 
 @section('content')
-    <div class="flex items-center justify-between rounded-xl px-5 py-3 text-sm {{ $unpaid > 0 ? 'bg-red-600 text-white' : 'bg-zinc-900 text-zinc-300' }}">
+    <div class="flex items-center justify-between rounded-xl px-5 py-3 text-sm {{ $unpaid > 0 ? 'bg-rose-600 text-white' : 'bg-slate-900 text-slate-300' }}">
         <span>Total BELUM {{ $isHost ? 'ditransfer' : 'dibayar' }}</span>
         <span class="text-base font-semibold tabular-nums">{{ rupiah($unpaid) }}</span>
     </div>
@@ -52,16 +52,16 @@
                         @endif
                         <td class="num font-semibold">{{ rupiah($row->amountDue()) }}</td>
                         <td class="text-xs">{{ $person?->account }}</td>
-                        <td><span @class(['rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', 'bg-emerald-50 text-emerald-700 ring-emerald-200' => $row->status === 'Sudah', 'bg-red-50 text-red-700 ring-red-200' => $row->status !== 'Sudah'])>{{ $row->status }}</span></td>
+                        <td><span @class(['rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', 'bg-emerald-50 text-emerald-700 ring-emerald-200' => $row->status === 'Sudah', 'bg-rose-50 text-rose-700 ring-rose-200' => $row->status !== 'Sudah'])>{{ $row->status }}</span></td>
                         <td class="text-xs whitespace-nowrap">{{ $row->paid_at?->translatedFormat('d M Y') }}</td>
-                        <td class="text-xs text-zinc-500">{{ $row->notes }}</td>
+                        <td class="text-xs text-slate-500">{{ $row->notes }}</td>
                         <td class="text-right whitespace-nowrap">
                             <a href="{{ route('admin.payrolls.edit', [$kind, $row->id]) }}" class="btn btn-sm">Ubah</a>
                             <x-admin.delete-button :action="route('admin.payrolls.destroy', [$kind, $row->id])" />
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="13" class="py-8 text-center text-zinc-500">Belum ada rekap.</td></tr>
+                    <tr><td colspan="13" class="py-8 text-center text-slate-500">Belum ada rekap.</td></tr>
                 @endforelse
                 </tbody>
             </table>

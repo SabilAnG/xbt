@@ -30,11 +30,11 @@
                         <td class="whitespace-nowrap">{{ \App\Models\MaterialMovement::TYPES[$movement->type] ?? $movement->type }}</td>
                         <td class="text-xs">{{ $movement->notes }}</td>
                         <td class="num text-emerald-600">{{ (float) $movement->qty_in ? '+'.qty($movement->qty_in) : '' }}</td>
-                        <td class="num text-red-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
+                        <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
                         <td class="num font-semibold">{{ qty($movement->balance_after) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center text-zinc-500">Belum ada pergerakan stok.</td></tr>
+                    <tr><td colspan="6" class="text-center text-slate-500">Belum ada pergerakan stok.</td></tr>
                 @endforelse
                 </tbody>
             </table>

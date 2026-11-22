@@ -31,7 +31,7 @@
             <input type="number" step="any" min="0" name="{{ $n }}[qty]" value="{{ $val('qty') !== null ? (float) $val('qty') : 1 }}" class="input">
         </div>
         <div class="flex items-end gap-2 lg:col-span-2">
-            <div class="flex-1 pb-2 text-right text-xs text-zinc-600">{{ $saved ? rupiah($saved->subtotal()) : '' }}</div>
+            <div class="flex-1 pb-2 text-right text-xs text-slate-600">{{ $saved ? rupiah($saved->subtotal()) : '' }}</div>
             <button type="button" class="btn btn-danger btn-sm mb-1" data-remove>Hapus</button>
         </div>
         <div class="sm:col-span-2 lg:col-span-12">

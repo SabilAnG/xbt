@@ -21,7 +21,7 @@
                                     <input name="{{ $section['rate'] }}" type="number" step="any" min="0" value="{{ (float) $row->{$section['rate']} }}" class="input w-36" required>
                                     <input name="account" value="{{ $row->account }}" class="input w-56 flex-1" placeholder="No. rekening / dana">
                                     <input type="hidden" name="is_active" value="0">
-                                    <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_active" value="1" class="rounded border-zinc-300" @checked($row->is_active)> Aktif</label>
+                                    <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_active" value="1" class="rounded border-slate-300" @checked($row->is_active)> Aktif</label>
                                     <button class="btn btn-sm">Simpan</button>
                                 </form>
                             </td>
@@ -30,7 +30,7 @@
                     </tbody>
                 </table>
             </div>
-            <form method="POST" action="{{ route($section['store']) }}" class="flex flex-wrap items-center gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3">
+            <form method="POST" action="{{ route($section['store']) }}" class="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3">
                 @csrf
                 <input name="name" class="input w-36" placeholder="Nama baru" required>
                 <input name="{{ $section['rate'] }}" type="number" step="any" min="0" class="input w-36" placeholder="{{ $section['rateLabel'] }}" required>

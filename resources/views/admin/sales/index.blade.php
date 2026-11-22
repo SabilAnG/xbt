@@ -32,26 +32,26 @@
                         <td class="font-mono text-xs">{{ $sale->invoice_number }}</td>
                         <td class="min-w-48">
                             {{ $line?->item?->name }}
-                            @if ($sale->notes)<p class="text-xs text-zinc-500">{{ $sale->notes }}</p>@endif
+                            @if ($sale->notes)<p class="text-xs text-slate-500">{{ $sale->notes }}</p>@endif
                         </td>
-                        <td class="num {{ ($line?->qty ?? 0) < 0 ? 'text-red-600' : '' }}">{{ qty($line?->qty) }}</td>
+                        <td class="num {{ ($line?->qty ?? 0) < 0 ? 'text-rose-600' : '' }}">{{ qty($line?->qty) }}</td>
                         <td class="num">{{ rupiah($line?->unit_price) }}</td>
                         <td>{{ $sale->channel ?? '—' }}</td>
                         <td>{{ $sale->customer_name ?? '—' }}</td>
                         <td class="num font-semibold">{{ rupiah($sale->total) }}</td>
                         <td class="num">{{ rupiah($sale->paid_amount) }}</td>
-                        <td class="num {{ $sale->receivable() > 0 ? 'text-red-600' : '' }}">{{ rupiah($sale->receivable()) }}</td>
+                        <td class="num {{ $sale->receivable() > 0 ? 'text-rose-600' : '' }}">{{ rupiah($sale->receivable()) }}</td>
                         <td><x-admin.status :value="$sale->isPaidOff() ? 'LUNAS' : 'BELUM LUNAS'" /></td>
                         <td class="num">{{ rupiah($sale->total_cost) }}</td>
                         <td class="num text-emerald-700">{{ rupiah($sale->total - $sale->total_cost) }}</td>
-                        <td class="num text-zinc-500">{{ $line?->item ? rupiah($line->item->listPriceFor($sale->channel)) : '' }}</td>
+                        <td class="num text-slate-500">{{ $line?->item ? rupiah($line->item->listPriceFor($sale->channel)) : '' }}</td>
                         <td class="text-right whitespace-nowrap">
                             <a href="{{ route('admin.sales.edit', $sale) }}" class="btn btn-sm">Ubah</a>
                             <x-admin.delete-button :action="route('admin.sales.destroy', $sale)" confirm="Hapus penjualan ini? Stok knalpot akan dikembalikan." />
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="15" class="py-8 text-center text-zinc-500">Belum ada penjualan.</td></tr>
+                    <tr><td colspan="15" class="py-8 text-center text-slate-500">Belum ada penjualan.</td></tr>
                 @endforelse
                 </tbody>
             </table>

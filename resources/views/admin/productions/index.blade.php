@@ -25,16 +25,16 @@
                     <tr>
                         <td class="whitespace-nowrap">{{ $production->produced_at->translatedFormat('d M Y') }}</td>
                         <td><a href="{{ route('admin.productions.show', $production) }}" class="link font-mono text-xs">{{ $production->production_number }}</a></td>
-                        <td>{{ $production->item?->name }}</td>
+                        <td class="min-w-64">{{ $production->item?->name }}</td>
                         <td class="num font-semibold">{{ qty($production->output_qty) }}</td>
                         <td>{{ $production->worker ?? '—' }}</td>
                         <td class="text-xs whitespace-nowrap">{{ $production->formula?->name }}</td>
                         <td class="text-xs">{{ $production->item?->brand }}</td>
-                        <td class="max-w-xs truncate text-xs text-zinc-500" title="{{ $production->notes }}">{{ $production->notes }}</td>
+                        <td class="max-w-xs truncate text-xs text-slate-500" title="{{ $production->notes }}">{{ $production->notes }}</td>
                         <td class="text-right"><x-admin.delete-button :action="route('admin.productions.destroy', $production)" confirm="Hapus produksi ini? Stok knalpot dan bahan akan dikembalikan." /></td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="py-8 text-center text-zinc-500">Belum ada produksi.</td></tr>
+                    <tr><td colspan="9" class="py-8 text-center text-slate-500">Belum ada produksi.</td></tr>
                 @endforelse
                 </tbody>
             </table>

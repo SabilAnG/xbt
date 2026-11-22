@@ -38,21 +38,21 @@
                 @forelse ($materials as $material)
                     @php $row = $flow->get($material->id); @endphp
                     <tr @class(['opacity-50' => ! $material->is_active])>
-                        <td class="font-mono text-xs whitespace-nowrap text-zinc-500">{{ $material->sku }}</td>
-                        <td><a href="{{ route('admin.materials.show', $material) }}" class="link">{{ $material->name }}</a></td>
+                        <td class="font-mono text-xs whitespace-nowrap text-slate-500">{{ $material->sku }}</td>
+                        <td class="min-w-52"><a href="{{ route('admin.materials.show', $material) }}" class="link">{{ $material->name }}</a></td>
                         <td class="text-xs whitespace-nowrap">{{ $material->category?->name }}</td>
                         <td>{{ $material->unit }}</td>
-                        <td class="num text-zinc-500">{{ qty($material->opening_stock) }}</td>
+                        <td class="num text-slate-500">{{ qty($material->opening_stock) }}</td>
                         <td class="num">{{ qty($row->masuk ?? 0) }}</td>
                         <td class="num">{{ qty($row->terpakai ?? 0) }}</td>
                         <td class="num">{{ qty($row->penyesuaian ?? 0) }}</td>
-                        <td class="num font-semibold {{ $material->stock < 0 ? 'text-red-600' : '' }}">{{ qty(round((float) $material->stock, 2)) }}</td>
-                        <td class="num text-zinc-500">{{ qty($material->min_stock) }}</td>
+                        <td class="num font-semibold {{ $material->stock < 0 ? 'text-rose-600' : '' }}">{{ qty(round((float) $material->stock, 2)) }}</td>
+                        <td class="num text-slate-500">{{ qty($material->min_stock) }}</td>
                         <td><x-admin.status :value="$material->stockStatus()" /></td>
                         <td class="num">{{ rupiah($material->cost_price) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="12" class="py-8 text-center text-zinc-500">Tidak ada bahan.</td></tr>
+                    <tr><td colspan="12" class="py-8 text-center text-slate-500">Tidak ada bahan.</td></tr>
                 @endforelse
                 </tbody>
             </table>

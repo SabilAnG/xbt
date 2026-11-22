@@ -13,7 +13,7 @@
             <x-admin.field name="store_account" label="Akun / toko" :value="$session->store_account" />
             <x-admin.field name="notes" label="Catatan" :value="$session->notes" class="sm:col-span-2" />
         </div>
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.live-sessions.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

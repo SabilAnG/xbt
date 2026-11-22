@@ -16,8 +16,8 @@
         </div>
         <x-admin.field name="notes" label="Keterangan" type="textarea" />
 
-        <div class="card bg-zinc-50 p-4 text-xs text-zinc-600 shadow-none">
-            <p class="mb-2 font-semibold text-zinc-700">Harga daftar</p>
+        <div class="card bg-slate-50 p-4 text-xs text-slate-600 shadow-none">
+            <p class="mb-2 font-semibold text-slate-700">Harga daftar</p>
             <div class="max-h-40 space-y-1 overflow-y-auto">
                 @foreach ($items->unique(fn ($item) => $item->sell_price.'|'.$item->sell_price_online.'|'.$item->formula_id) as $item)
                     <p>{{ $item->model_motor }} {{ $item->finishing }}: offline {{ rupiah($item->sell_price) }} · online {{ rupiah($item->sell_price_online) }}</p>
@@ -25,7 +25,7 @@
             </div>
         </div>
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.sales.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan penjualan</button>
         </div>

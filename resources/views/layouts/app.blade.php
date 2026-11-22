@@ -26,7 +26,7 @@
     </script>
 </head>
 
-<body class="dark-scheme">
+<body class="dark-scheme @yield('body-class')">
     <div id="wrapper">
         <a href="#" id="back-to-top"></a>
 
@@ -98,6 +98,8 @@ Indonesia
     </div>
 </div>
 
+
+@include('partials.mobile-app')
 
 <script src="{{ asset('assets/js/plugins.js') }}"></script>
 <script src="{{ asset('assets/js/swiper.js') }}"></script>

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', "Single Product")
+@section('title', $product->name)
+@section('body-class', 'has-buybar')
 
 @push('head')
 <style>
@@ -78,7 +79,7 @@
 @section('content')
 <div class="no-bottom no-top" id="content">
             <div id="top"></div>
-                <section class="pt-120 sm-pt-0">
+                <section class="pt-120 sm-pt-0 m-detail-section">
         <div class="container">
             <div class="row gy-4 gx-5">
                 <!-- Gallery -->
@@ -101,7 +102,7 @@
                 </div>
 
                 <!-- Info Produk -->
-                <div class="col-md-6">
+                <div class="col-md-6 m-detail-info">
                     <h2 class="fs-40">{{ $product->name }}</h2>
                     <p class="col-lg-10">{{ $product->fitment }}</p>
 
@@ -136,7 +137,7 @@
             </div>
 
             <!-- Description -->
-            <div class="row mt-5">
+            <div class="row mt-5 m-detail-desc">
                 <div class="col-md-12">
                     <h3 class="product-title">
                         Description
@@ -153,6 +154,21 @@
     </section>
         </div>
 @endsection
+
+@push('mobile-bar')
+    <div class="m-buybar">
+        <div class="m-buybar-price">
+            <small>{{ $product->item ? ($product->availableStock() > 0 ? 'Stok tersedia' : 'Pre-order') : 'Harga' }}</small>
+            <strong>{{ $product->formattedPrice() }}</strong>
+        </div>
+        <a class="m-buybar-chat" href="{{ route('redirect.product-checkout', ['product' => $product->slug, 'customer_support' => 2]) }}" target="_blank" rel="noopener" aria-label="Chat admin 2">
+            <i class="fa-regular fa-comment-dots" style="font-size:18px"></i>
+        </a>
+        <a class="m-buybar-buy" href="{{ route('redirect.product-checkout', ['product' => $product->slug, 'customer_support' => 1]) }}" target="_blank" rel="noopener">
+            <i class="fa-brands fa-whatsapp" style="font-size:18px"></i> Pesan via WhatsApp
+        </a>
+    </div>
+@endpush
 
 @push('scripts')
 <script>

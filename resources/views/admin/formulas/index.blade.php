@@ -34,7 +34,7 @@
                     <tr @class(['opacity-50' => ! $formula->is_active])>
                         <td class="min-w-48">
                             <a href="{{ route('admin.formulas.edit', $formula) }}" class="link">{{ $formula->name }}</a>
-                            <p class="font-mono text-[11px] text-zinc-400">{{ $formula->code }}</p>
+                            <p class="font-mono text-[11px] text-slate-400">{{ $formula->code }}</p>
                         </td>
                         <td class="text-xs">{{ $formula->motorcycleModel?->name ?? '—' }}</td>
                         <td class="num">{{ $formula->items_count }}</td>
@@ -42,23 +42,23 @@
                         <td class="num">{{ $formula->materials_count }}</td>
                         <td class="num">{{ $formula->costs_count + $formula->machines_count }}</td>
                         <td class="num whitespace-nowrap">{{ $minutes >= 60 ? floor($minutes / 60).'j '.round($minutes - floor($minutes / 60) * 60).'m' : round($minutes).'m' }}</td>
-                        <td class="num font-semibold">{{ rupiah($hpp) }}@if ($formula->hpp_brand)<p class="text-[11px] font-normal text-zinc-400">merek {{ $formula->hpp_brand }}</p>@endif</td>
+                        <td class="num font-semibold">{{ rupiah($hpp) }}@if ($formula->hpp_brand)<p class="text-[11px] font-normal text-slate-400">merek {{ $formula->hpp_brand }}</p>@endif</td>
                         <td class="num text-emerald-700" title="{{ $mainTier ? $mainTier->name.' · margin '.qty($mainTier->margin_percent, 2).'%' : '' }}">{{ $mainTier ? rupiah($mainTier->price($hpp)) : '—' }}</td>
                         <td class="num whitespace-nowrap">
-                            <span @class(['font-semibold', 'text-red-600' => $capacity['unit'] <= 0, 'text-emerald-700' => $capacity['unit'] > 0])>{{ qty($capacity['unit']) }} {{ $formula->output_unit }}</span>
-                            @if ($capacity['pembatas'])<p class="text-[11px] text-zinc-400">dibatasi {{ $capacity['pembatas'] }}</p>@endif
+                            <span @class(['font-semibold', 'text-rose-600' => $capacity['unit'] <= 0, 'text-emerald-700' => $capacity['unit'] > 0])>{{ qty($capacity['unit']) }} {{ $formula->output_unit }}</span>
+                            @if ($capacity['pembatas'])<p class="text-[11px] text-slate-400">dibatasi {{ $capacity['pembatas'] }}</p>@endif
                         </td>
                         <td><x-admin.status :value="$formula->is_active ? 'AKTIF' : 'NONAKTIF'" /></td>
                         <td class="text-right"><a href="{{ route('admin.formulas.edit', $formula) }}" class="btn btn-sm">Ubah</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="12" class="py-8 text-center text-zinc-500">Belum ada formula.</td></tr>
+                    <tr><td colspan="12" class="py-8 text-center text-slate-500">Belum ada formula.</td></tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
     </div>
     @if ($mainTier)
-        <p class="text-xs text-zinc-500">Kolom harga jual memakai tingkatan "{{ $mainTier->name }}" (margin {{ qty($mainTier->margin_percent, 2) }}%). Semua tingkatan tampil di tab Hasil tiap formula.</p>
+        <p class="text-xs text-slate-500">Kolom harga jual memakai tingkatan "{{ $mainTier->name }}" (margin {{ qty($mainTier->margin_percent, 2) }}%). Semua tingkatan tampil di tab Hasil tiap formula.</p>
     @endif
 @endsection

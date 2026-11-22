@@ -13,9 +13,9 @@
                 @endphp
                 @if ($field['type'] === 'checkbox')
                     <div class="flex items-end pb-2 {{ $span }}">
-                        <label class="flex items-center gap-2 text-sm text-zinc-700">
+                        <label class="flex items-center gap-2 text-sm text-slate-700">
                             <input type="hidden" name="{{ $name }}" value="0">
-                            <input type="checkbox" name="{{ $name }}" value="1" class="rounded border-zinc-300" @checked(old($name, $value))> {{ $field['label'] }}
+                            <input type="checkbox" name="{{ $name }}" value="1" class="rounded border-slate-300" @checked(old($name, $value))> {{ $field['label'] }}
                         </label>
                     </div>
                 @elseif ($field['type'] === 'select')
@@ -32,14 +32,14 @@
 
         @if ($master === 'mesin' && $row->exists)
             @php $b = $row->hourlyBreakdown(); @endphp
-            <div class="rounded-lg bg-zinc-50 p-4 text-sm">
+            <div class="rounded-lg bg-slate-50 p-4 text-sm">
                 Penyusutan {{ rupiah($b['penyusutan']) }} + listrik {{ rupiah($b['listrik']) }} + perawatan {{ rupiah($b['maintenance']) }}
                 = <strong>{{ rupiah($b['total']) }}/jam</strong>
-                <span class="text-zinc-500">(tarif listrik {{ rupiah(\App\Models\Machine::tarifListrik()) }}/kWh)</span>
+                <span class="text-slate-500">(tarif listrik {{ rupiah(\App\Models\Machine::tarifListrik()) }}/kWh)</span>
             </div>
         @endif
 
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.masters.index', $master) }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

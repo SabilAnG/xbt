@@ -28,16 +28,16 @@
                         <td class="whitespace-nowrap">{{ $day->date->translatedFormat('D, d M Y') }}</td>
                         @foreach ($workers as $worker)
                             @php $value = $day->valueFor($worker); @endphp
-                            <td class="num {{ $value === null ? 'text-zinc-300' : 'font-semibold' }}">{{ $value === null ? '—' : qty($value, 1) }}</td>
+                            <td class="num {{ $value === null ? 'text-slate-300' : 'font-semibold' }}">{{ $value === null ? '—' : qty($value, 1) }}</td>
                         @endforeach
-                        <td class="text-xs text-zinc-500">{{ $day->notes }}</td>
+                        <td class="text-xs text-slate-500">{{ $day->notes }}</td>
                         <td class="text-right whitespace-nowrap">
                             <a href="{{ route('admin.attendance.edit', $day) }}" class="btn btn-sm">Ubah</a>
                             <x-admin.delete-button :action="route('admin.attendance.destroy', $day)" />
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="{{ $workers->count() + 3 }}" class="py-8 text-center text-zinc-500">Belum ada absen.</td></tr>
+                    <tr><td colspan="{{ $workers->count() + 3 }}" class="py-8 text-center text-slate-500">Belum ada absen.</td></tr>
                 @endforelse
                 </tbody>
             </table>

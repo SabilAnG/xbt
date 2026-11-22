@@ -15,13 +15,13 @@
                     <tr>
                         <td class="whitespace-nowrap">{{ $adjustment->moved_at->translatedFormat('d M Y') }}</td>
                         <td><a href="{{ route('admin.materials.show', $adjustment->material_id) }}" class="link">{{ $adjustment->material?->name }}</a></td>
-                        <td class="num font-semibold {{ $delta < 0 ? 'text-red-600' : 'text-emerald-600' }}">{{ $delta > 0 ? '+' : '' }}{{ qty($delta) }}</td>
+                        <td class="num font-semibold {{ $delta < 0 ? 'text-rose-600' : 'text-emerald-600' }}">{{ $delta > 0 ? '+' : '' }}{{ qty($delta) }}</td>
                         <td>{{ $adjustment->notes }}</td>
                         <td class="num">{{ qty($adjustment->balance_after) }}</td>
                         <td class="text-right"><x-admin.delete-button :action="route('admin.adjustments.destroy', $adjustment)" /></td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="py-8 text-center text-zinc-500">Belum ada penyesuaian.</td></tr>
+                    <tr><td colspan="6" class="py-8 text-center text-slate-500">Belum ada penyesuaian.</td></tr>
                 @endforelse
                 </tbody>
             </table>

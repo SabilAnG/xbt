@@ -10,7 +10,7 @@
             <x-admin.field name="qty" label="Qty (+/−)" type="number" step="any" required />
             <x-admin.field name="reason" label="Alasan" required class="sm:col-span-2" />
         </div>
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.adjustments.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

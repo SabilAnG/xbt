@@ -13,9 +13,9 @@
     </section>
 
     <div class="card p-5 text-sm">
-        <p><span class="text-zinc-500">Tukang:</span> {{ $production->worker ?? '—' }}</p>
-        <p class="mt-1"><span class="text-zinc-500">Resep:</span> {{ $production->formula?->name }}</p>
-        <p class="mt-1"><span class="text-zinc-500">Catatan:</span> {{ $production->notes ?? '—' }}</p>
+        <p><span class="text-slate-500">Tukang:</span> {{ $production->worker ?? '—' }}</p>
+        <p class="mt-1"><span class="text-slate-500">Resep:</span> {{ $production->formula?->name }}</p>
+        <p class="mt-1"><span class="text-slate-500">Catatan:</span> {{ $production->notes ?? '—' }}</p>
     </div>
 
     <section class="card">

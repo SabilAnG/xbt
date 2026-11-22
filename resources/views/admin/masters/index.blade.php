@@ -36,7 +36,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="{{ count($config['columns']) + 2 }}" class="py-8 text-center text-zinc-500">Belum ada data.</td></tr>
+                    <tr><td colspan="{{ count($config['columns']) + 2 }}" class="py-8 text-center text-slate-500">Belum ada data.</td></tr>
                 @endforelse
                 </tbody>
             </table>

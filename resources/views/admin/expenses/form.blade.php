@@ -14,7 +14,7 @@
             <x-admin.select name="data_status" label="Status data" :options="collect($dataStatuses)->mapWithKeys(fn ($s) => [$s => $s])" :value="$expense->data_status" placeholder="OK" hint="PERLU DIRINCI = isi belanja belum jelas." />
         </div>
         <x-admin.field name="notes" label="Catatan" type="textarea" :value="$expense->notes" />
-        <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <a href="{{ route('admin.expenses.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan</button>
         </div>

@@ -24,13 +24,13 @@
                         <td><a href="{{ route('admin.orders.edit', $order) }}" class="link font-mono text-xs">{{ $order->order_number }}</a></td>
                         <td>{{ $order->customer_name ?? '—' }}</td>
                         <td class="text-xs">{{ collect([$order->customer_phone, $order->customer_email])->filter()->implode(' · ') ?: '—' }}</td>
-                        <td><span class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium">{{ $statuses[$order->status] ?? $order->status }}</span></td>
+                        <td><span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium">{{ $statuses[$order->status] ?? $order->status }}</span></td>
                         <td class="num">{{ $order->shipments_count }}</td>
                         <td class="text-xs whitespace-nowrap">{{ $order->created_at?->translatedFormat('d M Y') }}</td>
                         <td class="text-right"><a href="{{ route('admin.orders.edit', $order) }}" class="btn btn-sm">Kelola</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="py-8 text-center text-zinc-500">Belum ada pesanan.</td></tr>
+                    <tr><td colspan="7" class="py-8 text-center text-slate-500">Belum ada pesanan.</td></tr>
                 @endforelse
                 </tbody>
             </table>
