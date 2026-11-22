@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             SiteContentSeeder::class,
             ProductSeeder::class,
             KnalpotWorkbookSeeder::class,
+            HppMasterSeeder::class,
         ]);
     }
 }

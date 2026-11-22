@@ -52,7 +52,7 @@ class ProduksiSeeder extends Seeder
      * Angka ini yang paling sering berbeda antar bengkel — anggap sebagai
      * contoh dan sesuaikan dengan tagihan Anda sendiri.
      */
-    private function overheadBulanan(): void
+    public function overheadBulanan(): void
     {
         $rows = [
             ['Sewa Bengkel', 2_500_000, 'Sewa tempat per bulan'],
@@ -100,7 +100,7 @@ class ProduksiSeeder extends Seeder
      * Margin dihitung atas harga jual, jadi 40% berarti empat puluh persen dari
      * uang yang masuk — bukan modal dikali 1,4.
      */
-    private function tingkatanHarga(): void
+    public function tingkatanHarga(): void
     {
         $rows = [
             ['Reseller', 20, 0, 'Ambil banyak, harga paling bawah'],
@@ -179,7 +179,7 @@ class ProduksiSeeder extends Seeder
      * Proses kerja, bertarif per jam. Formula mengisi menitnya, jadi Anda
      * cukup tahu "potong pipa 10 menit" tanpa menghitung tarif per unit.
      */
-    private function komponenBiaya(): void
+    public function komponenBiaya(): void
     {
         // nama, menit standar
         $rows = [
@@ -247,7 +247,7 @@ class ProduksiSeeder extends Seeder
      * Mesin produksi. Biaya per jam diturunkan dari harga, umur ekonomis,
      * jam pakai, daya listrik, dan maintenance — bukan diketik langsung.
      */
-    private function mesin(): void
+    public function mesin(): void
     {
         // Tarif listrik dipakai semua mesin; bisa diubah di menu pengaturan.
         Setting::firstOrCreate(

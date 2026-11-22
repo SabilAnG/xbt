@@ -50,6 +50,34 @@ class Formula extends Model
         return $this->belongsTo(Item::class);
     }
 
+    /**
+     * Merek yang dipakai produk berformula ini (FD, XBT, ...), urut abjad.
+     *
+     * @return Collection<int, string>
+     */
+    public function brands(): Collection
+    {
+        return Item::query()->where('formula_id', $this->id)->whereNotNull('brand')->where('brand', '!=', '')
+            ->distinct()->orderBy('brand')->pluck('brand')
+            ->merge($this->materials->pluck('brand')->filter())
+            ->unique()->sort()->values();
+    }
+
+    /**
+     * Salinan formula yang hanya memuat baris bahan untuk satu merek: baris
+     * tanpa merek + baris merek itu. Dipakai menghitung HPP per merek, karena
+     * satu knalpot memakai Tameng FD *atau* Tameng XBT, bukan keduanya.
+     */
+    public function forBrand(?string $brand): static
+    {
+        $copy = clone $this;
+        $copy->setRelation('materials', $this->materials->filter(
+            fn (FormulaMaterial $line) => blank($line->brand) || $line->brand === $brand
+        )->values());
+
+        return $copy;
+    }
+
     public function materials(): HasMany
     {
         return $this->hasMany(FormulaMaterial::class)->orderBy('sort_order');
@@ -487,7 +515,8 @@ class Formula extends Model
             }
 
             $tersedia = (float) ($line->material->stock ?? 0);
-            $bisa = floor($tersedia / $butuh);
+            // Stok minus berarti tidak ada yang bisa dibuat, bukan kapasitas negatif.
+            $bisa = max(floor($tersedia / $butuh), 0);
 
             $rincian[] = [
                 'bahan' => $line->material?->name ?? '-',

@@ -17,7 +17,7 @@
         ['Stok', [
             ['Stok Produk', 'admin.items.index', 'admin.items.*', 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'],
             ['Stok Bahan', 'admin.materials.index', 'admin.materials.*', 'M4 6h16M4 12h16M4 18h10'],
-            ['Resep BOM', 'admin.formulas.index', 'admin.formulas.*', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
+            ['Formula (HPP)', 'admin.formulas.index', 'admin.formulas.*', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
         ]],
         ['Transaksi', [
             ['Produksi', 'admin.productions.index', 'admin.productions.*', 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z'],
@@ -25,6 +25,14 @@
             ['Pembelian Bahan', 'admin.purchases.index', 'admin.purchases.*', 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'],
             ['Penyesuaian Bahan', 'admin.adjustments.index', 'admin.adjustments.*', 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'],
             ['Pengeluaran', 'admin.expenses.index', 'admin.expenses.*', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'],
+        ]],
+        ['Master HPP', [
+            ['Komponen Biaya', 'admin.masters.index', 'admin.masters.*:komponen-biaya', 'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z', ['master' => 'komponen-biaya']],
+            ['Mesin', 'admin.masters.index', 'admin.masters.*:mesin', 'M9.6 3.9a1 1 0 011.9 0l.3 1a1 1 0 001.4.6l.9-.5a1 1 0 011.3 1.4l-.5.9a1 1 0 00.6 1.4l1 .3a1 1 0 010 1.9l-1 .3a1 1 0 00-.6 1.4l.5.9a1 1 0 01-1.3 1.3l-.9-.5a1 1 0 00-1.4.6l-.3 1a1 1 0 01-1.9 0l-.3-1a1 1 0 00-1.4-.6l-.9.5a1 1 0 01-1.3-1.3l.5-.9a1 1 0 00-.6-1.4l-1-.3a1 1 0 010-1.9l1-.3a1 1 0 00.6-1.4l-.5-.9a1 1 0 011.3-1.4l.9.5a1 1 0 001.4-.6l.3-1zM12.5 10a2 2 0 11-4 0 2 2 0 014 0z', ['master' => 'mesin']],
+            ['Overhead Bulanan', 'admin.masters.index', 'admin.masters.*:overhead', 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', ['master' => 'overhead']],
+            ['Tingkatan Harga', 'admin.masters.index', 'admin.masters.*:tingkatan-harga', 'M7 7h.01M7 3h5a2 2 0 011.4.6l7 7a2 2 0 010 2.8l-7 7a2 2 0 01-2.8 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z', ['master' => 'tingkatan-harga']],
+            ['Type & Merek Motor', 'admin.masters.index', 'admin.masters.*:type-motor|admin.masters.*:merek-motor', 'M13 10V3L4 14h7v7l9-11h-7z', ['master' => 'type-motor']],
+            ['Pengaturan Produksi', 'admin.production-settings.edit', 'admin.production-settings.*', 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'],
         ]],
         ['Host Live & Tukang', [
             ['Jam Live', 'admin.live-sessions.index', 'admin.live-sessions.*', 'M15 10l4.6-2.3A1 1 0 0121 8.6v6.8a1 1 0 01-1.4.9L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
@@ -72,7 +80,7 @@
                                 $active = collect(explode('|', $pattern))->contains(function ($p) {
                                     [$name, $kind] = array_pad(explode(':', $p, 2), 2, null);
 
-                                    return request()->routeIs($name) && ($kind === null || request()->route('kind') === $kind);
+                                    return request()->routeIs($name) && ($kind === null || in_array($kind, [request()->route('kind'), request()->route('master')], true));
                                 });
                             @endphp
                             <li>

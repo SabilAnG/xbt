@@ -131,5 +131,15 @@ Route::prefix('admin')->group(function () {
         Route::delete('gaji/{kind}/{id}', [Admin\PayrollController::class, 'destroy'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.destroy');
 
         Route::get('riwayat-pengadaan', Admin\ProcurementHistoryController::class)->name('procurement.index');
+
+        // Master pendukung Formula (HPP)
+        Route::get('pengaturan-produksi', [Admin\ProductionSettingController::class, 'edit'])->name('production-settings.edit');
+        Route::put('pengaturan-produksi', [Admin\ProductionSettingController::class, 'update'])->name('production-settings.update');
+        Route::get('master/{master}', [Admin\MasterController::class, 'index'])->name('masters.index');
+        Route::get('master/{master}/create', [Admin\MasterController::class, 'create'])->name('masters.create');
+        Route::post('master/{master}', [Admin\MasterController::class, 'store'])->name('masters.store');
+        Route::get('master/{master}/{id}/edit', [Admin\MasterController::class, 'edit'])->whereNumber('id')->name('masters.edit');
+        Route::put('master/{master}/{id}', [Admin\MasterController::class, 'update'])->whereNumber('id')->name('masters.update');
+        Route::delete('master/{master}/{id}', [Admin\MasterController::class, 'destroy'])->whereNumber('id')->name('masters.destroy');
     });
 });
