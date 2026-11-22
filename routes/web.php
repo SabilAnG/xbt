@@ -75,6 +75,14 @@ Route::prefix('admin')->group(function () {
 
         Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
         Route::resource('bahan', Admin\MaterialController::class)->names('materials')->parameters(['bahan' => 'material']);
+        Route::resource('komponen', Admin\ComponentController::class)->names('components')->parameters(['komponen' => 'component']);
+        Route::get('gudang', [Admin\WarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('gudang/setengah-jadi/mutasi', [Admin\WarehouseController::class, 'createMovement'])->name('warehouses.movements.create');
+        Route::post('gudang/setengah-jadi/mutasi', [Admin\WarehouseController::class, 'storeMovement'])->name('warehouses.movements.store');
+        Route::delete('gudang/mutasi-komponen/{movement}', [Admin\WarehouseController::class, 'destroyMovement'])->name('warehouses.movements.destroy');
+        Route::get('gudang/{type}', [Admin\WarehouseController::class, 'show'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.show');
+        Route::get('gudang/{type}/ubah', [Admin\WarehouseController::class, 'edit'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.edit');
+        Route::put('gudang/{type}', [Admin\WarehouseController::class, 'update'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.update');
         Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
         Route::resource('resep', Admin\FormulaController::class)->except('show')->names('formulas')->parameters(['resep' => 'formula']);
         Route::resource('produksi', Admin\ProductionController::class)->only(['index', 'create', 'store', 'show', 'destroy'])

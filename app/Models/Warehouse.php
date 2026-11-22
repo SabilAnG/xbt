@@ -10,7 +10,38 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Warehouse extends Model
 {
-    protected $fillable = ['name', 'code', 'address', 'description', 'is_active', 'sort_order'];
+    /** Jenis gudang => [slug URL, label]. */
+    public const TYPES = [
+        'bahan_baku' => ['bahan-baku', 'Bahan Baku'],
+        'setengah_jadi' => ['setengah-jadi', 'Setengah Jadi'],
+        'finish_good' => ['finish-good', 'Finish Good'],
+    ];
+
+    protected $fillable = ['name', 'code', 'type', 'address', 'description', 'is_active', 'sort_order'];
+
+    /** Gudang untuk satu jenis (slug URL atau kunci jenis); dibuat bila belum ada. */
+    public static function forType(string $type): self
+    {
+        $key = collect(self::TYPES)->search(fn (array $meta, string $key) => $key === $type || $meta[0] === $type);
+
+        abort_if($key === false, 404);
+
+        return static::firstOrCreate(['type' => $key], [
+            'name' => 'Gudang '.self::TYPES[$key][1],
+            'code' => 'GD-'.strtoupper(str_replace('_', '-', $key)),
+            'is_active' => true,
+        ]);
+    }
+
+    public function slug(): string
+    {
+        return self::TYPES[$this->type][0] ?? (string) $this->type;
+    }
+
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->type][1] ?? (string) $this->type;
+    }
 
     protected function casts(): array
     {

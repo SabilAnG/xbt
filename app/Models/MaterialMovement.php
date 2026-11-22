@@ -16,6 +16,7 @@ class MaterialMovement extends Model
         'production' => 'Dipakai Produksi',
         'adjustment' => 'Penyesuaian',
         'opname' => 'Stok Opname',
+        'component' => 'Dibuat jadi komponen',
     ];
 
     protected $fillable = [

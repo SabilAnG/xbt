@@ -30,7 +30,7 @@ class MaterialController extends Controller
         $flow = DB::table('material_movements')
             ->selectRaw("material_id,
                 SUM(CASE WHEN type = 'purchase' THEN qty_in ELSE 0 END) AS masuk,
-                SUM(CASE WHEN type = 'production' THEN qty_out ELSE 0 END) AS terpakai,
+                SUM(CASE WHEN type IN ('production', 'component') THEN qty_out ELSE 0 END) AS terpakai,
                 SUM(CASE WHEN type IN ('adjustment', 'opname') THEN qty_in - qty_out ELSE 0 END) AS penyesuaian")
             ->groupBy('material_id')
             ->get()

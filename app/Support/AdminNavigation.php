@@ -38,6 +38,8 @@ class AdminNavigation
         'globe' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.5 9h17m-17 6h17',
         'text' => 'M4 6h16M4 10h16M4 14h10M4 18h7',
         'image' => 'M4 5h16v14H4zm0 11 4.5-4.5a1.5 1.5 0 0 1 2 0L15 16m-1.5-1.5 1.5-1.5a1.5 1.5 0 0 1 2 0L20 16M15 9h.01',
+        'puzzle' => 'M10 4a2 2 0 1 1 4 0v1h4a1 1 0 0 1 1 1v4h-1a2 2 0 1 0 0 4h1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 1 0-4 0v1H6a1 1 0 0 1-1-1v-4h1a2 2 0 1 0 0-4H5V6a1 1 0 0 1 1-1h4V4Z',
+        'warehouse' => 'M3 21V9l9-6 9 6v12M7 21v-8h10v8M7 17h10',
         'truck' => 'M3 6h11v10H3zm11 4h4l3 3v3h-7M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
     ];
 
@@ -58,9 +60,11 @@ class AdminNavigation
             ['label' => 'Ringkasan', 'items' => [
                 $item('Dashboard', 'admin.dashboard', 'admin.dashboard', 'home'),
             ]],
-            ['label' => 'Stok', 'items' => [
+            ['label' => 'Inventory', 'items' => [
                 $item('Stok Produk', 'admin.items.index', 'admin.items.*', 'box'),
                 $item('Stok Bahan', 'admin.materials.index', 'admin.materials.*', 'layers'),
+                $item('Master Komponen', 'admin.components.index', 'admin.components.*', 'puzzle'),
+                $item('Gudang', 'admin.warehouses.index', 'admin.warehouses.*', 'warehouse'),
                 $item('Formula (HPP)', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
                 $item('Merek', 'admin.brands.index', 'admin.brands.*', 'tag'),
             ]],
