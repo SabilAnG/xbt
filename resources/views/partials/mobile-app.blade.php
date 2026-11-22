@@ -15,7 +15,7 @@
 @endphp
 
 <style>
-    .m-tabbar, .m-buybar, .m-search, .m-empty { display: none; }
+    .m-tabbar, .m-buybar, .m-search, .m-empty, .m-home { display: none; }
 
     @media (max-width: 767px) {
         :root { --m-accent: var(--primary-color, #f97316); --m-bar: 64px; }
@@ -136,6 +136,67 @@
         }
         .m-buybar .m-buybar-chat { width: 46px; background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .1); }
         .m-buybar .m-buybar-buy { padding: 0 18px; background: #25d366; color: #fff; box-shadow: 0 6px 18px -6px rgba(37, 211, 102, .7); }
+
+        /* ------------------------------------------------ beranda katalog */
+        .m-hide-mobile { display: none !important; }
+        .m-home { display: block; position: relative; z-index: 2; padding: 12px 14px 8px; }
+        .m-home-search { margin-bottom: 14px; }
+
+        .m-banners {
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 0;
+            border-radius: 16px; aspect-ratio: 16 / 8.5;
+        }
+        .m-banners::-webkit-scrollbar { display: none; }
+        .m-banner {
+            flex: 0 0 100%; scroll-snap-align: start; position: relative; background-size: cover; background-position: center;
+            border-radius: 16px; overflow: hidden; text-decoration: none;
+        }
+        .m-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.78), rgba(0,0,0,.15) 70%); }
+        .m-banner-text { position: absolute; z-index: 1; left: 16px; bottom: 16px; right: 40%; display: flex; flex-direction: column; gap: 2px; color: #fff; }
+        .m-banner-text strong { font-size: 18px; line-height: 1.2; }
+        .m-banner-text small { font-size: 12px; opacity: .75; }
+        .m-banner-text em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--m-accent); margin-top: 6px; }
+        .m-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 4px; }
+        .m-dots span { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); transition: all .25s; }
+        .m-dots span.is-active { width: 18px; background: var(--m-accent); }
+
+        .m-quick { position: static; height: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0 6px; }
+        .m-quick a { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; line-height: 1.2; text-align: center; color: rgba(255,255,255,.8); text-decoration: none; }
+        .m-quick a span { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 16px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); color: var(--m-accent); }
+        .m-quick a svg { width: 22px; height: 22px; }
+
+        .m-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 12px -14px 0; padding: 0 14px; }
+        .m-chips::-webkit-scrollbar { display: none; }
+        .m-chips a { flex: 0 0 auto; height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; font-size: 12.5px; white-space: nowrap; text-decoration: none; color: rgba(255,255,255,.85); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+
+        .m-section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 0 10px; }
+        .m-section-head h2 { font-size: 17px !important; margin: 0 !important; letter-spacing: 0; }
+        .m-section-head a { font-size: 12.5px; font-weight: 600; color: var(--m-accent); text-decoration: none; }
+        .m-section-head span { font-size: 12px; opacity: .5; }
+
+        .m-rail { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px 4px; scroll-snap-type: x proximity; }
+        .m-rail::-webkit-scrollbar { display: none; }
+        .m-rail { padding-left: 14px !important; padding-right: 14px !important; scroll-padding-left: 14px; }
+        .m-rail .m-card { flex: 0 0 42%; scroll-snap-align: start; }
+        .m-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+        .m-card { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; text-decoration: none; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+        .m-card:active { transform: scale(.98); }
+        .m-card-img { position: relative; display: block; aspect-ratio: 1; background: #1a1a1d; }
+        .m-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .m-card-badge { position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; background: #16a34a; color: #fff; }
+        .m-card-badge.is-out { background: rgba(0,0,0,.65); }
+        .m-card-body { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px 11px; }
+        .m-card-name { font-size: 12.5px; line-height: 1.35; color: #fff; font-weight: 500; min-height: 2.7em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .m-card-fit { font-size: 11px; opacity: .5; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .m-card-price { font-size: 14.5px; font-weight: 700; color: var(--m-accent); margin-top: 2px; }
+
+        .m-more { display: flex; justify-content: center; align-items: center; height: 44px; margin-top: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; text-decoration: none; color: #fff; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+        .m-home-empty { text-align: center; opacity: .6; padding: 24px 0; }
+        .m-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 22px 0 6px; }
+        .m-trust div { padding: 12px 8px; border-radius: 12px; text-align: center; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+        .m-trust strong { display: block; font-size: 12.5px; color: var(--m-accent); }
+        .m-trust small { display: block; font-size: 10.5px; opacity: .6; line-height: 1.3; margin-top: 2px; }
 
         footer { padding-top: 40px !important; }
         footer .footer-map iframe { height: 180px; }

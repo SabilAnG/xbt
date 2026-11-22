@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
 @section('title', "Welcome to Official Hypersonic Speed Tech")
+@section('m-search', 'home')
 
 @section('content')
 <div class="no-bottom no-top" id="content">
             <div id="top"></div>
-                <section class="text-light no-top no-bottom relative overflow-hidden">
+    @include('partials.m-home', ['catalog' => $catalog])
+                <section class="text-light no-top no-bottom relative overflow-hidden m-hide-mobile">
         <div class="mh-700">
             <div class="abs w-100 bottom-0 z-2 pb-4">
                 <div class="container">

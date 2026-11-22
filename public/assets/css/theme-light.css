@@ -1,0 +1,207 @@
+/*
+ * Tema terang untuk website (template aslinya hanya gelap).
+ * Aktif bila <html data-theme="light">. Bagian dengan foto latar (hero,
+ * jarallax) sengaja tetap gelap karena teksnya berada di atas foto.
+ */
+
+/* --------------------------------------------------- tombol ganti tema */
+.theme-toggle {
+    display: inline-grid; place-items: center; width: 40px; height: 40px; margin-right: 10px; padding: 0;
+    border-radius: 999px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .06);
+    color: #fff; cursor: pointer; transition: background .2s, border-color .2s, color .2s; vertical-align: middle;
+}
+.theme-toggle:hover { background: rgba(255, 255, 255, .14); }
+.theme-toggle svg { width: 19px; height: 19px; }
+.theme-toggle .theme-toggle-moon { display: none; }
+html[data-theme='light'] .theme-toggle .theme-toggle-sun { display: none; }
+html[data-theme='light'] .theme-toggle .theme-toggle-moon { display: block; }
+.logo-on-light { display: none !important; }
+
+@media (max-width: 991px) {
+    .theme-toggle { width: 36px; height: 36px; margin-right: 6px; }
+    .menu_side_area .btn-main { display: none !important; }
+}
+
+/* ------------------------------------------------------- warna dasar */
+html[data-theme='light'] {
+    --lt-bg: #ffffff;
+    --lt-bg-soft: #f5f6f8;
+    --lt-bg-softer: #eef0f3;
+    --lt-text: #3f4652;
+    --lt-heading: #111418;
+    --lt-muted: #6b7280;
+    --lt-border: #e3e6ea;
+    color-scheme: light;
+}
+
+html[data-theme='light'] body,
+html[data-theme='light'] #wrapper,
+html[data-theme='light'] #content {
+    background: var(--lt-bg) !important;
+    color: var(--lt-text);
+}
+
+html[data-theme='light'] h1, html[data-theme='light'] h2, html[data-theme='light'] h3,
+html[data-theme='light'] h4, html[data-theme='light'] h5, html[data-theme='light'] h6 {
+    color: var(--lt-heading);
+}
+html[data-theme='light'] p, html[data-theme='light'] li { color: inherit; }
+html[data-theme='light'] a:not(.btn-main):not([class*='btn']) { color: inherit; }
+
+/* Latar gelap bawaan template → terang (kecuali yang memakai foto latar). */
+html[data-theme='light'] section:not(.jarallax):not(.m-products-hero):not(.bg-color):not(.m-hide-mobile),
+html[data-theme='light'] .bg-dark:not(.jarallax):not(.m-products-hero),
+html[data-theme='light'] .bg-dark-1:not(.jarallax),
+html[data-theme='light'] .bg-dark-3:not(.jarallax) {
+    background-color: var(--lt-bg) !important;
+}
+html[data-theme='light'] .bg-dark-2:not(.jarallax) { background-color: var(--lt-bg-soft) !important; }
+html[data-theme='light'] section:not(.jarallax):not(.m-products-hero):not(.bg-color):not(.m-hide-mobile) .text-light,
+html[data-theme='light'] section.text-light:not(.jarallax):not(.m-products-hero):not(.bg-color):not(.m-hide-mobile) {
+    color: var(--lt-text) !important;
+}
+html[data-theme='light'] .de-gradient-edge-top,
+html[data-theme='light'] .de-gradient-edge-bottom { opacity: 0; }
+html[data-theme='light'] .op-5, html[data-theme='light'] .text-muted { color: var(--lt-muted) !important; }
+html[data-theme='light'] .border-bottom, html[data-theme='light'] hr { border-color: var(--lt-border) !important; }
+
+/* Bagian berfoto: teks tetap putih di atas foto. */
+html[data-theme='light'] .jarallax, html[data-theme='light'] .jarallax h1, html[data-theme='light'] .jarallax h2,
+html[data-theme='light'] .jarallax h3, html[data-theme='light'] .jarallax p,
+html[data-theme='light'] .m-hide-mobile h1, html[data-theme='light'] .m-hide-mobile p,
+html[data-theme='light'] .m-hide-mobile .subtitle { color: #fff; }
+html[data-theme='light'] .bg-color, html[data-theme='light'] .bg-color h2,
+html[data-theme='light'] .bg-color p, html[data-theme='light'] .bg-color a { color: #fff !important; }
+
+/* ------------------------------------------------------------ header */
+html[data-theme='light'] header,
+html[data-theme='light'] header.transparent,
+html[data-theme='light'] header.smaller {
+    background: rgba(255, 255, 255, .94) !important;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--lt-border);
+    box-shadow: 0 1px 2px rgba(17, 20, 24, .04);
+}
+html[data-theme='light'] header #topbar { background: transparent !important; border-color: var(--lt-border) !important; }
+html[data-theme='light'] header #topbar a { color: var(--lt-muted) !important; }
+html[data-theme='light'] header #topbar img { filter: invert(1) opacity(.6); }
+html[data-theme='light'] #mainmenu > li > a,
+html[data-theme='light'] #mainmenu a.menu-item { color: var(--lt-heading) !important; }
+html[data-theme='light'] #mainmenu > li > a:hover { color: var(--primary-color) !important; }
+html[data-theme='light'] header .logo-main,
+html[data-theme='light'] header .logo-mobile { display: none !important; }
+html[data-theme='light'] header .logo-on-light { display: inline-block !important; }
+html[data-theme='light'] #menu-btn:before,
+html[data-theme='light'] #btn-extra span { color: var(--lt-heading) !important; background-color: var(--lt-heading); }
+html[data-theme='light'] #menu-btn { color: var(--lt-heading) !important; }
+html[data-theme='light'] .theme-toggle { color: var(--lt-heading); border-color: var(--lt-border); background: var(--lt-bg-soft); }
+html[data-theme='light'] .theme-toggle:hover { background: var(--lt-bg-softer); }
+@media (max-width: 991px) {
+    html[data-theme='light'] header.header-mobile,
+    html[data-theme='light'] header.header-mobile #mainmenu { background: #fff !important; }
+    html[data-theme='light'] header.header-mobile #mainmenu li { border-color: var(--lt-border) !important; }
+    html[data-theme='light'] header .logo-on-light { height: 34px !important; }
+}
+
+/* ------------------------------------------------------ produk & kartu */
+html[data-theme='light'] .item_filter_group {
+    background: var(--lt-bg) !important; border: 1px solid var(--lt-border) !important;
+}
+html[data-theme='light'] .de_form label { color: var(--lt-text) !important; }
+html[data-theme='light'] .de__pcard h3 a, html[data-theme='light'] .de__pcard h3 { color: var(--lt-heading) !important; }
+html[data-theme='light'] .atr__main-price { color: var(--lt-heading); }
+html[data-theme='light'] .product-desc, html[data-theme='light'] article.product-description,
+html[data-theme='light'] article.product-description p, html[data-theme='light'] article.product-description li { color: var(--lt-text) !important; }
+html[data-theme='light'] article.product-description h2, html[data-theme='light'] article.product-description h3,
+html[data-theme='light'] article.product-description strong { color: var(--lt-heading) !important; }
+html[data-theme='light'] .crumb li, html[data-theme='light'] .crumb a { color: #fff; }
+
+/* Form (tracking, kontak) */
+html[data-theme='light'] input.form-control, html[data-theme='light'] textarea.form-control,
+html[data-theme='light'] select.form-control, html[data-theme='light'] .form-control {
+    background: #fff !important; color: var(--lt-heading) !important; border: 1px solid var(--lt-border) !important;
+}
+
+/* ------------------------------------------------------------ footer */
+html[data-theme='light'] footer {
+    background: var(--lt-bg-soft) !important; color: var(--lt-text) !important; border-top: 1px solid var(--lt-border);
+}
+html[data-theme='light'] footer h5, html[data-theme='light'] footer strong,
+html[data-theme='light'] footer .widget h5 { color: var(--lt-heading) !important; }
+html[data-theme='light'] footer a { color: var(--lt-text) !important; }
+html[data-theme='light'] footer a:hover { color: var(--primary-color) !important; }
+html[data-theme='light'] .subfooter { background: var(--lt-bg-softer) !important; border-color: var(--lt-border) !important; }
+
+/* ------------------------------------------- komponen "aplikasi" di HP */
+@media (max-width: 767px) {
+    html[data-theme='light'] .m-tabbar { background: rgba(255, 255, 255, .95); border-top-color: var(--lt-border); }
+    html[data-theme='light'] .m-tabbar a { color: #8a919c; }
+    html[data-theme='light'] .m-tabbar a.is-active { color: var(--primary-color); }
+    html[data-theme='light'] .m-tabbar a.m-tab-wa { color: var(--lt-text); }
+    html[data-theme='light'] .m-tabbar a.m-tab-wa span.m-tab-wa-icon { border-color: #fff; }
+
+    html[data-theme='light'] .m-search input,
+    html[data-theme='light'] .m-chips a,
+    html[data-theme='light'] .m-more,
+    html[data-theme='light'] .item_filter_group .de_checkbox label {
+        background: var(--lt-bg-soft) !important; border-color: var(--lt-border) !important; color: var(--lt-heading) !important;
+    }
+    html[data-theme='light'] .item_filter_group { border: 0 !important; background: none !important; }
+    html[data-theme='light'] .item_filter_group .de_checkbox input:checked + label { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: #fff !important; }
+    html[data-theme='light'] .m-search svg { color: var(--lt-muted); }
+
+    html[data-theme='light'] .m-quick a { color: var(--lt-text); }
+    html[data-theme='light'] .m-quick a span { background: var(--lt-bg-soft); border-color: var(--lt-border); }
+    html[data-theme='light'] .m-dots span { background: #d3d7dd; }
+    html[data-theme='light'] .m-dots span.is-active { background: var(--primary-color); }
+
+    html[data-theme='light'] .m-card,
+    html[data-theme='light'] .m-product-grid .de__pcard,
+    html[data-theme='light'] .m-trust div {
+        background: #fff; border-color: var(--lt-border); box-shadow: 0 1px 3px rgba(17, 20, 24, .06);
+    }
+    html[data-theme='light'] .m-card-name, html[data-theme='light'] .m-card-fit { color: var(--lt-heading); }
+    html[data-theme='light'] .m-card-img { background: var(--lt-bg-soft); }
+    html[data-theme='light'] .m-section-head h2 { color: var(--lt-heading); }
+
+    html[data-theme='light'] .m-buybar { background: rgba(255, 255, 255, .96); border-top-color: var(--lt-border); }
+    html[data-theme='light'] .m-buybar .m-buybar-price strong { color: var(--lt-heading); }
+    html[data-theme='light'] .m-buybar .m-buybar-price small { color: var(--lt-muted); opacity: 1; }
+    html[data-theme='light'] .m-buybar .m-buybar-chat { background: var(--lt-bg-soft); border-color: var(--lt-border); color: var(--lt-heading); }
+}
+
+/* Tautan beraksen tetap oranye; garis tombol menu tetap terlihat. */
+html[data-theme='light'] .m-section-head a,
+html[data-theme='light'] .m-banner-text em,
+html[data-theme='light'] .id-color { color: var(--primary-color) !important; }
+html[data-theme='light'] #btn-extra span { background-color: var(--lt-heading) !important; }
+
+/* Tepi gradasi bagian berfoto memudar ke putih, bukan ke hitam (kecuali hero beranda). */
+html[data-theme='light'] .jarallax .gradient-edge-top:not(.op-5) {
+    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0) 100%) !important;
+}
+html[data-theme='light'] .jarallax .gradient-edge-bottom:not(.color) {
+    background: linear-gradient(0deg, #fff 0%, rgba(255, 255, 255, 0) 100%) !important;
+}
+
+/* Footer: label kontak memakai .text-white bawaan template. */
+html[data-theme='light'] footer .text-white { color: var(--lt-heading) !important; }
+
+/* Halaman Tracking */
+html[data-theme='light'] .tracking-card,
+html[data-theme='light'] .tracking-result {
+    background: #fff !important; color: var(--lt-text) !important;
+    border: 1px solid var(--lt-border) !important; box-shadow: 0 12px 32px -16px rgba(17, 20, 24, .18) !important;
+}
+html[data-theme='light'] .tracking-input { border-color: var(--lt-border) !important; color: var(--lt-heading) !important; background: var(--lt-bg-soft) !important; }
+html[data-theme='light'] .tracking-input::placeholder { color: var(--lt-muted); }
+html[data-theme='light'] .shipment-info, html[data-theme='light'] .shipment-tab { background: var(--lt-bg-soft) !important; }
+html[data-theme='light'] .info-value, html[data-theme='light'] .action-btn { color: var(--lt-heading) !important; }
+html[data-theme='light'] .action-btn { border-color: var(--lt-border) !important; }
+html[data-theme='light'] .timeline-content p { color: var(--lt-text) !important; }
+html[data-theme='light'] .progress-line { background: var(--lt-bg-softer) !important; }
+
+/* Tautan kembali di halaman detail produk (desktop) */
+.product-back-link { font-size: 14px; font-weight: 500; color: rgba(255, 255, 255, .7) !important; text-decoration: none; }
+.product-back-link:hover { color: var(--primary-color) !important; }
+html[data-theme='light'] .product-back-link { color: var(--lt-muted) !important; }

@@ -15,7 +15,12 @@ use Illuminate\Support\Facades\Route;
 | Product resource is in place.
 */
 
-Route::view('/', 'pages.home')->name('home');
+Route::get('/', function () {
+    return view('pages.home', [
+        // Katalog untuk beranda versi HP (gaya aplikasi e-commerce).
+        'catalog' => Product::with(['images', 'item'])->active()->ordered()->get(),
+    ]);
+})->name('home');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/contact', 'pages.contact')->name('contact');
 Route::view('/workshop', 'pages.workshop')->name('workshop');
@@ -34,6 +39,7 @@ Route::get('/products/{product:slug}', function (Product $product) {
 
     return view('pages.products.show', [
         'product' => $product->load(['images', 'item']),
+        'others' => Product::with(['images', 'item'])->active()->ordered()->whereKeyNot($product->id)->limit(6)->get(),
     ]);
 })->name('products.show');
 

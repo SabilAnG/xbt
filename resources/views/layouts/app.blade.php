@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#121212">
     <title>@yield('title', config('app.name'))</title>
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
@@ -18,6 +19,21 @@
     <link rel="stylesheet" href="{{ asset('assets/css/colors/scheme-1.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/custom-swiper-1.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/theme-light.css') }}?v={{ filemtime(public_path('assets/css/theme-light.css')) }}">
+    {{-- Tema dipasang sebelum halaman tampil supaya tidak berkedip. ?theme=light|dark juga menyimpan pilihan. --}}
+    <script>
+        (function () {
+            var theme = 'dark';
+            try {
+                var fromUrl = new URLSearchParams(location.search).get('theme');
+                if (fromUrl === 'light' || fromUrl === 'dark') localStorage.setItem('site-theme', fromUrl);
+                theme = localStorage.getItem('site-theme') || 'dark';
+            } catch (e) {}
+            document.documentElement.setAttribute('data-theme', theme);
+            var meta = document.querySelector('meta[name=theme-color]');
+            if (meta) meta.content = theme === 'light' ? '#ffffff' : '#121212';
+        })();
+    </script>
         @stack('head')
         <script>
         window.__redirect = function(path) {
@@ -27,6 +43,23 @@
 </head>
 
 <body class="dark-scheme @yield('body-class')">
+<script>
+    // Template memakai kelas .dark-scheme untuk tema gelap; tema terang = tanpa kelas itu.
+    if (document.documentElement.getAttribute('data-theme') === 'light') {
+        document.body.classList.remove('dark-scheme');
+        document.body.classList.add('theme-light');
+    }
+    window.toggleSiteTheme = function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        try { localStorage.setItem('site-theme', next); } catch (e) {}
+        document.documentElement.setAttribute('data-theme', next);
+        document.body.classList.toggle('dark-scheme', next === 'dark');
+        document.body.classList.toggle('theme-light', next === 'light');
+        var meta = document.querySelector('meta[name=theme-color]');
+        if (meta) meta.content = next === 'light' ? '#ffffff' : '#121212';
+    };
+</script>
+@include('partials.m-appbar')
     <div id="wrapper">
         <a href="#" id="back-to-top"></a>
 

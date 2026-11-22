@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', "Our Products")
+@section('m-search', 'products')
 
 @section('content')
 <div class="no-bottom no-top" id="content">
@@ -29,10 +30,6 @@
 
     <section class="m-products-section">
         <div class="container">
-            <label class="m-search">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z"/></svg>
-                <input type="search" id="m-product-search" placeholder="Cari knalpot…" autocomplete="off">
-            </label>
             <div class="row g-4">
                 <div class="col-lg-3">
                     <div class="item_filter_group">
@@ -205,6 +202,9 @@
                 });
                 $('#m-product-empty').toggle(shown === 0);
             });
+            if ($('#m-product-search').val() && window.matchMedia('(max-width: 767px)').matches) {
+                $('#m-product-search').trigger('input');
+            }
 
             $(".cat-filter, .brand-filter, #cat_all, #brand_all").change(function() {
                 let brands = [];
