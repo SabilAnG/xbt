@@ -102,10 +102,15 @@ class ProductionController extends Controller
         return redirect()->route('admin.productions.index')->with('status', 'Draf produksi dihapus.');
     }
 
-    public function post(Production $production, ProductionService $service): RedirectResponse
+    public function post(Request $request, Production $production, ProductionService $service): RedirectResponse
     {
+        $leftovers = $request->validate([
+            'leftover' => ['nullable', 'array'],
+            'leftover.*' => ['in:stok,sampah'],
+        ])['leftover'] ?? [];
+
         try {
-            $service->post($production);
+            $service->post($production, $leftovers);
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }

@@ -39,7 +39,10 @@ class ProductionService
      *
      * @return array{units: Collection<int, array<string, mixed>>, pipes: Collection<int, array<string, mixed>>, ready: bool, problems: list<string>, material_cost: float, waste_cost: float, other_cost: float, total_cost: float, hpp: float}
      */
-    public function preview(Production $production): array
+    /**
+     * @param  array<int|string, string>  $leftovers  pilihan sisa per potongan pipa: stok | sampah
+     */
+    public function preview(Production $production, array $leftovers = []): array
     {
         $production->loadMissing('formula');
         $qty = (float) $production->qty;
@@ -69,7 +72,7 @@ class ProductionService
 
         $pipes = $requirements->filter(fn (array $line) => $line['material']->isPipe())
             ->groupBy(fn (array $line) => $line['material']->id)
-            ->map(function (Collection $group) use (&$problems) {
+            ->map(function (Collection $group) use (&$problems, $leftovers) {
                 /** @var Material $material */
                 $material = $group->first()['material'];
                 $cuts = $group->flatMap(fn (array $line) => collect($line['cuts'])->map(fn (float $length) => [
@@ -78,7 +81,7 @@ class ProductionService
                 $plan = $this->planner->cuttingPlan($material, $cuts, allowNewBars: false);
                 $pieces = PipePiece::whereIn('id', collect($plan['assignments'])->pluck('key'))->get()->keyBy('id');
                 $cost = collect($plan['assignments'])->sum(fn (array $cut) => ($cut['length'] + $cut['kerf']) * (float) $pieces[$cut['key']]->cost_per_cm);
-                $outcomes = $this->outcomes($material, $plan['assignments'], $pieces);
+                $outcomes = $this->outcomes($material, $plan['assignments'], $pieces, $leftovers);
 
                 foreach ($plan['unplaced'] as $cut) {
                     $problems[] = sprintf('%s: tidak ada pipa yang cukup untuk potong %s cm (%s).', $material->label(), qty($cut['length'], 2), $cut['label']);
@@ -117,16 +120,19 @@ class ProductionService
         ];
     }
 
-    public function post(Production $production): void
+    /**
+     * @param  array<int|string, string>  $leftovers  pilihan sisa per potongan pipa: stok | sampah
+     */
+    public function post(Production $production, array $leftovers = []): void
     {
-        DB::transaction(function () use ($production) {
+        DB::transaction(function () use ($production, $leftovers) {
             $production = Production::lockForUpdate()->findOrFail($production->id);
 
             if ($production->isPosted()) {
                 throw new RuntimeException('Produksi ini sudah dibukukan.');
             }
 
-            $preview = $this->preview($production);
+            $preview = $this->preview($production, $leftovers);
 
             if (! $preview['ready']) {
                 throw new RuntimeException('Belum bisa dibukukan: '.implode(' ', $preview['problems']));
@@ -158,6 +164,7 @@ class ProductionService
                 $material = $row['material'];
                 $usage = [];
                 $touched = [];
+                $destination = collect($row['outcomes'])->pluck('status', 'key');
 
                 foreach ($row['assignments'] as $cut) {
                     $piece = PipePiece::with('warehouse', 'material')->lockForUpdate()->findOrFail($cut['key']);
@@ -187,8 +194,8 @@ class ProductionService
 
                     if ($remaining <= 0) {
                         $piece->forceFill(['status' => PipePiece::USED_UP])->save();
-                    } elseif ($remaining < (float) $material->min_reusable_cm) {
-                        $this->stock->recordPiece($piece, $piece->warehouse, 'afkir', 0, $remaining, $production, $date, $piece->code.' sisa '.qty($remaining, 2).' cm terlalu pendek');
+                    } elseif (($destination[$piece->id] ?? null) === PipePiece::SCRAP) {
+                        $this->stock->recordPiece($piece, $piece->warehouse, 'afkir', 0, $remaining, $production, $date, $piece->code.' sisa '.qty($remaining, 2).' cm dibuang');
                         $wasteCost += $piece->value();
                         $piece->forceFill(['status' => PipePiece::SCRAP])->save();
                     } elseif ($piece->warehouse_id !== $offcut->id) {
@@ -366,27 +373,37 @@ class ProductionService
     /**
      * Keadaan akhir tiap potongan yang tersentuh rencana potong.
      *
+     * Sisa yang cukup panjang disarankan kembali ke stok (Gudang Stok Sisa),
+     * yang lebih pendek dari batas sisa minimal disarankan dibuang; pilihan
+     * pengguna menggantikan saran itu.
+     *
      * @param  list<array<string, mixed>>  $assignments
      * @param  Collection<int, PipePiece>  $pieces
-     * @return list<array{key: int, code: string, before: float, after: float, status: string, from_offcut: bool}>
+     * @param  array<int|string, string>  $leftovers
+     * @return list<array{key: int, code: string, material: string, before: float, after: float, value: float, suggested: string, status: string, from_offcut: bool}>
      */
-    private function outcomes(Material $material, array $assignments, Collection $pieces): array
+    private function outcomes(Material $material, array $assignments, Collection $pieces, array $leftovers = []): array
     {
         $offcut = Warehouse::forType(Warehouse::OFFCUT)->id;
 
-        return collect($assignments)->groupBy('key')->map(function (Collection $cuts, $key) use ($material, $pieces, $offcut) {
+        return collect($assignments)->groupBy('key')->map(function (Collection $cuts, $key) use ($material, $pieces, $offcut, $leftovers) {
             $after = (float) $cuts->last()['after'];
+            $suggested = $after < (float) $material->min_reusable_cm ? PipePiece::SCRAP : 'sisa';
             $status = match (true) {
                 $after <= 0 => PipePiece::USED_UP,
-                $after < (float) $material->min_reusable_cm => PipePiece::SCRAP,
-                default => 'sisa',
+                ($leftovers[$key] ?? null) === 'sampah' => PipePiece::SCRAP,
+                ($leftovers[$key] ?? null) === 'stok' => 'sisa',
+                default => $suggested,
             };
 
             return [
                 'key' => (int) $key,
                 'code' => $cuts->first()['code'],
+                'material' => $material->label(),
                 'before' => (float) $cuts->first()['before'],
                 'after' => $after,
+                'value' => $after * (float) $pieces[$key]->cost_per_cm,
+                'suggested' => $after <= 0 ? PipePiece::USED_UP : $suggested,
                 'status' => $status,
                 'from_offcut' => $pieces[$key]->warehouse_id === $offcut,
             ];

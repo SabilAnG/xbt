@@ -88,6 +88,15 @@
     var materials = @json($materials);
     var warehouses = @json($warehouses);
     var suggestions = @json($suggestions);
+    if (Array.isArray(suggestions)) suggestions = {};
+    var presetUrl = @json(route('admin.component-options.store'));
+    var csrf = document.querySelector('meta[name="csrf-token"]').content;
+    (function () {
+        var list = document.createElement('datalist');
+        list.id = 'part-names';
+        @json($partNames).forEach(function (n) { var o = document.createElement('option'); o.value = n; list.appendChild(o); });
+        document.body.appendChild(list);
+    })();
     var byId = {};
     materials.forEach(function (m) { byId[m.id] = m; });
 
@@ -147,6 +156,8 @@
         return '<div class="rounded-xl border border-slate-200 p-3" data-component data-p="' + p + '" data-c="' + c + '">'
             + '<div class="flex flex-wrap items-center gap-2">'
             + '<input name="' + base + '[name]" value="' + esc(comp.name) + '" class="input max-w-56 font-medium" list="' + list + '" placeholder="Nama komponen, mis. P1" data-field="name" aria-label="Nama komponen">'
+            + '<button type="button" class="tile size-10 text-brand-600" data-preset-add title="Simpan nama komponen ke Data Komponen" aria-label="Simpan ke Data Komponen">'
+            + '<svg fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>'
             + '<span class="text-xs text-slate-500">×</span>'
             + '<input name="' + base + '[qty]" type="number" step="any" min="0" value="' + esc(comp.qty) + '" class="input w-20" data-field="cqty" aria-label="Jumlah per knalpot">'
             + '<span class="text-xs text-slate-500">buah / knalpot</span>'
@@ -165,7 +176,7 @@
             + '<datalist id="sug-' + p + '">' + names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>'
             + '<div class="flex flex-wrap items-center gap-2">'
             + '<span class="grid size-7 place-items-center rounded-lg bg-brand-50 text-xs font-bold text-brand-700">' + (p + 1) + '</span>'
-            + '<input name="parts[' + p + '][name]" value="' + esc(part.name) + '" class="input max-w-64 text-base font-semibold" placeholder="Nama bagian, mis. Leheran" data-field="pname" aria-label="Nama bagian">'
+            + '<input name="parts[' + p + '][name]" value="' + esc(part.name) + '" class="input max-w-64 text-base font-semibold" list="part-names" placeholder="Nama bagian, mis. Leheran" data-field="pname" aria-label="Nama bagian">'
             + '<span class="ml-auto text-sm text-slate-500">Subtotal <strong class="text-slate-900 tabular-nums" data-part-cost></strong></span>'
             + '<button type="button" class="btn btn-ghost btn-sm text-rose-600" data-remove-part>Hapus bagian</button>'
             + '</div>'
@@ -250,6 +261,36 @@
             var q = partsBox.querySelector('[data-line][data-p="' + d.p + '"][data-c="' + d.c + '"][data-l="' + d.l + '"] [data-field="qty"]');
             if (q) q.focus();
         }
+    });
+
+    // Tombol "+" di komponen: simpan namanya ke Data Komponen di bagian ini.
+    form.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-preset-add]');
+        if (!btn) return;
+        var d = ref(btn);
+        var input = btn.parentElement.querySelector('[data-field="name"]');
+        var partName = (state.parts[d.p].name || '').trim();
+        var name = input.value.trim();
+        if (!name || !partName) { (name ? form.querySelector('[data-part][data-p="' + d.p + '"] [data-field="pname"]') : input).focus(); return; }
+        btn.disabled = true;
+        fetch(presetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify({ kind: 'komponen', part: partName, name: name }),
+        }).then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+            .then(function (data) {
+                var list = suggestions[partName] = suggestions[partName] || [];
+                if (list.indexOf(data.name) === -1) list.push(data.name);
+                var datalist = document.getElementById('sug-' + d.p);
+                if (datalist && ![].some.call(datalist.options, function (o) { return o.value === data.name; })) {
+                    var o = document.createElement('option'); o.value = data.name; datalist.appendChild(o);
+                }
+                btn.classList.add('bg-emerald-50', 'text-emerald-600');
+                btn.title = data.message;
+                btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg>';
+            })
+            .catch(function (err) { btn.title = (err && err.message) || 'Gagal menyimpan.'; btn.classList.add('text-rose-600'); })
+            .finally(function () { btn.disabled = false; });
     });
 
     form.addEventListener('click', function (e) {

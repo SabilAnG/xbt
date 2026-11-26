@@ -90,6 +90,7 @@ class AdminNavigation
             ]],
             ['label' => 'Produksi', 'items' => [
                 $item('Formula', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
+                $item('Data Komponen', 'admin.component-options.index', 'admin.component-options.*', 'list'),
                 $item('Rencana Produksi', 'admin.plans.index', 'admin.plans.*', 'calendar'),
                 $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
                 $item('Vendor Produksi', 'admin.warehouses.show', 'admin.warehouses.show:di-vendor', 'truck', ['type' => 'di-vendor']),

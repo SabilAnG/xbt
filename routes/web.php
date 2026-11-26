@@ -98,6 +98,10 @@ Route::prefix('admin')->group(function () {
         Route::resource('pembelian-bahan', Admin\MaterialPurchaseController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('purchases')->parameters(['pembelian-bahan' => 'purchase']);
         Route::get('master-item', [Admin\MasterItemController::class, 'index'])->name('master-items.index');
+        Route::get('data-komponen', [Admin\ComponentOptionController::class, 'index'])->name('component-options.index');
+        Route::post('data-komponen', [Admin\ComponentOptionController::class, 'store'])->name('component-options.store');
+        Route::put('data-komponen/{option}', [Admin\ComponentOptionController::class, 'update'])->name('component-options.update');
+        Route::delete('data-komponen/{option}', [Admin\ComponentOptionController::class, 'destroy'])->name('component-options.destroy');
         Route::get('data-motor', [Admin\MotorOptionController::class, 'index'])->name('motor-options.index');
         Route::post('data-motor', [Admin\MotorOptionController::class, 'store'])->name('motor-options.store');
         Route::put('data-motor/{option}', [Admin\MotorOptionController::class, 'update'])->name('motor-options.update');

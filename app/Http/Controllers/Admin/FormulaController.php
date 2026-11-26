@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ComponentOption;
 use App\Models\Formula;
 use App\Models\FormulaComponent;
 use App\Models\FormulaCost;
@@ -24,13 +25,6 @@ use Illuminate\View\View;
 class FormulaController extends Controller
 {
     /** Saran nama komponen per bagian. */
-    public const COMPONENT_SUGGESTIONS = [
-        'Leheran' => ['Pureng', 'Plendes', 'P1', 'P2', 'P3', 'P4', 'P5', 'Sok sambungan', 'Breket leher'],
-        'Silincer' => ['Tabung', 'Sarangan', 'Tutup depan', 'Tutup belakang', 'Moncong', 'Gaswool', 'Breket silincer', 'Tameng'],
-        'Aksesoris' => ['Baut', 'Ring', 'Stiker / emblem', 'Tameng', 'Karet', 'Packing', 'Dus'],
-        'Bahan' => ['P1', 'P2', 'P3', 'P4', 'Plendes', 'Pureng'],
-    ];
-
     public function index(Request $request): View
     {
         $formulas = Formula::query()->with(['item', 'outputMaterial', 'parts.components'])
@@ -163,7 +157,10 @@ class FormulaController extends Controller
         ])->all());
 
         if ($parts === []) {
-            $parts = collect($formula->isSemiFinished() ? ['Bahan'] : Formula::DEFAULT_PARTS)->map(fn (string $name) => ['name' => $name, 'components' => []])->all();
+            // Bagian bawaan dari Data Komponen; cadangan bila master masih kosong.
+            $defaults = ComponentOption::defaultParts($formula->isSemiFinished() ? Formula::SEMI_FINISHED : Formula::KNALPOT)
+                ?: ($formula->isSemiFinished() ? ['Bahan'] : Formula::DEFAULT_PARTS);
+            $parts = collect($defaults)->map(fn (string $name) => ['name' => $name, 'components' => []])->all();
         }
 
         $costs = old('costs', $formula->costs->map(fn ($cost) => [
@@ -190,10 +187,8 @@ class FormulaController extends Controller
             'warehouses' => collect([Warehouse::RAW, Warehouse::SEMI, Warehouse::ACCESSORY])->mapWithKeys(fn (string $type) => [$type => Warehouse::forType($type)->name]),
             'costSuggestions' => collect(['Ongkos las', 'Ongkos bending', 'Finishing / poles', 'Packing'])
                 ->merge(FormulaCost::query()->distinct()->pluck('name'))->unique()->values(),
-            'suggestions' => collect(self::COMPONENT_SUGGESTIONS)
-                ->map(fn (array $names, string $part) => collect($names)->merge(
-                    FormulaComponent::query()->whereHas('part', fn ($query) => $query->where('name', $part))->distinct()->pluck('name')
-                )->unique()->values()),
+            'suggestions' => ComponentOption::suggestions(),
+            'partNames' => ComponentOption::query()->parts()->pluck('name'),
             'semiMaterials' => Material::query()->where('measure', Material::UNIT)->where('is_producible', true)
                 ->where('warehouse_id', Warehouse::forType(Warehouse::SEMI)->id)
                 ->whereNotIn('id', Formula::query()->whereNotNull('output_material_id')->whereKeyNot($formula->id ?? 0)->pluck('output_material_id'))
@@ -250,6 +245,18 @@ class FormulaController extends Controller
             ->values()->all();
 
         $parts = array_values($data['parts']);
+
+        foreach ($parts as $part) {
+
+            ComponentOption::rememberPart($part['name']);
+
+            foreach ($part['components'] ?? [] as $component) {
+
+                ComponentOption::rememberComponent($part['name'], $component['name']);
+
+            }
+
+        }
         unset($data['parts'], $data['costs'], $data['item_id'], $data['output_material_id']);
 
         // Nilai motor dibakukan ke master data (dan dicatat bila baru).

@@ -170,6 +170,39 @@ class InventoryFlowTest extends TestCase
         $this->get(route('admin.finance.index'))->assertOk();
     }
 
+    public function test_leftovers_can_be_sent_back_to_stock_or_thrown_away_when_posting(): void
+    {
+        $formula = $this->formula();
+        $this->buy([[$this->pipe, 1], [$this->pureng, 5], [$this->plendes, 5]]);
+        $offcut = Warehouse::forType(Warehouse::OFFCUT);
+        $this->post(route('admin.adjustments.store'), [
+            'adjusted_at' => '2026-11-26', 'material_id' => $this->pipe->id, 'direction' => 'in', 'reason' => 'stok_awal',
+            'warehouse_id' => $offcut->id, 'qty' => 1, 'length_cm' => 33, 'unit_cost' => 500,
+        ])->assertSessionHasNoErrors();
+        $old = PipePiece::where('initial_length_cm', 33)->firstOrFail();
+        $bar = PipePiece::where('initial_length_cm', 600)->firstOrFail();
+        $production = $this->draftProduction($formula, 2);
+
+        // Daftar sisa tampil dengan saran: 3 cm dibuang, 530 cm kembali ke stok.
+        $this->get(route('admin.productions.show', $production))->assertOk()
+            ->assertSee('Sisa produksi')->assertSee('Kembali ke stok')->assertSee('Buang ke sampah');
+
+        // Pilihan dibalik: sisa pendek disimpan, sisa batang dibuang.
+        $this->post(route('admin.productions.post', $production), ['leftover' => [$old->id => 'stok', $bar->id => 'sampah']])
+            ->assertSessionHasNoErrors()->assertSessionMissing('error');
+
+        $old->refresh();
+        $bar->refresh();
+        $this->assertSame(PipePiece::AVAILABLE, $old->status);
+        $this->assertSame($offcut->id, $old->warehouse_id);
+        $this->assertEqualsWithDelta(3, (float) $old->length_cm, 0.001);
+        $this->assertSame(PipePiece::SCRAP, $bar->status);
+        // Afkir = 530 cm × Rp 500.
+        $this->assertEquals(265_000, (float) $production->fresh()->waste_cost);
+        $this->assertEqualsWithDelta(3, (float) $this->pipe->fresh()->stock, 0.001);
+        $this->get(route('admin.productions.show', $production))->assertOk()->assertSee('Dibuang')->assertSee('Kembali ke stok');
+    }
+
     public function test_production_cannot_be_posted_without_enough_stock(): void
     {
         $formula = $this->formula();

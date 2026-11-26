@@ -70,7 +70,7 @@ class AdminPanelTest extends TestCase
             'admin.purchases.index', 'admin.purchases.create', 'admin.adjustments.index', 'admin.adjustments.create',
             'admin.warehouses.index', 'admin.finance.index', 'admin.expenses.index', 'admin.expenses.create',
             'admin.wallets.index', 'admin.brands.index', 'admin.production-settings.edit', 'admin.master-items.index', 'admin.units.index',
-            'admin.receipts.index', 'admin.suppliers.index', 'admin.transfers.index', 'admin.transfers.create', 'admin.motor-options.index',
+            'admin.receipts.index', 'admin.suppliers.index', 'admin.transfers.index', 'admin.transfers.create', 'admin.motor-options.index', 'admin.component-options.index',
         ] as $route) {
             $this->get(route($route))->assertOk();
         }

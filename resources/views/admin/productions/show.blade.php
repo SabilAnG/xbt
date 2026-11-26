@@ -7,11 +7,34 @@
         </form>
     @else
         <a href="{{ route('admin.productions.edit', $production) }}" class="btn">Ubah</a>
-        <form method="POST" action="{{ route('admin.productions.post', $production) }}">
+        <form method="POST" action="{{ route('admin.productions.post', $production) }}" id="post-form">
             @csrf<button class="btn btn-primary" @disabled(! $preview['ready'])>{{ $production->isVendor() ? 'Kirim ke vendor' : 'Bukukan produksi' }}</button>
         </form>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+    (() => {
+        const box = document.querySelector('[data-leftovers]');
+        if (!box) return;
+        const rp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+        const total = box.querySelector('[data-waste-total]');
+        const refresh = () => {
+            let waste = 0;
+            box.querySelectorAll('[data-leftover-row]').forEach(row => {
+                if (row.querySelector('[data-leftover-choice][value="sampah"]').checked) waste += parseFloat(row.dataset.value) || 0;
+            });
+            total.textContent = rp(waste);
+        };
+        box.addEventListener('change', refresh);
+        box.querySelectorAll('[data-leftover-all]').forEach(button => button.addEventListener('click', () => {
+            box.querySelectorAll(`[data-leftover-choice][value="${button.dataset.leftoverAll}"]`).forEach(radio => { radio.checked = true; });
+            refresh();
+        }));
+    })();
+</script>
+@endpush
 
 @section('content')
     @if ($production->isPosted())
@@ -99,6 +122,39 @@
             </div>
         </section>
 
+        @php
+            $leftPieces = $production->cuts->pluck('piece')->unique('id')->filter(fn ($piece) => (float) $piece->length_cm > 0 && in_array($piece->status, ['tersedia', 'afkir'], true));
+        @endphp
+        @if ($leftPieces->isNotEmpty())
+            <section class="card p-5 sm:p-6">
+                <div class="flex items-center gap-3">
+                    <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br from-[#c4eaa9] to-[#46ad37] text-white">
+                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('puzzle') }}"/></svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <h2 class="card-title">Sisa produksi</h2>
+                        <p class="text-[12px] text-muted">{{ $leftPieces->where('status', 'tersedia')->count() }} kembali ke stok · {{ $leftPieces->where('status', 'afkir')->count() }} dibuang</p>
+                    </div>
+                    <a href="{{ route('admin.warehouses.show', 'stok-sisa') }}" class="btn btn-sm">Gudang Stok Sisa</a>
+                </div>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    @foreach ($leftPieces as $piece)
+                        <div class="flex items-center gap-3 rounded-[12px] bg-white/80 px-3.5 py-2.5 shadow-[0_4px_12px_-10px_rgb(60_66_110/0.5)]">
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-[13px] font-semibold text-ink">{{ qty($piece->length_cm, 2) }} cm · <span class="font-mono text-[11px] font-normal text-muted">{{ $piece->code }}</span></p>
+                                <p class="truncate text-[11.5px] text-muted">{{ $piece->material->label() }} · {{ rupiah($piece->value()) }}</p>
+                            </div>
+                            @if ($piece->status === 'tersedia')
+                                <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Kembali ke stok</span>
+                            @else
+                                <span class="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-600">Dibuang</span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if ($production->cuts->isNotEmpty())
             <section class="card overflow-hidden">
                 <div class="card-header"><h2 class="card-title">Potongan pipa</h2></div>
@@ -163,6 +219,66 @@
                 </table>
             </div>
         </section>
+
+        @php $leftovers = $preview['pipes']->flatMap(fn ($pipe) => collect($pipe['outcomes'])->where('after', '>', 0))->values(); @endphp
+        @if ($leftovers->isNotEmpty())
+            <section class="card p-5 sm:p-6" data-leftovers>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br from-[#c4eaa9] to-[#46ad37] text-white">
+                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('puzzle') }}"/></svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <h2 class="card-title">Sisa produksi</h2>
+                        <p class="text-[12px] text-muted">{{ $leftovers->count() }} potongan sisa · total {{ qty($leftovers->sum('after'), 2) }} cm · nilai {{ rupiah($leftovers->sum('value')) }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" class="btn btn-sm" data-leftover-all="stok">Semua ke stok</button>
+                        <button type="button" class="btn btn-sm" data-leftover-all="sampah">Semua dibuang</button>
+                    </div>
+                </div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="table">
+                        <thead><tr><th>Potongan</th><th>Bahan</th><th class="num">Panjang awal</th><th class="num">Sisa</th><th class="num">Nilai</th><th>Ke mana</th></tr></thead>
+                        <tbody>
+                        @foreach ($leftovers as $left)
+                            <tr data-leftover-row data-value="{{ $left['value'] }}">
+                                <td class="font-mono text-xs">{{ $left['code'] }}</td>
+                                <td class="text-[13px]">{{ $left['material'] }}</td>
+                                <td class="num text-muted">{{ qty($left['before'], 2) }} cm</td>
+                                <td class="num font-semibold text-ink">{{ qty($left['after'], 2) }} cm</td>
+                                <td class="num">{{ rupiah($left['value']) }}</td>
+                                <td>
+                                    <div class="inline-flex rounded-full bg-surface p-1 shadow-[inset_0_1px_3px_rgb(60_66_110/0.15)]">
+                                        @foreach (['stok' => ['Kembali ke stok', 'sisa'], 'sampah' => ['Buang ke sampah', 'afkir']] as $choice => [$choiceLabel, $status])
+                                            <label class="cursor-pointer">
+                                                <input type="radio" form="post-form" name="leftover[{{ $left['key'] }}]" value="{{ $choice }}" class="peer sr-only" data-leftover-choice @checked($left['suggested'] === $status)>
+                                                <span @class([
+                                                    'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium text-ink-soft transition hover:text-ink',
+                                                    'peer-checked:bg-linear-to-b peer-checked:from-[#4fd08a] peer-checked:to-[#1fae5b] peer-checked:text-white peer-checked:shadow-[0_6px_14px_-6px_#1fae5b]' => $choice === 'stok',
+                                                    'peer-checked:bg-linear-to-b peer-checked:from-[#fb7185] peer-checked:to-[#e11d48] peer-checked:text-white peer-checked:shadow-[0_6px_14px_-6px_#e11d48]' => $choice === 'sampah',
+                                                ])>
+                                                    @if ($choice === 'stok')
+                                                        <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12M7 21v-8h10v8"/></svg>
+                                                    @else
+                                                        <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 7h16m-10 4v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+                                                    @endif
+                                                    {{ $choiceLabel }}
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    @if ($left['suggested'] === 'afkir')
+                                        <p class="mt-1 text-[11px] text-muted">Lebih pendek dari batas sisa minimal</p>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-3 text-[12px] text-ink-soft">Kembali ke stok → masuk <strong>Gudang Stok Sisa Produksi</strong> dan bisa dipakai produksi berikutnya. Dibuang → nilainya dihitung sebagai biaya afkir (<strong data-waste-total>{{ rupiah($preview['waste_cost']) }}</strong>).</p>
+            </section>
+        @endif
 
         @foreach ($preview['pipes'] as $pipe)
             <section class="card overflow-hidden">
