@@ -164,10 +164,10 @@
                         </linearGradient>
                         <filter id="gauge-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#4a5280" flood-opacity="0.18"/></filter>
                     </defs>
-                    <path d="M40.72 150 A80 80 0 1 1 179.28 150" fill="none" stroke="#fff" stroke-width="36" stroke-linecap="butt" filter="url(#gauge-shadow)"/>
+                    <path d="M40.72 150 A80 80 0 1 1 179.28 150" fill="none" stroke="var(--color-white)" stroke-width="36" stroke-linecap="butt" filter="url(#gauge-shadow)"/>
                     <path d="M40.72 150 A80 80 0 1 1 179.28 150" fill="none" stroke="url(#gauge-fill)" stroke-width="36" pathLength="100" stroke-dasharray="{{ round($margin, 1) }} 100"/>
-                    <text x="34" y="182" font-size="11" fill="#5d6483" transform="rotate(12 34 182)">0%</text>
-                    <text x="168" y="186" font-size="11" fill="#5d6483" transform="rotate(-14 168 186)">100%</text>
+                    <text x="34" y="182" font-size="11" fill="var(--color-ink-soft)" transform="rotate(12 34 182)">0%</text>
+                    <text x="168" y="186" font-size="11" fill="var(--color-ink-soft)" transform="rotate(-14 168 186)">100%</text>
                 </svg>
                 <div class="absolute inset-x-0 top-[26%] flex flex-col items-center">
                     <span class="grid size-13 place-items-center rounded-full bg-white text-ink shadow-(--shadow-soft)">
@@ -230,14 +230,14 @@
                         <div class="relative flex h-[212px] items-end justify-between gap-1">
                             @foreach ($monthly as $row)
                                 <div class="flex h-full flex-1 items-end justify-center gap-[5px]" data-col="{{ $loop->index }}">
-                                    <span class="w-[34%] max-w-[18px] rounded-t-full rounded-b-[4px] bg-linear-to-b from-[#a7afc2] via-[#cfd4df] to-[#f1f2f6]" style="height: {{ max(round($row['produced'] / $barTop * 100, 2), 4) }}%"></span>
+                                    <span class="w-[34%] max-w-[18px] rounded-t-full rounded-b-[4px] bg-linear-to-b from-[#a7afc2] via-[#cfd4df] to-surface" style="height: {{ max(round($row['produced'] / $barTop * 100, 2), 4) }}%"></span>
                                     <span class="relative w-[34%] max-w-[18px] overflow-hidden rounded-t-full rounded-b-[4px] bg-white shadow-[0_4px_10px_-5px_rgb(74_90_124/0.45)]" style="height: {{ max(round(max($row['produced'], $row['sold']) / $barTop * 100, 2), 4) }}%">
                                         <span class="absolute inset-x-0 bottom-0 rounded-b-[4px] bg-linear-to-b from-[#f2661f] via-[#f89b54] to-[#fde0c8]" style="height: {{ $row['produced'] > 0 || $row['sold'] > 0 ? round($row['sold'] / max($row['produced'], $row['sold']) * 100, 2) : 0 }}%"></span>
                                     </span>
                                 </div>
                             @endforeach
                             <svg class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                <polyline fill="none" stroke="#9aa0b8" stroke-width="1.4" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"
+                                <polyline fill="none" stroke="var(--color-muted)" stroke-width="1.4" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"
                                     points="{{ $monthly->values()->map(fn ($row, $i) => round(($i + 0.5) / max($monthly->count(), 1) * 100, 2).','.round(100 - $row['sold'] / $barTop * 100, 2))->implode(' ') }}"/>
                             </svg>
                         </div>

@@ -11,6 +11,13 @@
     $awaitingGoods = \App\Models\MaterialPurchase::query()->awaitingGoods()->count();
     $draftProductions = \App\Models\Production::query()->where('status', \App\Models\Production::DRAFT)->count();
     $groupDots = ['Pembelian' => $awaitingGoods > 0, 'Produksi' => $draftProductions > 0];
+    $lowMaterials = \App\Models\Material::query()->where('is_active', true)->get(['stock', 'min_stock'])
+        ->filter(fn ($material) => $material->stockStatus() !== 'AMAN')->count();
+    $notifications = collect([
+        ['Pembelian menunggu barang', $awaitingGoods.' pembelian belum diterima semua', route('admin.receipts.index'), 'inbox', 'from-[#9fe3f5] to-[#2fa9d6]', $awaitingGoods],
+        ['Produksi masih draf', $draftProductions.' nota produksi belum dibukukan', route('admin.productions.index', ['status' => 'draft']), 'factory', 'from-[#fde39a] to-[#eba50f]', $draftProductions],
+        ['Bahan habis / menipis', $lowMaterials.' bahan di bawah stok minimum', route('admin.materials.index'), 'box', 'from-[#fdbac4] to-[#df3f58]', $lowMaterials],
+    ])->filter(fn ($row) => $row[5] > 0)->values();
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -25,6 +32,13 @@
     <script>
         // Sidebar lebar/sempit diingat di browser (aman bila storage diblokir).
         try { if (localStorage.getItem('admin.nav') === 'open') document.documentElement.dataset.nav = 'open'; } catch (e) {}
+        // Tema terang/gelap: pilihan tersimpan, atau mengikuti pengaturan perangkat.
+        (() => {
+            let theme = null;
+            try { theme = localStorage.getItem('admin.theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+        })();
     </script>
     @vite('resources/css/admin.css')
 </head>
@@ -124,39 +138,52 @@
                 </span>
                 <span class="mx-1 hidden h-7 w-px bg-line xl:block"></span>
 
-                {{-- Buat cepat --}}
+                {{-- Switch tema terang / gelap --}}
+                <button type="button" class="theme-switch" id="theme-toggle" role="switch" aria-checked="false" aria-label="Mode gelap" title="Ganti tema terang / gelap">
+                    <svg class="theme-icon left-[12px]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 17.5a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-.5a1 1 0 0 1 1-1ZM3 11h1.5a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2Zm16.5 0H21a1 1 0 1 1 0 2h-1.5a1 1 0 1 1 0-2Z"/></svg>
+                    <svg class="theme-icon right-[12px]" fill="currentColor" viewBox="0 0 24 24"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+                    <span class="theme-knob">
+                        <svg class="size-[17px] [html[data-theme=dark]_&]:hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 17.5a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-.5a1 1 0 0 1 1-1ZM3 11h1.5a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2Zm16.5 0H21a1 1 0 1 1 0 2h-1.5a1 1 0 1 1 0-2Z"/></svg>
+                        <svg class="hidden size-4 [html[data-theme=dark]_&]:block" fill="currentColor" viewBox="0 0 24 24"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+                    </span>
+                </button>
+
+                {{-- Notifikasi --}}
                 <details class="relative">
-                    <summary class="topbar-icon list-none bg-linear-to-b from-[#f9922a] to-[#f2621f] text-white shadow-(--shadow-orange) hover:text-white [&::-webkit-details-marker]:hidden" title="Buat baru">
-                        <svg fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    <summary class="topbar-icon list-none [&::-webkit-details-marker]:hidden" title="Notifikasi">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v4.3L4 16v1.5h16V16l-1.5-2.7V9A6.5 6.5 0 0 0 12 2.5ZM9.5 19a2.5 2.5 0 0 0 5 0h-5Z"/></svg>
+                        @if ($notifications->isNotEmpty())
+                            <span class="topbar-badge">{{ min($notifications->sum(fn ($row) => $row[5]), 99) }}</span>
+                        @endif
                     </summary>
-                    <div class="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-2xl border border-white bg-white p-1.5 shadow-(--shadow-pop)">
-                        <p class="px-3 pt-1.5 pb-1 text-[11px] font-semibold tracking-wider text-muted uppercase">Buat baru</p>
-                        @foreach ([
-                            ['Pembelian', 'admin.purchases.create', 'bag'],
-                            ['Penerimaan barang', 'admin.receipts.index', 'inbox'],
-                            ['Produksi', 'admin.productions.create', 'factory'],
-                            ['Penjualan', 'admin.sales.create', 'cart'],
-                            ['Pindah barang', 'admin.transfers.create', 'arrows'],
-                            ['Pengeluaran', 'admin.expenses.create', 'banknote'],
-                        ] as [$label, $routeName, $icon])
-                            <a href="{{ route($routeName) }}" class="flyout-link">
-                                <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon($icon) }}"/></svg>
-                                {{ $label }}
-                            </a>
-                        @endforeach
+                    <div class="absolute right-0 z-40 mt-3 w-[320px] overflow-hidden rounded-2xl border border-white bg-white shadow-(--shadow-pop)">
+                        <div class="flex items-center justify-between border-b border-line px-4 py-3">
+                            <p class="text-[14px] font-semibold text-ink">Notifikasi</p>
+                            @if ($notifications->isNotEmpty())<span class="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">{{ $notifications->count() }} perlu ditindak</span>@endif
+                        </div>
+                        <div class="space-y-1 p-2">
+                            @forelse ($notifications as [$label, $detail, $href, $icon, $gradient])
+                                <a href="{{ $href }}" class="flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-hover">
+                                    <span class="grid size-10 shrink-0 place-items-center rounded-[11px] bg-linear-to-br {{ $gradient }} text-white">
+                                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon($icon) }}"/></svg>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-semibold text-ink">{{ $label }}</span>
+                                        <span class="block truncate text-[11.5px] text-muted">{{ $detail }}</span>
+                                    </span>
+                                </a>
+                            @empty
+                                <div class="px-4 py-7 text-center">
+                                    <span class="mx-auto mb-2 grid size-11 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg>
+                                    </span>
+                                    <p class="text-[13px] font-semibold text-ink">Semua beres</p>
+                                    <p class="text-[11.5px] text-muted">Tidak ada yang perlu ditindak.</p>
+                                </div>
+                            @endforelse
+                        </div>
                     </div>
                 </details>
-                <a href="{{ route('home') }}" target="_blank" class="topbar-icon hidden sm:grid" title="Lihat website">
-                    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.5 9h17m-17 6h17"/></svg>
-                </a>
-                <a href="{{ route('admin.receipts.index') }}" class="topbar-icon" title="Penerimaan: {{ $awaitingGoods }} pembelian menunggu barang">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11Zm2.4-.2 6.6 5 6.6-5H5.4Z"/></svg>
-                    @if ($awaitingGoods)<span class="topbar-badge">{{ $awaitingGoods > 9 ? '9+' : $awaitingGoods }}</span>@endif
-                </a>
-                <a href="{{ route('admin.productions.index', ['status' => 'draft']) }}" class="topbar-icon" title="Produksi draf: {{ $draftProductions }}">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v4.3L4 16v1.5h16V16l-1.5-2.7V9A6.5 6.5 0 0 0 12 2.5ZM9.5 19a2.5 2.5 0 0 0 5 0h-5Z"/></svg>
-                    @if ($draftProductions)<span class="topbar-badge">{{ $draftProductions > 9 ? '9+' : $draftProductions }}</span>@endif
-                </a>
                 <span class="mx-1 hidden h-7 w-px bg-line sm:block"></span>
 
                 <details class="group relative">
@@ -218,18 +245,7 @@
             @endif
         </div>
 
-        @if (session('status'))
-            <div class="mb-5 flex items-start gap-3 rounded-[14px] border-[1.5px] border-white bg-emerald-50/80 px-4 py-3 text-[13px] text-emerald-800 shadow-(--shadow-card)" role="status">
-                <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"><svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7"/></svg></span>
-                <span class="pt-0.5">{{ session('status') }}</span>
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="mb-5 flex items-start gap-3 rounded-[14px] border-[1.5px] border-white bg-rose-50/80 px-4 py-3 text-[13px] text-rose-700 shadow-(--shadow-card)" role="alert">
-                <span class="grid size-6 shrink-0 place-items-center rounded-full bg-rose-500 text-white"><svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 7v6m0 4h.01"/></svg></span>
-                <span class="pt-0.5">{{ session('error') }}</span>
-            </div>
-        @endif
+        @include('layouts.partials.toasts')
 
         <div class="space-y-5">
             @yield('content')
@@ -244,6 +260,18 @@
 <script>
     (() => {
         const root = document.documentElement;
+
+        // Switch tema terang / gelap.
+        const toggle = document.getElementById('theme-toggle');
+        const paint = () => toggle?.setAttribute('aria-checked', root.dataset.theme === 'dark' ? 'true' : 'false');
+        paint();
+        toggle?.addEventListener('click', () => {
+            root.classList.add('theme-switching');
+            root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem('admin.theme', root.dataset.theme); } catch (e) {}
+            paint();
+            setTimeout(() => root.classList.remove('theme-switching'), 400);
+        });
 
         // Lebarkan / sempitkan sidebar di desktop.
         document.getElementById('nav-expand')?.addEventListener('click', () => {
