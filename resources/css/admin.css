@@ -734,3 +734,73 @@
         scrollbar-color: rgb(203 208 224) transparent;
     }
 }
+
+/* Stok opname: foto bukti stok per baris */
+.opname-thumb {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 9px;
+    box-shadow: 0 0 0 1px var(--color-line);
+    background: var(--color-surface);
+}
+.opname-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.opname-thumb.is-new { box-shadow: 0 0 0 2px var(--color-accent); }
+.opname-thumb[hidden] { display: none; }
+.opname-camera {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--color-white);
+    color: var(--color-ink-soft);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    transition: color .15s, transform .15s;
+}
+.opname-camera:hover { color: var(--color-accent); transform: translateY(-1px); }
+.opname-camera.has-photo { background: var(--color-accent-soft); color: var(--color-accent); }
+.opname-camera svg { width: 18px; height: 18px; }
+
+/* Topbar: nama brand gaya balap */
+.racing-wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding-left: 6px;
+    font-family: 'Racing Sans One', 'Poppins', sans-serif;
+    font-size: 25px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-style: italic;
+    white-space: nowrap;
+    transition: transform .2s;
+}
+.racing-wordmark:hover { transform: translateX(2px) skewX(-3deg); }
+.racing-ihc {
+    background: linear-gradient(180deg, #ff5a3c, #d6261a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 6px;
+}
+.racing-word { color: var(--color-ink); }
+.racing-stripes {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-right: 8px;
+    transform: skewX(-20deg);
+}
+.racing-stripes i {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #f2621f);
+}
+.racing-stripes i:nth-child(1) { width: 14px; margin-left: 6px; }
+.racing-stripes i:nth-child(2) { width: 20px; }
+.racing-stripes i:nth-child(3) { width: 12px; margin-left: 8px; opacity: .7; }
+html[data-theme='dark'] .racing-word { color: #fff; }

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseReturnItem extends Model
 {
-    protected $fillable = ['purchase_return_id', 'material_purchase_item_id', 'warehouse_id', 'qty', 'unit_price', 'subtotal'];
+    protected $fillable = ['purchase_return_id', 'material_purchase_item_id', 'warehouse_id', 'pipe_piece_id', 'qty', 'unit_price', 'subtotal'];
 
     protected function casts(): array
     {

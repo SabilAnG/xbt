@@ -13,8 +13,10 @@
     $groupDots = ['Pembelian' => $awaitingGoods > 0, 'Produksi' => $draftProductions > 0];
     // Hanya bahan yang diberi stok minimum (bahan yang memang harus selalu ada).
     $lowMaterials = \App\Models\Material::query()->needsRestock()->count();
+    $dueBills = \App\Models\MaterialPurchase::query()->dueWithin(3)->count();
     $unpaidSales = \App\Models\Sale::query()->posted()->whereColumn('paid_amount', '<', 'total')->count();
     $notifications = collect([
+        ['Hutang jatuh tempo', $dueBills.' tagihan jatuh tempo ≤ 3 hari / lewat', route('admin.purchases.index', ['bayar' => 'jatuh-tempo']), 'bag', 'from-[#fdbac4] to-[#df3f58]', $dueBills, 'admin.purchases.index'],
         ['Pembelian menunggu barang', $awaitingGoods.' pembelian belum diterima semua', route('admin.receipts.index'), 'inbox', 'from-[#9fe3f5] to-[#2fa9d6]', $awaitingGoods, 'admin.receipts.index'],
         ['Produksi masih draf', $draftProductions.' nota produksi belum dibukukan', route('admin.productions.index', ['status' => 'draft']), 'factory', 'from-[#fde39a] to-[#eba50f]', $draftProductions, 'admin.productions.index'],
         ['Bahan habis / menipis', $lowMaterials.' bahan di bawah stok minimum', route('admin.master-items.index'), 'box', 'from-[#fdbac4] to-[#df3f58]', $lowMaterials, 'admin.master-items.index'],
@@ -30,7 +32,7 @@
     <title>{{ $title ?? 'Admin' }} · {{ config('app.name') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=poppins:400,500,600,700|racing-sans-one:400&display=swap">
     <script>
         // Sidebar lebar/sempit diingat di browser (aman bila storage diblokir).
         try { if (localStorage.getItem('admin.nav') === 'open') document.documentElement.dataset.nav = 'open'; } catch (e) {}
@@ -70,10 +72,10 @@
                     <path d="M14 10 32 34H2Z" fill="#f0621f" opacity=".9"/>
                     <path d="M31 12 44 34H18Z" fill="#f7b21f" opacity=".9"/>
                 </svg>
-                <span class="relative mt-5 rounded-[5px] bg-[#e2361f] px-1 text-[11px] leading-[15px] font-extrabold tracking-tight text-white">XBT</span>
+                <span class="relative mt-5 rounded-[5px] bg-[#e2361f] px-1 text-[11px] leading-[15px] font-extrabold tracking-tight text-white">IHC</span>
             </span>
             <span class="nav-label leading-tight">
-                <span class="block text-sm font-semibold tracking-tight text-ink">Knalpot Admin</span>
+                <span class="block text-sm font-semibold tracking-tight text-ink">IHC Racing</span>
                 <span class="block text-xs text-muted">Produksi &amp; Penjualan</span>
             </span>
         </a>
@@ -124,8 +126,16 @@
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
             </label>
 
-            {{-- Form cari menu: "/" untuk fokus, Enter membuka hasil pertama. --}}
-            <form role="search" class="relative min-w-0 flex-1 sm:max-w-[420px]" onsubmit="return false">
+            {{-- Nama brand bergaya balap di kiri. --}}
+            <div class="hidden min-w-0 flex-1 items-center sm:flex">
+                <a href="{{ route('admin.dashboard') }}" class="racing-wordmark" aria-label="IHC Racing">
+                    <span class="racing-stripes" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span class="racing-ihc">IHC</span><span class="racing-word">Racing</span>
+                </a>
+            </div>
+
+            {{-- Form cari menu di tengah: "/" untuk fokus, Enter membuka hasil pertama. --}}
+            <form role="search" class="relative min-w-0 flex-1 sm:w-[340px] sm:flex-none" onsubmit="return false">
                 <svg class="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-ink-soft" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z"/></svg>
                 <input id="nav-search" type="search" placeholder="Cari menu, mis. pembelian, formula..." autocomplete="off" aria-label="Cari menu"
                        class="h-11 w-full rounded-[12px] border border-white bg-white pr-12 pl-11 text-[13px] text-ink shadow-[0_6px_16px_-10px_rgb(60_66_110/0.45)] placeholder:text-muted focus:border-brand-400 focus:ring-4 focus:ring-brand-500/12 focus:outline-none [&::-webkit-search-cancel-button]:hidden">
@@ -133,12 +143,12 @@
                 <div id="nav-results" class="absolute right-0 left-0 z-40 mt-2 hidden max-h-80 min-w-64 overflow-y-auto rounded-2xl border border-white bg-white p-1.5 shadow-(--shadow-pop)"></div>
             </form>
 
-            <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
-                <span class="hidden items-center gap-2 px-2 text-[12.5px] font-medium text-ink-soft xl:inline-flex">
+            <div class="flex items-center justify-end gap-1.5 sm:flex-1 sm:gap-2">
+                <span class="hidden items-center gap-2 px-2 text-[12.5px] font-medium whitespace-nowrap text-ink-soft 2xl:inline-flex">
                     <svg class="size-[17px] text-accent" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" viewBox="0 0 24 24"><path d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
                     {{ now()->translatedFormat('l, d M Y') }}
                 </span>
-                <span class="mx-1 hidden h-7 w-px bg-line xl:block"></span>
+                <span class="mx-1 hidden h-7 w-px bg-line 2xl:block"></span>
 
                 {{-- Switch tema terang / gelap --}}
                 <button type="button" class="theme-switch" id="theme-toggle" role="switch" aria-checked="false" aria-label="Mode gelap" title="Ganti tema terang / gelap">

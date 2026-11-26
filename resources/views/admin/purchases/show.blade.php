@@ -11,6 +11,8 @@
 @endsection
 
 @section('content')
+    @php $recordedBy = $purchase->recordedBy(); @endphp
+    <p class="-mb-2 text-[12.5px] text-muted">{{ $purchase->purchased_at->translatedFormat('d M Y') }} · {{ $purchase->supplier ?? 'tanpa supplier' }}@if ($purchase->due_date) · jatuh tempo <span @class(['font-semibold text-rose-600' => $purchase->isOverdue()])>{{ $purchase->due_date->translatedFormat('d M Y') }}</span>@endif{{ $recordedBy ? ' · dicatat oleh '.$recordedBy : '' }}</p>
     <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total" :value="rupiah($purchase->total)" />
         <x-admin.stat label="Dibayar" :value="rupiah($purchase->paid_amount)" />
@@ -112,7 +114,7 @@
         @endif
     </section>
 
-    @php $returnable = $purchase->isService() ? collect() : $purchase->items->filter(fn ($line) => ! $line->material->isPipe() && $line->returnableQty() > 0); @endphp
+    @php $returnable = $purchase->isService() ? collect() : $purchase->items->filter(fn ($line) => $line->returnableQty() > 0); @endphp
     @if ($returnable->isNotEmpty() || $purchase->returns->isNotEmpty())
         <section class="grid gap-4 sm:gap-6 lg:grid-cols-2">
             <div class="card overflow-hidden">
@@ -147,8 +149,8 @@
                         @foreach ($returnable->values() as $i => $line)
                             <div class="flex items-center gap-3 text-[13px]">
                                 <input type="hidden" name="items[{{ $i }}][material_purchase_item_id]" value="{{ $line->id }}">
-                                <span class="min-w-0 flex-1">{{ $line->material->name }}<span class="block text-[11px] text-muted">bisa diretur {{ qty($line->returnableQty()) }} · {{ rupiah($line->unit_price) }}/satuan</span></span>
-                                <input name="items[{{ $i }}][qty]" type="number" step="any" min="0" max="{{ $line->returnableQty() }}" class="input w-28" placeholder="0" value="{{ old("items.$i.qty") }}">
+                                <span class="min-w-0 flex-1">{{ $line->material->name }}<span class="block text-[11px] text-muted">bisa diretur {{ qty($line->returnableQty()) }}{{ $line->material->isPipe() ? ' batang utuh' : '' }} · {{ rupiah($line->unit_price) }}/{{ $line->material->isPipe() ? 'batang' : 'satuan' }}</span></span>
+                                <input name="items[{{ $i }}][qty]" type="number" step="{{ $line->material->isPipe() ? 1 : 'any' }}" min="0" max="{{ $line->returnableQty() }}" class="input w-28" placeholder="0" value="{{ old("items.$i.qty") }}">
                             </div>
                         @endforeach
                     </div>

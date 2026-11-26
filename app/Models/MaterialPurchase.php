@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Nota pembelian bahan: tanggal, toko, siapa yang belanja. Tiap baris masuk ke
@@ -16,14 +18,28 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class MaterialPurchase extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return ($this->kind === 'jasa' ? 'Tagihan jasa ' : 'Pembelian ').$this->invoice_number.($this->supplier ? ' · '.$this->supplier : '').' · '.rupiah($this->total);
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['supplier', 'due_date', 'notes'];
+    }
+
     protected $fillable = [
-        'invoice_number', 'kind', 'purchased_at', 'supplier_id', 'supplier', 'supplier_location', 'supplier_invoice', 'buyer', 'production_plan_id', 'production_id', 'total', 'paid_amount', 'notes',
+        'invoice_number', 'kind', 'purchased_at', 'due_date', 'supplier_id', 'supplier', 'supplier_location', 'supplier_invoice', 'buyer', 'production_plan_id', 'production_id', 'total', 'paid_amount', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'purchased_at' => 'date',
+            'due_date' => 'date',
             'total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
         ];
@@ -111,6 +127,27 @@ class MaterialPurchase extends Model
     public function scopeUnpaid(Builder $query): Builder
     {
         return $query->whereColumn('paid_amount', '<', 'total');
+    }
+
+    /** Jatuh tempo bawaan dari termin bayar supplier (bila belum diisi). */
+    protected static function booted(): void
+    {
+        static::creating(function (MaterialPurchase $purchase) {
+            if (! $purchase->due_date && $purchase->supplier_id && ($days = Supplier::whereKey($purchase->supplier_id)->value('payment_term_days'))) {
+                $purchase->due_date = Carbon::parse($purchase->purchased_at)->addDays((int) $days)->toDateString();
+            }
+        });
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_date !== null && $this->payable() > 0 && $this->due_date->lt(today());
+    }
+
+    /** Belum lunas dan jatuh tempo dalam $days hari ke depan (termasuk yang sudah lewat). */
+    public function scopeDueWithin(Builder $query, int $days = 3): Builder
+    {
+        return $query->unpaid()->whereNotNull('due_date')->whereDate('due_date', '<=', today()->addDays($days));
     }
 
     public function payable(): float

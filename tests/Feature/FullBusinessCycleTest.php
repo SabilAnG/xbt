@@ -281,7 +281,8 @@ class FullBusinessCycleTest extends TestCase
         if (in_array($user->role, ['gudang', 'kasir'], true)) {
             $this->assertGreaterThan(10, $forbidden);
         } else {
-            $this->assertSame($user->isOwner() ? 0 : 1, $forbidden);
+            // Admin hanya ditolak di menu Pengguna (kelola pengguna & riwayat aktivitas).
+            $this->assertSame($user->isOwner() ? 0 : 2, $forbidden);
         }
     }
 

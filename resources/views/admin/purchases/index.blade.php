@@ -17,13 +17,13 @@
         </div>
         <x-admin.select name="supplier" label="Supplier" :options="$suppliers" :value="request('supplier')" placeholder="Semua" />
         <x-admin.select name="terima" label="Penerimaan" :options="['belum' => 'Belum diterima semua']" :value="request('terima')" placeholder="Semua" />
-        <x-admin.select name="bayar" label="Pembayaran" :options="['hutang' => 'Belum lunas']" :value="request('bayar')" placeholder="Semua" />
+        <x-admin.select name="bayar" label="Pembayaran" :options="['hutang' => 'Belum lunas', 'jatuh-tempo' => 'Jatuh tempo ≤ 3 hari']" :value="request('bayar')" placeholder="Semua" />
     </x-admin.filters>
 
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
             <table class="table">
-                <thead><tr><th>Nomor</th><th>Tanggal</th><th>Supplier</th><th>Dibeli oleh</th><th>Barang</th><th class="num">Total</th><th class="num">Sisa hutang</th><th>Barang</th><th>Bayar</th></tr></thead>
+                <thead><tr><th>Nomor</th><th>Tanggal</th><th>Supplier</th><th>Dibeli oleh</th><th>Barang</th><th class="num">Total</th><th class="num">Sisa hutang</th><th>Jatuh tempo</th><th>Barang</th><th>Bayar</th></tr></thead>
                 <tbody>
                 @forelse ($purchases as $purchase)
                     <tr>
@@ -34,11 +34,12 @@
                         <td class="min-w-56 text-xs text-slate-600">@if ($purchase->isService())<span class="font-medium text-violet-700">Jasa vendor</span> · {{ $purchase->notes }}@else{{ $purchase->items->map(fn ($line) => $line->material->name.' × '.qty($line->qty).' '.$line->material->purchaseUnit())->implode(' · ') }}@endif</td>
                         <td class="num font-semibold">{{ rupiah($purchase->total) }}</td>
                         <td class="num {{ $purchase->payable() > 0 ? 'text-rose-600' : 'text-slate-400' }}">{{ $purchase->payable() > 0 ? rupiah($purchase->payable()) : '—' }}</td>
+                        <td class="whitespace-nowrap text-[12.5px]">@if ($purchase->due_date && $purchase->payable() > 0)<span @class(['font-semibold text-rose-600' => $purchase->isOverdue()])>{{ $purchase->due_date->translatedFormat('d M Y') }}</span>@else<span class="text-muted">—</span>@endif</td>
                         <td>@if ($purchase->receiveStatus())<x-admin.status :value="$purchase->receiveStatus()" />@else<span class="text-xs text-slate-400">jasa</span>@endif</td>
                         <td><x-admin.status :value="$purchase->paymentStatus()" /></td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="py-10 text-center text-slate-500">Belum ada pembelian.</td></tr>
+                    <tr><td colspan="10" class="py-10 text-center text-slate-500">Belum ada pembelian.</td></tr>
                 @endforelse
                 </tbody>
             </table>

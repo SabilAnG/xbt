@@ -7,12 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Barang di gudang. `stock` adalah cache dari stock_movements.
  */
 class Item extends Model
 {
+    /** Harga jual online berubah → produk website yang mengikuti harga ini ikut berubah. */
+    protected static function booted(): void
+    {
+        static::updated(function (Item $item) {
+            if ($item->wasChanged('sell_price_online')) {
+                Product::query()->where('item_id', $item->id)->where('price_follows_item', true)->where('currency', 'IDR')
+                    ->update(['price' => (float) $item->sell_price_online]);
+            }
+        });
+    }
+
     protected $fillable = [
         'sku', 'name', 'model_motor', 'finishing', 'variant', 'size', 'brand',
         'item_category_id', 'item_type_id', 'product_id',
@@ -119,5 +131,11 @@ class Item extends Model
     public function listPriceFor(?string $channel): float
     {
         return (float) ($channel === 'Offline' ? $this->sell_price : $this->sell_price_online);
+    }
+
+    /** Foto stok dari stok opname, terbaru dulu. */
+    public function stockPhotos(): MorphMany
+    {
+        return $this->morphMany(StockPhoto::class, 'subject')->latest('taken_at')->latest('id');
     }
 }

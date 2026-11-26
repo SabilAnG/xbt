@@ -9,6 +9,7 @@ use App\Models\ExpenseType;
 use App\Models\Worker;
 use App\Models\WorkerAdvance;
 use App\Models\WorkerPayroll;
+use App\Models\WorkerPieceEarning;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,7 @@ class PayrollService
     /**
      * Rekap absensi yang belum digaji dalam satu periode.
      *
-     * @return array{worker: Worker, attendances: Collection<int, Attendance>, days_full: float, days_half: float, overtime_hours: float, wage_total: float, meal_total: float, overtime_total: float, gross_pay: float, advance_balance: float, advance_deduction: float, net_pay: float}
+     * @return array{worker: Worker, attendances: Collection<int, Attendance>, days_full: float, days_half: float, overtime_hours: float, wage_total: float, meal_total: float, overtime_total: float, pieces: Collection<int, WorkerPieceEarning>, piece_total: float, gross_pay: float, advance_balance: float, advance_deduction: float, net_pay: float}
      */
     public function summary(Worker $worker, string $start, string $end, ?float $deduction = null): array
     {
@@ -41,7 +42,10 @@ class PayrollService
         $wage = ($full + $half * 0.5) * (float) $worker->daily_wage;
         $meal = $mealDays * (float) $worker->meal_allowance;
         $overtimeTotal = $overtime * (float) $worker->overtime_rate;
-        $gross = $wage + $meal + $overtimeTotal;
+        $pieces = WorkerPieceEarning::query()->where('worker_id', $worker->id)->whereNull('worker_payroll_id')
+            ->whereBetween('earned_on', [$start, $end])->get();
+        $pieceTotal = (float) $pieces->sum('amount');
+        $gross = $wage + $meal + $overtimeTotal + $pieceTotal;
         $balance = $worker->advanceBalance();
         $deduction = min(max($deduction ?? $balance, 0), $balance, $gross);
 
@@ -54,6 +58,8 @@ class PayrollService
             'wage_total' => $wage,
             'meal_total' => $meal,
             'overtime_total' => $overtimeTotal,
+            'pieces' => $pieces,
+            'piece_total' => $pieceTotal,
             'gross_pay' => $gross,
             'advance_balance' => $balance,
             'advance_deduction' => $deduction,
@@ -67,8 +73,8 @@ class PayrollService
         return DB::transaction(function () use ($worker, $start, $end, $deduction, $notes) {
             $summary = $this->summary($worker, $start, $end, $deduction);
 
-            if ($summary['attendances']->isEmpty()) {
-                throw new RuntimeException("Tidak ada absensi {$worker->name} yang belum digaji pada periode ini.");
+            if ($summary['attendances']->isEmpty() && $summary['pieces']->isEmpty()) {
+                throw new RuntimeException("Tidak ada absensi atau upah borongan {$worker->name} yang belum digaji pada periode ini.");
             }
 
             $payroll = WorkerPayroll::create([
@@ -85,6 +91,7 @@ class PayrollService
                 'wage_total' => $summary['wage_total'],
                 'meal_total' => $summary['meal_total'],
                 'overtime_total' => $summary['overtime_total'],
+                'piece_total' => $summary['piece_total'],
                 'gross_pay' => $summary['gross_pay'],
                 'advance_deduction' => $summary['advance_deduction'],
                 'net_pay' => $summary['net_pay'],
@@ -93,6 +100,7 @@ class PayrollService
             ]);
 
             Attendance::whereIn('id', $summary['attendances']->pluck('id'))->update(['worker_payroll_id' => $payroll->id]);
+            WorkerPieceEarning::whereIn('id', $summary['pieces']->pluck('id'))->update(['worker_payroll_id' => $payroll->id]);
 
             return $payroll;
         });
@@ -159,6 +167,7 @@ class PayrollService
 
         DB::transaction(function () use ($payroll) {
             $payroll->attendances()->update(['worker_payroll_id' => null]);
+            WorkerPieceEarning::where('worker_payroll_id', $payroll->id)->update(['worker_payroll_id' => null]);
             $payroll->delete();
         });
     }

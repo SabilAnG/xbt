@@ -45,6 +45,7 @@ class PurchaseService
             $purchase = MaterialPurchase::create([
                 'invoice_number' => DocumentNumber::next('material_purchases', $date),
                 'purchased_at' => $date->toDateString(),
+                'due_date' => $data['due_date'] ?? null,
                 'supplier_id' => $supplier?->id,
                 'supplier' => $supplier?->name,
                 'supplier_location' => $location ?? $supplier?->address,
@@ -360,12 +361,37 @@ class PurchaseService
                 $line = $lines->get($row['material_purchase_item_id']) ?? throw new RuntimeException('Barang tidak ada di pembelian ini.');
                 $qty = (float) $row['qty'];
 
-                if ($line->material->isPipe()) {
-                    throw new RuntimeException('Retur pipa per batang belum didukung; pakai Penyesuaian Stok untuk batang yang dikembalikan.');
-                }
-
                 if ($qty > $line->returnableQty() + 0.0001) {
                     throw new RuntimeException("{$line->material->name}: yang bisa diretur maksimal ".qty($line->returnableQty()).' (sudah diterima, belum diretur).');
+                }
+
+                // Pipa: batang utuh dari penerimaan pembelian ini yang belum dipotong.
+                if ($line->material->isPipe()) {
+                    if (floor($qty) != $qty) {
+                        throw new RuntimeException("{$line->material->name}: pipa diretur per batang utuh.");
+                    }
+
+                    $pieces = PipePiece::query()->where('material_id', $line->material_id)->where('status', PipePiece::AVAILABLE)
+                        ->where('source_type', (new PurchaseReceipt)->getMorphClass())->whereIn('source_id', $purchase->receipts()->pluck('id'))
+                        ->orderByDesc('id')->get()->filter(fn (PipePiece $piece) => $piece->isUntouched())->take((int) $qty);
+
+                    if ($pieces->count() < $qty) {
+                        throw new RuntimeException("{$line->material->name}: hanya {$pieces->count()} batang utuh (belum dipotong) yang masih ada di gudang.");
+                    }
+
+                    foreach ($pieces as $piece) {
+                        $this->stock->recordPiece($piece, $piece->warehouse, 'retur', 0, (float) $piece->length_cm, $return, $data['returned_at'], $note.' · '.$piece->code);
+                        $piece->forceFill(['status' => PipePiece::RETURNED])->save();
+                        $return->items()->create([
+                            'material_purchase_item_id' => $line->id, 'warehouse_id' => $piece->warehouse_id, 'pipe_piece_id' => $piece->id,
+                            'qty' => 1, 'unit_price' => (float) $line->unit_price, 'subtotal' => (float) $line->unit_price,
+                        ]);
+                    }
+
+                    $this->stock->recalculate($line->material);
+                    $line->forceFill(['returned_qty' => (float) $line->returned_qty + $qty])->save();
+
+                    continue;
                 }
 
                 $warehouseId = PurchaseReceiptItem::query()->where('material_purchase_item_id', $line->id)->latest('id')->value('warehouse_id')
@@ -423,6 +449,7 @@ class PurchaseService
                 $payment->delete();
             }
 
+            PipePiece::whereIn('id', $return->items()->whereNotNull('pipe_piece_id')->pluck('pipe_piece_id'))->update(['status' => PipePiece::AVAILABLE]);
             $this->stock->forget($return);
             $return->items()->delete();
             $return->delete();

@@ -54,6 +54,11 @@
                     :hint="$product->item ? 'Harga jual online stok: '.rupiah($product->item->sell_price_online) : 'Harga yang tampil di halaman produk.'" />
                 <x-admin.select name="currency" label="Mata uang" :options="['IDR' => 'Rp (IDR)', 'USD' => '$ (USD)']" :value="$product->currency ?? 'IDR'" :placeholder="false" required />
             </div>
+            <label class="flex items-start gap-2 text-[13px]">
+                <input type="hidden" name="price_follows_item" value="0">
+                <input type="checkbox" name="price_follows_item" value="1" class="mt-0.5" @checked(old('price_follows_item', $product->price_follows_item))>
+                <span>Harga ikut <strong>harga jual online</strong> produk yang ditautkan <span class="block text-[11.5px] text-muted">Harga website berubah otomatis saat harga produk diubah (hanya untuk Rupiah).</span></span>
+            </label>
             <div class="grid grid-cols-2 gap-4">
                 <x-admin.field name="sort_order" label="Urutan" type="number" min="0" :value="$product->sort_order" required />
                 <div class="flex items-end pb-2">

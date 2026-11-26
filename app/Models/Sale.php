@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,19 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Sale extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Penjualan '.$this->invoice_number.($this->customer_name ? ' · '.$this->customer_name : '');
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['customer_name', 'customer_phone', 'channel', 'notes'];
+    }
+
     /** Saluran penjualan; Offline memakai harga jual offline. */
     public const CHANNELS = ['Offline', 'Shopee', 'Tokopedia', 'TikTok Shop', 'Lazada', 'WhatsApp', 'Website'];
 
@@ -79,6 +93,16 @@ class Sale extends Model
     public function refreshPaidAmount(): void
     {
         $this->forceFill(['paid_amount' => (float) $this->payments()->sum('amount')])->save();
+    }
+
+    /** LUNAS / BELUM LUNAS / UANG BELUM KEMBALI (retur atau lebih bayar yang belum dikembalikan). */
+    public function paymentStatus(): string
+    {
+        return match (true) {
+            $this->receivable() > 0.004 => 'BELUM LUNAS',
+            $this->receivable() < -0.004 => 'UANG BELUM KEMBALI',
+            default => 'LUNAS',
+        };
     }
 
     /** Ringkas isi nota, mis. "Mio Racing ×2, Beat ×1". */

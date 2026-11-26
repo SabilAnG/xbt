@@ -88,6 +88,8 @@
         </div>
     </section>
 
+    @include('admin.partials.stock-photos', ['photos' => $item->stockPhotos()->with('warehouse')->limit(12)->get()])
+
     <section class="card">
         <div class="card-header"><h2 class="card-title">Kartu stok</h2></div>
         <div class="overflow-x-auto">

@@ -8,7 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 /** Master ongkos formula (las, finishing, packing, …) dengan tarif bawaan per knalpot. */
 class CostOption extends Model
 {
-    protected $fillable = ['name', 'amount', 'sort_order'];
+    /** Cara bayar ongkos ke tukang. Keduanya biaya tenaga kerja yang dibayar lewat Penggajian. */
+    public const PAYMENT_MODES = [
+        'gaji' => 'Termasuk gaji harian',
+        'borongan' => 'Borongan per produksi',
+    ];
+
+    protected $fillable = ['name', 'amount', 'payment_mode', 'sort_order'];
+
+    public function isPiecework(): bool
+    {
+        return $this->payment_mode === 'borongan';
+    }
+
+    public function modeLabel(): string
+    {
+        return self::PAYMENT_MODES[$this->payment_mode] ?? $this->payment_mode;
+    }
 
     protected function casts(): array
     {

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Master supplier: toko bahan dan vendor jasa produksi. */
 class Supplier extends Model
 {
-    protected $fillable = ['name', 'phone', 'address', 'notes', 'is_active'];
+    protected $fillable = ['name', 'phone', 'address', 'payment_term_days', 'notes', 'is_active'];
 
     protected function casts(): array
     {

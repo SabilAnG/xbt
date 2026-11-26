@@ -121,6 +121,7 @@ class WebProductController extends Controller
             'slug' => $slug,
             'fitment' => $item->model_motor,
             'price' => $item->sell_price_online,
+            'price_follows_item' => true,
             'currency' => 'IDR',
             'description' => collect([
                 'Model motor' => $item->model_motor,
@@ -212,6 +213,7 @@ class WebProductController extends Controller
         unset($data['images'], $data['new_images'], $data['new_media']);
         // Tombol "Simpan draf" / "Posting ke website" menentukan status tayang.
         $data['is_active'] = $request->has('publish') ? $request->boolean('publish') : $request->boolean('is_active');
+        $data['price_follows_item'] = $request->boolean('price_follows_item') && filled($data['item_id'] ?? null);
 
         return $data;
     }

@@ -18,8 +18,8 @@
         <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)] bg-size-[44px_44px]"></div>
 
         <div class="relative flex items-center gap-3">
-            <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold shadow-lg">XBT</span>
-            <span class="text-sm font-semibold tracking-tight">Knalpot Admin</span>
+            <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold shadow-lg">IHC</span>
+            <span class="text-sm font-semibold tracking-tight">IHC Racing</span>
         </div>
 
         <div class="relative mt-auto max-w-md">
@@ -42,8 +42,8 @@
     <main class="flex items-center justify-center px-1 py-12 sm:px-10">
         <div class="card w-full max-w-[420px] p-7 sm:p-9">
             <div class="mb-10 flex items-center gap-3 lg:hidden">
-                <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">XBT</span>
-                <span class="text-sm font-semibold text-ink">Knalpot Admin</span>
+                <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">IHC</span>
+                <span class="text-sm font-semibold text-ink">IHC Racing</span>
             </div>
 
             <h2 class="text-2xl font-semibold tracking-tight text-ink">Masuk</h2>

@@ -15,7 +15,11 @@
     <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total nota" :value="rupiah($sale->total)" :hint="$sale->sold_at->translatedFormat('d M Y').' · '.($sale->channel ?? 'tanpa saluran')" />
         <x-admin.stat label="Sudah dibayar" :value="rupiah($sale->paid_amount)" :hint="$sale->payments->count().' kali pembayaran'" />
-        <x-admin.stat label="Sisa piutang" :value="rupiah(max($sale->receivable(), 0))" :tone="$sale->receivable() > 0 ? 'danger' : 'default'" trend="down" />
+        @if ($sale->receivable() < -0.004)
+            <x-admin.stat label="Perlu dikembalikan" :value="rupiah(-$sale->receivable())" tone="warning" hint="retur / lebih bayar" />
+        @else
+            <x-admin.stat label="Sisa piutang" :value="rupiah(max($sale->receivable(), 0))" :tone="$sale->receivable() > 0 ? 'danger' : 'default'" trend="down" />
+        @endif
         <x-admin.stat label="Laba kotor" :value="rupiah($sale->total - $sale->total_cost)" :hint="'HPP '.rupiah($sale->total_cost)" />
     </section>
 
@@ -24,7 +28,7 @@
             <section class="card overflow-hidden">
                 <div class="card-header">
                     <h2 class="card-title">Produk</h2>
-                    <x-admin.status :value="$sale->isPaidOff() ? 'LUNAS' : 'BELUM LUNAS'" />
+                    <x-admin.status :value="$sale->paymentStatus()" />
                 </div>
                 <div class="overflow-x-auto">
                     <table class="table">
@@ -66,7 +70,7 @@
                                 <td class="whitespace-nowrap">{{ $payment->paid_at->translatedFormat('d M Y') }}</td>
                                 <td>{{ $payment->wallet?->name ?? '—' }}</td>
                                 <td class="text-muted">{{ $payment->notes }}</td>
-                                <td class="num font-medium text-emerald-700">{{ rupiah($payment->amount) }}</td>
+                                <td class="num font-medium {{ $payment->amount < 0 ? 'text-rose-600' : 'text-emerald-700' }}">{{ rupiah($payment->amount) }}</td>
                                 <td class="text-right"><x-admin.delete-button :action="route('admin.sales.payments.destroy', $payment)" confirm="Hapus pembayaran ini? Saldo dompet dikurangi lagi." /></td>
                             </tr>
                         @empty
@@ -84,6 +88,7 @@
                 <p><span class="text-muted">Nama:</span> {{ $sale->customer_name ?? '—' }}</p>
                 <p><span class="text-muted">Telepon:</span> {{ $sale->customer_phone ?? '—' }}</p>
                 <p><span class="text-muted">Saluran:</span> {{ $sale->channel ?? '—' }}</p>
+                @if ($by = $sale->recordedBy())<p><span class="text-muted">Dicatat oleh:</span> {{ $by }}</p>@endif
                 @if ($sale->notes)<p class="whitespace-pre-line text-muted">{{ $sale->notes }}</p>@endif
                 @if ($sale->order)
                     <p><span class="text-muted">Tracking:</span> <a href="{{ route('admin.orders.edit', $sale->order) }}" class="link">{{ $sale->order->order_number }}</a> · {{ \App\Models\Order::STATUSES[$sale->order->status] ?? $sale->order->status }}</p>
@@ -99,6 +104,21 @@
                     <x-admin.wallet-select label="Masuk ke dompet" placeholder="— pilih dompet —" />
                     <x-admin.field name="notes" label="Catatan" placeholder="mis. pelunasan, transfer BCA" />
                     <button class="btn btn-primary w-full">Simpan pembayaran</button>
+                </form>
+            @endif
+
+            @if ($sale->receivable() < -0.004)
+                <form method="POST" action="{{ route('admin.sales.refunds.store', $sale) }}" class="card space-y-4 p-5">
+                    @csrf
+                    <div>
+                        <h2 class="card-title">Kembalikan uang ke pembeli</h2>
+                        <p class="text-[12px] text-muted">Nota retur / lebih bayar. Uang keluar dari dompet yang dipilih.</p>
+                    </div>
+                    <x-admin.field name="paid_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
+                    <x-admin.field name="amount" label="Nominal (Rp)" type="number" step="any" min="0" :value="-$sale->receivable()" required />
+                    <x-admin.wallet-select label="Keluar dari dompet" placeholder="— pilih dompet —" />
+                    <x-admin.field name="notes" label="Catatan" placeholder="mis. transfer balik ke pembeli" />
+                    <button class="btn btn-primary w-full">Simpan uang kembali</button>
                 </form>
             @endif
 

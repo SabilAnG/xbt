@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -14,6 +15,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class MaterialAdjustment extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Penyesuaian bahan '.$this->adjustment_number.' · '.($this->material?->name ?? '');
+    }
+
     public const REASONS = [
         'stok_awal' => 'Stok awal',
         'koreksi' => 'Koreksi hitung fisik',
@@ -53,6 +61,12 @@ class MaterialAdjustment extends Model
     public function movements(): MorphMany
     {
         return $this->morphMany(MaterialMovement::class, 'source');
+    }
+
+    /** Nilai penyesuaian dari mutasi stoknya (plus = stok bertambah, minus = rugi). */
+    public function value(): float
+    {
+        return (float) $this->movements()->get()->sum(fn (MaterialMovement $row) => ((float) $row->qty_in - (float) $row->qty_out) * (float) $row->unit_cost);
     }
 
     public function reasonLabel(): string

@@ -11,6 +11,7 @@ use App\Models\ProductionCut;
 use App\Models\ProductionReceipt;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Models\WorkerPieceEarning;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -109,6 +110,11 @@ class ProductionService
             $problems[] = 'Formula ini belum punya bahan.';
         }
 
+        $piecework = $production->formula->piecework();
+        if ($piecework->isNotEmpty() && ! $production->worker_id) {
+            $problems[] = 'Ongkos borongan ('.$piecework->pluck('name')->implode(', ').') butuh penanggung jawab. Pilih pekerja di nota produksi.';
+        }
+
         return [
             'units' => $units,
             'pipes' => $pipes,
@@ -119,6 +125,7 @@ class ProductionService
             'other_cost' => $otherCost,
             'services' => $services,
             'service_cost' => $serviceCost,
+            'piecework' => $piecework->map(fn (array $row) => $row + ['amount' => $row['rate'] * $qty]),
             'total_cost' => $total,
             'hpp' => $qty > 0 ? $total / $qty : 0,
         ];
@@ -242,6 +249,14 @@ class ProductionService
                     'total' => $amount,
                     'notes' => 'Jasa '.$lines->map(fn ($line) => trim(($line['process'] ? $line['process'].' ' : '').$line['component']).' '.qty($line['qty']).' × '.rupiah($line['rate']))->implode(', ')
                         .' · '.$production->production_number,
+                ]);
+            }
+
+            // Ongkos borongan jadi upah tukang, dibayar di slip gaji berikutnya.
+            foreach ($preview['piecework'] as $row) {
+                WorkerPieceEarning::create([
+                    'worker_id' => $production->worker_id, 'production_id' => $production->id, 'earned_on' => $date,
+                    'name' => $row['name'], 'qty' => (float) $production->qty, 'rate' => $row['rate'], 'amount' => $row['amount'],
                 ]);
             }
 
@@ -392,6 +407,13 @@ class ProductionService
                 throw new RuntimeException('Tagihan jasa vendor dari produksi ini sudah dibayar sebagian. Hapus pembayarannya dulu.');
             }
             $bills->each->delete();
+
+            // Upah borongan ikut dibatalkan, asal belum masuk slip gaji.
+            $earnings = WorkerPieceEarning::where('production_id', $production->id)->with('payroll')->get();
+            if ($slip = $earnings->first(fn (WorkerPieceEarning $row) => $row->worker_payroll_id)?->payroll) {
+                throw new RuntimeException("Upah borongan produksi ini sudah masuk slip gaji {$slip->payroll_number}. Hapus slipnya dulu.");
+            }
+            WorkerPieceEarning::where('production_id', $production->id)->delete();
 
             $production->cuts()->delete();
             $production->usages()->delete();

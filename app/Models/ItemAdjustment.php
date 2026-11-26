@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Stok opname / penyesuaian stok knalpot jadi: stok sistem diganti hasil hitung fisik. */
 class ItemAdjustment extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Penyesuaian produk '.$this->adjustment_number.' · '.($this->item?->name ?? '');
+    }
+
     public const REASONS = [
         'opname' => 'Hitung fisik (opname)',
         'rusak' => 'Rusak / cacat',

@@ -12,7 +12,7 @@
             <input id="month" name="month" type="month" value="{{ request('month') }}" class="input">
         </div>
         <x-admin.select name="channel" label="Saluran" :options="collect($channels)->mapWithKeys(fn ($c) => [$c => $c])" :value="request('channel')" placeholder="Semua" />
-        <x-admin.select name="payment" label="Pembayaran" :options="['unpaid' => 'Belum lunas']" :value="request('payment')" placeholder="Semua" />
+        <x-admin.select name="payment" label="Pembayaran" :options="['unpaid' => 'Belum lunas', 'refund' => 'Uang belum kembali']" :value="request('payment')" placeholder="Semua" />
     </x-admin.filters>
 
     <div class="card overflow-hidden">
@@ -41,13 +41,13 @@
                         <td class="num font-semibold">{{ rupiah($sale->total) }}</td>
                         <td class="num">{{ rupiah($sale->paid_amount) }}</td>
                         <td class="num {{ $sale->receivable() > 0 ? 'text-rose-600' : '' }}">{{ rupiah(max($sale->receivable(), 0)) }}</td>
-                        <td><x-admin.status :value="$sale->isPaidOff() ? 'LUNAS' : 'BELUM LUNAS'" /></td>
+                        <td><x-admin.status :value="$sale->paymentStatus()" /></td>
                         <td class="num text-emerald-700">{{ rupiah($sale->total - $sale->total_cost) }}</td>
                         <td class="whitespace-nowrap text-[12px]">
                             @if ($sale->order)<a href="{{ route('admin.orders.edit', $sale->order) }}" class="link">{{ \App\Models\Order::STATUSES[$sale->order->status] ?? $sale->order->status }}</a>@else<span class="text-muted">—</span>@endif
                         </td>
                         <td class="text-right whitespace-nowrap">
-                            <a href="{{ route('admin.sales.show', $sale) }}" class="btn btn-sm">{{ $sale->isPaidOff() ? 'Lihat' : 'Bayar' }}</a>
+                            <a href="{{ route('admin.sales.show', $sale) }}" class="btn btn-sm">{{ $sale->paymentStatus() === 'LUNAS' ? 'Lihat' : ($sale->receivable() > 0 ? 'Bayar' : 'Kembalikan') }}</a>
                             <x-admin.delete-button :action="route('admin.sales.destroy', $sale)" confirm="Hapus penjualan ini? Stok knalpot dan uang masuknya dikembalikan." />
                         </td>
                     </tr>

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Barang persediaan untuk produksi.
@@ -306,5 +307,11 @@ class Material extends Model
     public function scopeNeedsRestock(Builder $query): Builder
     {
         return $query->where('is_active', true)->where('min_stock', '>', 0)->whereColumn('stock', '<=', 'min_stock');
+    }
+
+    /** Foto stok dari stok opname, terbaru dulu. */
+    public function stockPhotos(): MorphMany
+    {
+        return $this->morphMany(StockPhoto::class, 'subject')->latest('taken_at')->latest('id');
     }
 }

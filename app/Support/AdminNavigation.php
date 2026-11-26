@@ -114,7 +114,8 @@ class AdminNavigation
                 $item('Pesanan & Tracking', 'admin.orders.index', 'admin.orders.*', 'truck'),
             ]],
             ['label' => 'Pengguna', 'items' => [
-                $item('Pengguna & Akses', 'admin.users.index', 'admin.users.*', 'users'),
+                $item('Pengguna & Akses', 'admin.users.index', 'admin.users.index', 'users'),
+                $item('Riwayat Aktivitas', 'admin.users.activity', 'admin.users.activity', 'list'),
             ]],
         ];
     }

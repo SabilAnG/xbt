@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,18 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Pengguna '.$this->name.' ('.$this->roleLabel().')';
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['role', 'is_active', 'email'];
+    }
 
     /**
      * @var list<string>

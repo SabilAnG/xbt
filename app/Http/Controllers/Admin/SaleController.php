@@ -27,6 +27,7 @@ class SaleController extends Controller
             ->when($request->input('month'), fn ($query, $month) => $query->where('sold_at', 'like', "{$month}%"))
             ->when($request->input('channel'), fn ($query, $channel) => $query->where('channel', $channel))
             ->when($request->input('payment') === 'unpaid', fn ($query) => $query->whereColumn('paid_amount', '<', 'total'))
+            ->when($request->input('payment') === 'refund', fn ($query) => $query->whereColumn('paid_amount', '>', 'total'))
             ->when($request->string('q')->trim()->value(), fn ($query, $search) => $query->where(
                 fn ($query) => $query->where('invoice_number', 'like', "%{$search}%")->orWhere('customer_name', 'like', "%{$search}%")
                     ->orWhereHas('items.item', fn ($query) => $query->where('name', 'like', "%{$search}%"))
@@ -135,6 +136,24 @@ class SaleController extends Controller
         }
 
         return back()->with('status', $sale->fresh()->isPaidOff() ? 'Pembayaran dicatat. Nota lunas.' : 'Pembayaran dicatat.');
+    }
+
+    public function storeRefund(Request $request, Sale $sale, InventoryService $inventory): RedirectResponse
+    {
+        $data = $request->validate([
+            'paid_at' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'wallet_id' => ['required', 'exists:wallets,id'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $inventory->refundSale($sale, (float) $data['amount'], (int) $data['wallet_id'], $data['paid_at'], $data['notes'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Uang kembali ke pembeli dicatat.');
     }
 
     public function destroyPayment(SalePayment $payment, InventoryService $inventory): RedirectResponse

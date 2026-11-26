@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,19 @@ use Illuminate\Support\Collection;
  */
 class Formula extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Formula '.$this->name;
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['name', 'is_active'];
+    }
+
     public const MOTOR_CATEGORIES = [
         'matic' => 'Matic',
         'bebek' => 'Bebek',
@@ -158,6 +172,21 @@ class Formula extends Model
     public function materialCostPerUnit(): float
     {
         return (float) $this->requirements()->sum('cost');
+    }
+
+    /**
+     * Ongkos formula yang dibayar borongan (lihat Data Ongkos).
+     *
+     * @return Collection<int, array{name: string, rate: float}>
+     */
+    public function piecework(): Collection
+    {
+        $modes = CostOption::query()->get(['name', 'payment_mode'])->mapWithKeys(fn (CostOption $option) => [mb_strtolower($option->name) => $option->payment_mode]);
+
+        return $this->loadStructure()->costs
+            ->filter(fn (FormulaCost $cost) => ($modes[mb_strtolower($cost->name)] ?? 'gaji') === 'borongan' && (float) $cost->amount > 0)
+            ->map(fn (FormulaCost $cost) => ['name' => $cost->name, 'rate' => (float) $cost->amount])
+            ->values();
     }
 
     public function otherCostPerUnit(): float

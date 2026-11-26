@@ -29,10 +29,10 @@
         <div class="card-header"><h2 class="card-title">Rekap belum digaji</h2></div>
         <div class="overflow-x-auto">
             <table class="table">
-                <thead><tr><th>Pekerja</th><th class="num">Hari</th><th class="num">½ hari</th><th class="num">Lembur</th><th class="num">Upah</th><th class="num">Makan</th><th class="num">Lembur</th><th class="num">Kasbon</th><th class="num">Diterima</th><th></th></tr></thead>
+                <thead><tr><th>Pekerja</th><th class="num">Hari</th><th class="num">½ hari</th><th class="num">Lembur</th><th class="num">Upah</th><th class="num">Makan</th><th class="num">Lembur</th><th class="num">Borongan</th><th class="num">Kasbon</th><th class="num">Diterima</th><th></th></tr></thead>
                 <tbody>
                 @forelse ($summaries as $row)
-                    <tr @class(['[&_td]:text-muted' => $row['attendances']->isEmpty()])>
+                    <tr @class(['[&_td]:text-muted' => $row['attendances']->isEmpty() && $row['pieces']->isEmpty()])>
                         <td class="font-medium text-ink"><a href="{{ route('admin.workers.show', $row['worker']) }}" class="link">{{ $row['worker']->name }}</a></td>
                         <td class="num">{{ qty($row['days_full']) }}</td>
                         <td class="num">{{ qty($row['days_half']) }}</td>
@@ -40,10 +40,11 @@
                         <td class="num">{{ rupiah($row['wage_total']) }}</td>
                         <td class="num">{{ rupiah($row['meal_total']) }}</td>
                         <td class="num">{{ rupiah($row['overtime_total']) }}</td>
+                        <td class="num">{{ $row['piece_total'] ? rupiah($row['piece_total']) : '—' }}</td>
                         <td class="num text-rose-600">{{ $row['advance_deduction'] ? '−'.rupiah($row['advance_deduction']) : '—' }}</td>
                         <td class="num font-semibold text-ink">{{ rupiah($row['net_pay']) }}</td>
                         <td class="text-right">
-                            @if ($row['attendances']->isNotEmpty())
+                            @if ($row['attendances']->isNotEmpty() || $row['pieces']->isNotEmpty())
                                 <form method="POST" action="{{ route('admin.payrolls.store') }}">
                                     @csrf
                                     <input type="hidden" name="worker_id" value="{{ $row['worker']->id }}">
@@ -55,7 +56,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" class="py-10 text-center text-muted">Belum ada pekerja aktif.</td></tr>
+                    <tr><td colspan="11" class="py-10 text-center text-muted">Belum ada pekerja aktif.</td></tr>
                 @endforelse
                 </tbody>
                 @if ($summaries->isNotEmpty())
@@ -65,6 +66,7 @@
                         <td class="num">{{ rupiah($summaries->sum('wage_total')) }}</td>
                         <td class="num">{{ rupiah($summaries->sum('meal_total')) }}</td>
                         <td class="num">{{ rupiah($summaries->sum('overtime_total')) }}</td>
+                        <td class="num">{{ rupiah($summaries->sum('piece_total')) }}</td>
                         <td class="num text-rose-600">−{{ rupiah($summaries->sum('advance_deduction')) }}</td>
                         <td class="num">{{ rupiah($summaries->sum('net_pay')) }}</td>
                         <td></td>

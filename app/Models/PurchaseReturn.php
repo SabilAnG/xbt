@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Barang pembelian yang dikembalikan ke supplier: stok keluar, tagihan turun. */
 class PurchaseReturn extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Retur pembelian '.$this->return_number;
+    }
+
     protected $fillable = ['return_number', 'material_purchase_id', 'returned_at', 'total', 'refund_amount', 'wallet_id', 'purchase_payment_id', 'notes'];
 
     protected function casts(): array

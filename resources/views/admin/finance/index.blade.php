@@ -24,6 +24,12 @@
                 @foreach ($profit['by_category'] as $category => $amount)
                     <tr><td class="pl-8 text-slate-500">{{ $category }}</td><td class="num text-rose-600">−{{ rupiah($amount) }}</td></tr>
                 @endforeach
+                @if ($profit['absorbed_labour'] > 0)
+                    <tr><td class="pl-8 text-slate-500">Upah sudah dibebankan ke HPP produksi <span class="text-[11px]">(ongkos formula)</span></td><td class="num text-emerald-600">+{{ rupiah($profit['absorbed_labour']) }}</td></tr>
+                @endif
+                @if (abs($profit['stock_result']) > 0.004)
+                    <tr><td class="pl-8 text-slate-500">Selisih stok <span class="text-[11px]">(opname, rusak, hilang, afkir)</span></td><td class="num {{ $profit['stock_result'] < 0 ? 'text-rose-600' : 'text-emerald-600' }}">{{ $profit['stock_result'] < 0 ? '−' : '+' }}{{ rupiah(abs($profit['stock_result'])) }}</td></tr>
+                @endif
                 <tr class="font-semibold"><td>Laba bersih</td><td class="num {{ $profit['net'] >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">{{ rupiah($profit['net']) }}</td></tr>
                 </tbody>
             </table>

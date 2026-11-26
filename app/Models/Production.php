@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Production extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Produksi '.$this->production_number.($this->status === 'posted' ? ' (dibukukan)' : '');
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['status', 'qty', 'formula_id', 'worker_id'];
+    }
+
     public const DRAFT = 'draft';
 
     public const POSTED = 'posted';

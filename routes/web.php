@@ -78,6 +78,7 @@ Route::prefix('admin')->group(function () {
         Route::post('stok-opname/produk', [Admin\StockOpnameController::class, 'storeItems'])->name('stock-opname.items');
         Route::post('stok-opname/bahan', [Admin\StockOpnameController::class, 'storeMaterials'])->name('stock-opname.materials');
         Route::get('laporan-produksi', Admin\ProductionReportController::class)->name('reports.production');
+        Route::get('pengguna/aktivitas', [Admin\UserController::class, 'activity'])->name('users.activity');
         Route::resource('pengguna', Admin\UserController::class)->only(['index', 'store', 'update', 'destroy'])->names('users')->parameters(['pengguna' => 'user']);
 
         // Inventori: formula → rencana → pembelian → gudang → produksi
@@ -153,6 +154,7 @@ Route::prefix('admin')->group(function () {
         Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
         Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
         Route::post('penjualan/{sale}/bayar', [Admin\SaleController::class, 'storePayment'])->name('sales.payments.store');
+        Route::post('penjualan/{sale}/uang-kembali', [Admin\SaleController::class, 'storeRefund'])->name('sales.refunds.store');
         Route::delete('penjualan/pembayaran/{payment}', [Admin\SaleController::class, 'destroyPayment'])->name('sales.payments.destroy');
         Route::resource('penjualan', Admin\SaleController::class)->names('sales')->parameters(['penjualan' => 'sale']);
         Route::get('laporan-keuangan', Admin\FinanceReportController::class)->name('finance.index');

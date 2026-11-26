@@ -140,13 +140,14 @@ class SupplierController extends Controller
         return back()->with('status', 'Uang muka dihapus; saldo dompet dikembalikan.');
     }
 
-    /** @return array{name: string, phone: ?string, address: ?string, notes: ?string} */
+    /** @return array{name: string, phone: ?string, address: ?string, payment_term_days: ?int, notes: ?string} */
     private function validated(Request $request, ?Supplier $supplier = null): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'name')->ignore($supplier)],
             'phone' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:255'],
+            'payment_term_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'notes' => ['nullable', 'string'],
         ], ['name.unique' => 'Supplier dengan nama ini sudah ada.']);
     }

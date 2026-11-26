@@ -6,6 +6,8 @@
         'AMAN' => ['bg-emerald-50 text-emerald-700 ring-emerald-600/15', 'bg-emerald-500'],
         'LUNAS' => ['bg-emerald-50 text-emerald-700 ring-emerald-600/15', 'bg-emerald-500'],
         'BELUM LUNAS' => ['bg-rose-50 text-rose-700 ring-rose-600/15', 'bg-rose-500'],
+        'UANG BELUM KEMBALI' => ['bg-amber-50 text-amber-800 ring-amber-600/20', 'bg-amber-500'],
+        'JATUH TEMPO' => ['bg-rose-50 text-rose-700 ring-rose-600/15', 'bg-rose-500'],
         'PERLU DIRINCI' => ['bg-rose-50 text-rose-700 ring-rose-600/15', 'bg-rose-500'],
         'ESTIMASI' => ['bg-amber-50 text-amber-800 ring-amber-600/20', 'bg-amber-500'],
         'OK' => ['bg-slate-50 text-slate-600 ring-slate-500/15', 'bg-slate-400'],

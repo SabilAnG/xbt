@@ -58,7 +58,8 @@ class PayrollController extends Controller
         $made = 0;
 
         foreach (Worker::query()->active()->get() as $worker) {
-            if ($service->summary($worker, $data['period_start'], $data['period_end'])['attendances']->isNotEmpty()) {
+            $summary = $service->summary($worker, $data['period_start'], $data['period_end']);
+            if ($summary['attendances']->isNotEmpty() || $summary['pieces']->isNotEmpty()) {
                 $service->create($worker, $data['period_start'], $data['period_end']);
                 $made++;
             }

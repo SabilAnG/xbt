@@ -20,6 +20,7 @@ class Product extends Model
         'slug',
         'fitment',
         'price',
+        'price_follows_item',
         'currency',
         'description',
         'is_active',
@@ -30,6 +31,7 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'price_follows_item' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
@@ -41,6 +43,16 @@ class Product extends Model
     }
 
     /** Harga untuk ditampilkan di website: "Rp 890.000" atau "$910.00". */
+    /** Harga ikut harga jual online produk di stok (bila dicentang & ditautkan). */
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product) {
+            if ($product->price_follows_item && $product->item_id && $product->currency === 'IDR') {
+                $product->price = (float) Item::whereKey($product->item_id)->value('sell_price_online');
+            }
+        });
+    }
+
     public function formattedPrice(): string
     {
         return $this->currency === 'IDR'

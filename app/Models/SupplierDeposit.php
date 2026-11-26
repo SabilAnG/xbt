@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Uang muka (DP) ke supplier/vendor sebelum tagihannya ada; nanti dipakai membayar tagihan. */
 class SupplierDeposit extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Uang muka '.($this->supplier?->name ?? '').' · '.rupiah($this->amount);
+    }
+
     protected $fillable = ['supplier_id', 'wallet_id', 'paid_at', 'amount', 'notes'];
 
     protected function casts(): array

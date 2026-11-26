@@ -66,26 +66,33 @@
     $gradients = ['from-[#fbb26a] to-[#ef6a2c]', 'from-[#5fb7f7] to-[#2f6be0]', 'from-[#5ee2b0] to-[#14b8a6]', 'from-[#d7a6ff] to-[#9b3fe0]'];
 
     $alerts = [
-        ['Produk stok habis', $headline['products_out'], route('admin.items.index', ['status' => 'HABIS']), $headline['products_out'] ? 'danger' : 'success'],
-        ['Produk stok menipis', $headline['products_low'], route('admin.items.index', ['status' => 'MENIPIS']), $headline['products_low'] ? 'warning' : 'success'],
-        ['Bahan habis / menipis', $headline['materials_alert'], route('admin.materials.index'), $headline['materials_alert'] ? 'danger' : 'success'],
-        ['Pengeluaran perlu dirinci', $headline['needs_detail'], route('admin.expenses.index', ['data_status' => 'PERLU DIRINCI']), $headline['needs_detail'] ? 'danger' : 'success'],
-        ['Piutang belum dibayar', rupiah($headline['receivable']), route('admin.sales.index', ['payment' => 'unpaid']), $headline['receivable'] > 0 ? 'danger' : 'success'],
-        ['Hutang pembelian bahan', rupiah($headline['purchase_payable']), route('admin.purchases.index', ['bayar' => 'hutang']), $headline['purchase_payable'] > 0 ? 'danger' : 'success'],
-        ['Produksi masih draf', $headline['draft_productions'], route('admin.productions.index', ['status' => 'draft']), $headline['draft_productions'] ? 'warning' : 'success'],
-        ['Total stok knalpot jadi', qty($headline['total_stock']).' unit', route('admin.items.index'), 'default'],
+        ['Produk stok habis', $headline['products_out'], route('admin.items.index', ['status' => 'HABIS']), $headline['products_out'] ? 'danger' : 'success', 'admin.items.index'],
+        ['Produk stok menipis', $headline['products_low'], route('admin.items.index', ['status' => 'MENIPIS']), $headline['products_low'] ? 'warning' : 'success', 'admin.items.index'],
+        ['Bahan habis / menipis', $headline['materials_alert'], route('admin.materials.index'), $headline['materials_alert'] ? 'danger' : 'success', 'admin.materials.index'],
+        ['Pengeluaran perlu dirinci', $headline['needs_detail'], route('admin.expenses.index', ['data_status' => 'PERLU DIRINCI']), $headline['needs_detail'] ? 'danger' : 'success', 'admin.expenses.index'],
+        ['Piutang belum dibayar', rupiah($headline['receivable']), route('admin.sales.index', ['payment' => 'unpaid']), $headline['receivable'] > 0 ? 'danger' : 'success', 'admin.sales.index'],
+        ['Hutang pembelian bahan', rupiah($headline['purchase_payable']), route('admin.purchases.index', ['bayar' => 'hutang']), $headline['purchase_payable'] > 0 ? 'danger' : 'success', 'admin.purchases.index'],
+        ['Produksi masih draf', $headline['draft_productions'], route('admin.productions.index', ['status' => 'draft']), $headline['draft_productions'] ? 'warning' : 'success', 'admin.productions.index'],
+        ['Total stok knalpot jadi', qty($headline['total_stock']).' unit', route('admin.items.index'), 'default', 'admin.items.index'],
     ];
     $alertTone = ['danger' => 'bg-rose-500 shadow-rose-500/40', 'warning' => 'bg-amber-400 shadow-amber-400/40', 'success' => 'bg-emerald-500 shadow-emerald-500/40', 'default' => 'bg-slate-300 shadow-slate-300/40'];
     $openIcon = 'M14 4h6v6m0-6L10 14m-1-9H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-4';
+    // Angka keuangan (omzet, laba, kas, hutang) hanya untuk peran yang boleh membuka menu Keuangan.
+    $viewer = auth()->user();
+    $showFinance = (bool) $viewer?->canOpenGroup('Keuangan');
+    $can = fn (string $route) => \App\Support\AdminNavigation::allows($viewer, $route);
+    $alerts = array_values(array_filter($alerts, fn (array $alert) => $can($alert[4])));
 @endphp
 @extends('layouts.admin', ['title' => 'Dashboard'])
 
 @section('actions')
-    <a href="{{ route('admin.productions.create') }}" class="btn">+ Produksi</a>
-    <a href="{{ route('admin.sales.create') }}" class="btn btn-primary">+ Penjualan</a>
+    @if ($can('admin.productions.create'))<a href="{{ route('admin.productions.create') }}" class="btn">+ Produksi</a>@endif
+    @if ($can('admin.purchases.create') && ! $can('admin.sales.create'))<a href="{{ route('admin.purchases.create') }}" class="btn btn-primary">+ Pembelian</a>@endif
+    @if ($can('admin.sales.create'))<a href="{{ route('admin.sales.create') }}" class="btn btn-primary">+ Penjualan</a>@endif
 @endsection
 
 @section('content')
+    @if ($showFinance)
     {{-- KPI bercincin --}}
     <section class="stat-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <x-admin.stat label="Omzet" :value="$money($headline['revenue'])" :title="rupiah($headline['revenue'])" :percent="$paidShare" :hint="'Terbayar '.qty($paidShare, 0).'%'" :href="route('admin.sales.index')" />
@@ -258,6 +265,16 @@
         </div>
     </section>
 
+    @else
+    {{-- Peran operasional (mis. Kepala Gudang): tanpa angka keuangan --}}
+    <section class="stat-grid grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <x-admin.stat label="Stok knalpot jadi" :value="qty($headline['total_stock']).' unit'" :hint="$headline['products_low'].' menipis · '.$headline['products_out'].' habis'" :href="route('admin.warehouses.show', 'finish-good')" />
+        <x-admin.stat label="Bahan perlu dibeli" :value="$headline['materials_alert'].' bahan'" :tone="$headline['materials_alert'] ? 'danger' : 'success'" :href="route('admin.master-items.index')" />
+        <x-admin.stat label="Produksi draf" :value="$headline['draft_productions'].' nota'" :tone="$headline['draft_productions'] ? 'warning' : 'success'" :href="route('admin.productions.index', ['status' => 'draft'])" />
+        <x-admin.stat label="Menunggu diterima" :value="\App\Models\MaterialPurchase::query()->awaitingGoods()->count().' pembelian'" :href="route('admin.receipts.index')" />
+    </section>
+    @endif
+
     {{-- Perlu perhatian --}}
     <section class="card p-5 sm:p-6">
         <div class="flex items-center justify-between gap-3">
@@ -275,6 +292,7 @@
         </div>
     </section>
 
+    @if ($showFinance)
     {{-- Per merek --}}
     @if ($byBrand->isNotEmpty())
         <section class="card overflow-hidden">
@@ -352,6 +370,8 @@
         </div>
     </section>
 
+    @endif
+
     {{-- Stok yang perlu ditindak --}}
     <section class="grid gap-6 xl:grid-cols-2">
         <div class="card overflow-hidden">
@@ -409,6 +429,7 @@
             ['Produksi terakhir', route('admin.productions.index'), $recentProductions, 'production'],
             ['Penjualan terakhir', route('admin.sales.index'), $recentSales, 'sale'],
         ] as [$heading, $more, $rows, $kind])
+            @continue($kind === 'sale' && ! $showFinance)
             <div class="card overflow-hidden">
                 <div class="card-header">
                     <h2 class="card-title">{{ $heading }}</h2>
@@ -448,6 +469,7 @@
     </section>
 @endsection
 
+@if ($showFinance)
 @push('scripts')
 <script>
     (() => {
@@ -528,3 +550,4 @@
     })();
 </script>
 @endpush
+@endif

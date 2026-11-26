@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,13 +10,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Slip gaji mingguan satu pekerja. */
 class WorkerPayroll extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Slip gaji '.$this->payroll_number.($this->status === 'paid' ? ' (dibayar)' : '');
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['status'];
+    }
+
     public const DRAFT = 'draft';
 
     public const PAID = 'paid';
 
     protected $fillable = [
         'payroll_number', 'worker_id', 'period_start', 'period_end', 'days_full', 'days_half', 'overtime_hours',
-        'daily_wage', 'meal_allowance', 'overtime_rate', 'wage_total', 'meal_total', 'overtime_total', 'gross_pay',
+        'daily_wage', 'meal_allowance', 'overtime_rate', 'wage_total', 'meal_total', 'overtime_total', 'piece_total', 'gross_pay',
         'advance_deduction', 'net_pay', 'status', 'paid_at', 'wallet_id', 'expense_id', 'deduction_expense_id', 'notes',
     ];
 
@@ -48,6 +62,12 @@ class WorkerPayroll extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    /** Upah borongan yang dibayar di slip ini. */
+    public function pieces(): HasMany
+    {
+        return $this->hasMany(WorkerPieceEarning::class)->orderBy('earned_on');
     }
 
     public function attendances(): HasMany

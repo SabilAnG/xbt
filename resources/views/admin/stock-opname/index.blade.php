@@ -8,10 +8,27 @@
         Warehouse::RAW => ['from-[#fbbf94] to-[#e9643a]', '#ee7a45', 'warehouse'],
         Warehouse::SEMI => ['from-[#9fe3f5] to-[#2fa9d6]', '#3fbbe2', 'layers'],
         Warehouse::ACCESSORY => ['from-[#fde39a] to-[#eba50f]', '#eeaa12', 'tag'],
+        Warehouse::OFFCUT => ['from-[#c4eaa9] to-[#46ad37]', '#4fb83f', 'puzzle'],
     ];
     $isProduct = $warehouse->type === Warehouse::FINISHED;
 @endphp
 @extends('layouts.admin', ['title' => 'Stok Opname'])
+
+{{-- Sel foto: foto terakhir + tombol ambil/unggah foto (kamera belakang di HP). --}}
+@php
+    $photoCell = function (string $name, $photo, string $label) {
+        $last = $photo
+            ? '<a href="'.e($photo->url()).'" target="_blank" class="opname-thumb" title="Foto '.e($photo->taken_at->translatedFormat('d M Y')).($photo->counted_by ? ' oleh '.e($photo->counted_by) : '').'"><img src="'.e($photo->url()).'" alt="" loading="lazy"></a>'
+            : '';
+
+        return '<div class="flex items-center justify-end gap-2" data-photo-cell>'.$last
+            .'<span class="opname-thumb is-new" hidden data-photo-preview><img alt=""></span>'
+            .'<label class="opname-camera" title="Ambil / unggah foto '.e($label).'">'
+            .'<input type="file" name="'.e($name).'" accept="image/*" capture="environment" class="sr-only" data-photo>'
+            .'<svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+            .'</label></div>';
+    };
+@endphp
 
 @section('actions')
     <a href="{{ route('admin.adjustments.index') }}" class="btn">Penyesuaian stok</a>
@@ -19,7 +36,7 @@
 
 @section('content')
     {{-- Pilih gudang --}}
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         @foreach ($tiles as $tile)
             @php [$gradient, $color, $icon] = $styles[$tile['warehouse']->type]; $active = $tile['warehouse']->is($warehouse); @endphp
             <a href="{{ route('admin.stock-opname.index', ['gudang' => $tile['warehouse']->slug()]) }}"
@@ -29,14 +46,14 @@
                 </span>
                 <span class="min-w-0 flex-1">
                     <span @class(['block truncate text-[13.5px] font-semibold', 'text-accent' => $active, 'text-ink' => ! $active])>{{ $tile['warehouse']->name }}</span>
-                    <span class="block truncate text-[11.5px] text-muted">{{ $tile['count'] }} {{ $tile['warehouse']->type === Warehouse::FINISHED ? 'produk' : 'bahan' }} · {{ rupiah($tile['value']) }}</span>
+                    <span class="block truncate text-[11.5px] text-muted">{{ $tile['count'] }} {{ $tile['warehouse']->type === Warehouse::FINISHED ? 'produk' : ($tile['warehouse']->type === Warehouse::OFFCUT ? 'potongan' : 'barang') }} · {{ rupiah($tile['value']) }}</span>
                 </span>
                 @if ($active)<span class="size-2 shrink-0 rounded-full bg-accent"></span>@endif
             </a>
         @endforeach
     </section>
 
-    <form method="POST" action="{{ $isProduct ? route('admin.stock-opname.items') : route('admin.stock-opname.materials') }}" class="card overflow-hidden" data-opname>
+    <form method="POST" action="{{ $isProduct ? route('admin.stock-opname.items') : route('admin.stock-opname.materials') }}" class="card overflow-hidden" enctype="multipart/form-data" data-opname>
         @csrf
         @unless ($isProduct)<input type="hidden" name="warehouse" value="{{ $warehouse->type }}">@endunless
 
@@ -44,7 +61,7 @@
         <div class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
             <div class="min-w-0 flex-1">
                 <h2 class="card-title">Opname {{ $warehouse->name }}</h2>
-                <p class="text-[12px] text-muted">Isi stok hasil hitung fisik. Kosong / sama dengan sistem = tidak diubah.{{ $isProduct ? '' : ' Pipa dihitung per batang di Penyesuaian Stok.' }}
+                <p class="text-[12px] text-muted">Isi stok hasil hitung fisik. Kosong / sama dengan sistem = tidak diubah.{{ $pieces->isNotEmpty() ? ' Pipa: hapus centang "Ada" untuk batang/potongan yang tidak ditemukan.' : '' }}
                     @if ($lastCount)<span class="ml-1 text-ink-soft">Opname terakhir {{ $lastCount->adjusted_at->translatedFormat('d M Y') }} oleh <strong>{{ $lastCount->counted_by }}</strong>.</span>@endif
                 </p>
             </div>
@@ -74,6 +91,7 @@
             <div class="flex flex-wrap items-center justify-end gap-2 sm:col-span-2 xl:col-span-4">
                 <span class="pill">Berubah <strong class="ml-1 text-ink" data-count>0</strong></span>
                 <span class="pill">Selisih <strong class="ml-1 tabular-nums" data-total>Rp 0</strong></span>
+                <span class="pill">Foto <strong class="ml-1 text-ink" data-photo-count>0</strong></span>
                 <button class="btn btn-primary">Simpan opname</button>
             </div>
         </div>
@@ -87,6 +105,7 @@
                     <th class="num">Stok fisik</th>
                     <th class="num">Selisih</th>
                     <th class="num">Nilai selisih</th>
+                    <th class="num">Foto</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -103,14 +122,43 @@
                         </td>
                         <td class="num"><span class="text-muted" data-diff>—</span></td>
                         <td class="num tabular-nums" data-value>—</td>
+                        <td class="num">{!! $photoCell('photos['.$row['id'].']', $row['photo'] ?? null, $row['name']) !!}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="py-10 text-center text-muted">{{ $isProduct ? 'Belum ada produk aktif.' : 'Belum ada bahan di gudang ini.' }}</td></tr>
+                    @if ($pieces->isEmpty())
+                        <tr><td colspan="6" class="py-10 text-center text-muted">{{ $isProduct ? 'Belum ada produk aktif.' : 'Belum ada bahan di gudang ini.' }}</td></tr>
+                    @endif
                 @endforelse
-                <tr data-no-match hidden><td colspan="5" class="py-8 text-center text-muted">Tidak ada yang cocok dengan pencarian.</td></tr>
+                <tr data-no-match hidden><td colspan="6" class="py-8 text-center text-muted">Tidak ada yang cocok dengan pencarian.</td></tr>
                 </tbody>
             </table>
         </div>
+
+        @if ($pieces->isNotEmpty())
+            <div class="border-t border-line px-5 py-3">
+                <h3 class="text-[13.5px] font-semibold text-ink">Pipa per batang / potongan <span class="font-normal text-muted">· {{ $pieces->count() }} tercatat</span></h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead><tr><th>Kode</th><th>Bahan</th><th class="num">Panjang</th><th class="num">Nilai</th><th class="num">Ada</th><th class="num">Foto</th></tr></thead>
+                    <tbody>
+                    @foreach ($pieces as $piece)
+                        <tr data-piece data-name="{{ mb_strtolower($piece->code.' '.$piece->material?->name) }}" data-value="{{ $piece->value() }}">
+                            <td class="font-mono text-xs">{{ $piece->code }}</td>
+                            <td>{{ $piece->material?->name }}</td>
+                            <td class="num">{{ qty($piece->length_cm, 1) }} cm</td>
+                            <td class="num">{{ rupiah($piece->value()) }}</td>
+                            <td class="num">
+                                <input type="hidden" name="pieces_listed[]" value="{{ $piece->id }}">
+                                <input type="checkbox" name="pieces_present[]" value="{{ $piece->id }}" class="size-4" checked data-present aria-label="{{ $piece->code }} ada">
+                            </td>
+                            <td class="num">{!! $photoCell('piece_photos['.$piece->id.']', $piece->stockPhotos->first(), $piece->code) !!}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
     </form>
 @endsection
 
@@ -138,6 +186,11 @@
                 valueEl.textContent = same ? '—' : rp(value);
                 valueEl.className = 'num tabular-nums ' + (value < 0 && !same ? 'text-rose-600' : '');
             });
+            form.querySelectorAll('[data-piece]').forEach(row => {
+                const present = row.querySelector('[data-present]').checked;
+                row.classList.toggle('opacity-60', !present);
+                if (!present) { count++; total -= parseFloat(row.dataset.value); }
+            });
             form.querySelector('[data-count]').textContent = count;
             const totalEl = form.querySelector('[data-total]');
             totalEl.textContent = rp(total);
@@ -147,12 +200,24 @@
         form.querySelector('[data-search]').addEventListener('input', e => {
             const term = e.target.value.trim().toLowerCase();
             let shown = 0;
-            rows.forEach(row => { row.hidden = term !== '' && !row.dataset.name.includes(term); if (!row.hidden) shown++; });
+            [...rows, ...form.querySelectorAll('[data-piece]')].forEach(row => { row.hidden = term !== '' && !row.dataset.name.includes(term); if (!row.hidden) shown++; });
             form.querySelector('[data-no-match]').hidden = shown > 0 || rows.length === 0;
         });
         form.querySelector('[data-fill]').addEventListener('click', () => { rows.forEach(row => { if (row.querySelector('[data-actual]').value === '') row.querySelector('[data-actual]').value = parseFloat(row.dataset.system); }); refresh(); });
         form.querySelector('[data-clear]').addEventListener('click', () => { rows.forEach(row => row.querySelector('[data-actual]').value = ''); refresh(); });
         form.addEventListener('input', e => { if (e.target.matches('[data-actual]')) refresh(); });
+        form.addEventListener('change', e => { if (e.target.matches('[data-present]')) refresh(); });
+        // Pratinjau foto yang baru diambil/diunggah.
+        form.addEventListener('change', e => {
+            if (!e.target.matches('[data-photo]')) return;
+            const cell = e.target.closest('[data-photo-cell]');
+            const preview = cell.querySelector('[data-photo-preview]');
+            const file = e.target.files[0];
+            preview.hidden = !file;
+            if (file) preview.querySelector('img').src = URL.createObjectURL(file);
+            cell.querySelector('.opname-camera').classList.toggle('has-photo', !!file);
+            form.querySelector('[data-photo-count]').textContent = [...form.querySelectorAll('[data-photo]')].filter(input => input.files.length).length;
+        });
         // Enter di kolom stok fisik pindah ke baris berikutnya, bukan langsung menyimpan.
         form.addEventListener('keydown', e => {
             if (e.key !== 'Enter' || !e.target.matches('[data-actual]')) return;

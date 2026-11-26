@@ -20,6 +20,7 @@
                     @error('supplier_location')<p class="error">{{ $message }}</p>@enderror
                 </div>
                 <x-admin.field name="supplier_invoice" label="No. nota supplier" />
+                <x-admin.field name="due_date" label="Jatuh tempo" type="date" hint="Kosongkan = ikut termin supplier." />
                 <div>
                     <label for="buyer" class="label">Dibeli oleh</label>
                     <input id="buyer" name="buyer" value="{{ old('buyer') }}" class="input" list="buyers" placeholder="Siapa yang belanja">

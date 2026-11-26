@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,19 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Expense extends Model
 {
+    use RecordsActivity;
+
+    public function activityLabel(): string
+    {
+        return 'Pengeluaran '.$this->reference_number.' · '.$this->description.' · '.rupiah($this->amount);
+    }
+
+    /** @return list<string> */
+    public function activityFields(): array
+    {
+        return ['amount', 'description', 'wallet_id', 'spent_at'];
+    }
+
     public const STATUSES = [
         'draft' => 'Draft',
         'posted' => 'Dibukukan',

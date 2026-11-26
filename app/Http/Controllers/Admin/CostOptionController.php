@@ -28,10 +28,14 @@ class CostOptionController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_mode' => ['nullable', Rule::in(array_keys(CostOption::PAYMENT_MODES))],
         ], ['name.required' => 'Isi nama ongkosnya dulu.']);
 
         $existing = CostOption::findByName($data['name']);
         $option = CostOption::remember($data['name'], (float) ($data['amount'] ?? 0));
+        if (! $existing && ! empty($data['payment_mode'])) {
+            $option->update(['payment_mode' => $data['payment_mode']]);
+        }
         $message = $existing ? "Ongkos \"{$option->name}\" sudah ada di Data Ongkos." : "Ongkos \"{$option->name}\" disimpan ke Data Ongkos.";
 
         return $request->expectsJson()
@@ -46,6 +50,7 @@ class CostOptionController extends Controller
             'name' => ['required', 'string', 'max:100', Rule::unique('cost_options', 'name')->ignore($option)],
             'amount' => ['nullable', 'numeric', 'min:0'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'payment_mode' => ['nullable', Rule::in(array_keys(CostOption::PAYMENT_MODES))],
         ], ['name.unique' => 'Nama ongkos itu sudah ada.']);
 
         DB::transaction(function () use ($option, $data) {
@@ -59,6 +64,7 @@ class CostOptionController extends Controller
                 'name' => $new,
                 'amount' => (float) ($data['amount'] ?? 0),
                 'sort_order' => (int) ($data['sort_order'] ?? $option->sort_order),
+                'payment_mode' => $data['payment_mode'] ?? $option->payment_mode,
             ]);
         });
 

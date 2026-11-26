@@ -27,6 +27,10 @@
                 <div class="flex justify-between gap-3"><dt class="text-ink-soft">Upah · {{ qty($payroll->days_full) }} hari{{ (float) $payroll->days_half ? ' + '.qty($payroll->days_half).' × ½ hari' : '' }} × {{ rupiah($payroll->daily_wage) }}</dt><dd class="font-medium text-ink tabular-nums">{{ rupiah($payroll->wage_total) }}</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-ink-soft">Uang makan · {{ qty($payroll->days_full + $payroll->days_half) }} hari × {{ rupiah($payroll->meal_allowance) }}</dt><dd class="font-medium text-ink tabular-nums">{{ rupiah($payroll->meal_total) }}</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-ink-soft">Lembur · {{ qty($payroll->overtime_hours, 1) }} jam × {{ rupiah($payroll->overtime_rate) }}</dt><dd class="font-medium text-ink tabular-nums">{{ rupiah($payroll->overtime_total) }}</dd></div>
+                @foreach ($payroll->pieces as $piece)
+                    <div class="flex justify-between gap-3"><dt class="text-ink-soft">Borongan {{ $piece->name }} · {{ qty($piece->qty) }} × {{ rupiah($piece->rate) }}
+                        <a href="{{ route('admin.productions.show', $piece->production_id) }}" class="link text-[11.5px]">{{ $piece->production?->production_number }}</a></dt><dd class="font-medium text-ink tabular-nums">{{ rupiah($piece->amount) }}</dd></div>
+                @endforeach
                 <div class="flex justify-between gap-3 border-t border-line pt-2.5"><dt class="font-semibold text-ink">Gaji kotor</dt><dd class="font-semibold text-ink tabular-nums">{{ rupiah($payroll->gross_pay) }}</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-ink-soft">Potong kasbon</dt><dd class="font-medium text-rose-600 tabular-nums">−{{ rupiah($payroll->advance_deduction) }}</dd></div>
                 <div class="flex justify-between gap-3 border-t border-line pt-3 text-[18px]"><dt class="font-semibold text-ink">Diterima</dt><dd class="font-bold text-brand-600 tabular-nums">{{ rupiah($payroll->net_pay) }}</dd></div>

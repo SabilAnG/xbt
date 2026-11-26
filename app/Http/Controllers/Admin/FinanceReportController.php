@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\Item;
+use App\Models\ItemAdjustment;
+use App\Models\MaterialAdjustment;
 use App\Models\MaterialPurchase;
 use App\Models\MaterialStock;
 use App\Models\Production;
@@ -47,7 +49,15 @@ class FinanceReportController extends Controller
 
         $revenue = (float) $sales->sum('total');
         $cogs = (float) $sales->sum('total_cost');
-        $operating = (float) $expenses->sum('amount');
+        // Ongkos formula = upah yang dibayar lewat gaji; bagian yang sudah dibebankan ke HPP produksi
+        // periode ini dikeluarkan dari biaya operasional supaya tidak terhitung dua kali.
+        $absorbedLabour = (float) $productions->sum('other_cost');
+        $operating = (float) $expenses->sum('amount') - $absorbedLabour;
+
+        // Selisih stok (opname, rusak, hilang, afkir di luar produksi). Stok awal bukan laba/rugi.
+        $range = [$from->toDateString(), $to->toDateString()];
+        $stockResult = (float) ItemAdjustment::query()->whereBetween('adjusted_at', $range)->get()->sum(fn (ItemAdjustment $row) => $row->value())
+            + (float) MaterialAdjustment::query()->whereBetween('adjusted_at', $range)->where('reason', '!=', 'stok_awal')->get()->sum(fn (MaterialAdjustment $row) => $row->value());
 
         $inventory = collect(array_keys(Warehouse::TYPES))->mapWithKeys(function (string $type) {
             $warehouse = Warehouse::forType($type);
@@ -68,7 +78,10 @@ class FinanceReportController extends Controller
                 'cogs' => $cogs,
                 'gross' => $revenue - $cogs,
                 'operating' => $operating,
-                'net' => $revenue - $cogs - $operating,
+                'expenses' => (float) $expenses->sum('amount'),
+                'absorbed_labour' => $absorbedLabour,
+                'stock_result' => $stockResult,
+                'net' => $revenue - $cogs - $operating + $stockResult,
                 'by_category' => $expenses->groupBy(fn (Expense $expense) => $expense->category?->name ?? 'Tanpa kategori')
                     ->map(fn ($rows) => (float) $rows->sum('amount'))->sortDesc(),
             ],

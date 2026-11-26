@@ -72,7 +72,7 @@
                                 <input type="checkbox" name="purchases[]" value="{{ $bill->id }}" data-due="{{ $bill->payable() }}" @checked(in_array($bill->id, old('purchases', $unpaid->pluck('id')->all())))>
                                 <span class="min-w-0 flex-1">
                                     <span class="font-mono text-[11.5px]">{{ $bill->invoice_number }}</span>
-                                    <span class="block truncate text-[11px] text-muted">{{ $bill->purchased_at->translatedFormat('d M Y') }} · {{ $bill->isService() ? 'jasa' : 'bahan' }}</span>
+                                    <span class="block truncate text-[11px] {{ $bill->isOverdue() ? 'font-semibold text-rose-600' : 'text-muted' }}">{{ $bill->purchased_at->translatedFormat('d M Y') }} · {{ $bill->isService() ? 'jasa' : 'bahan' }}{{ $bill->due_date ? ' · tempo '.$bill->due_date->translatedFormat('d M') : '' }}</span>
                                 </span>
                                 <span class="font-semibold text-rose-600 tabular-nums">{{ rupiah($bill->payable()) }}</span>
                             </label>
@@ -131,6 +131,7 @@
                 <x-admin.field name="name" label="Nama" :value="$supplier->name" required />
                 <x-admin.field name="phone" label="Telepon / WA" :value="$supplier->phone" />
                 <x-admin.field name="address" label="Alamat" :value="$supplier->address" />
+                <x-admin.field name="payment_term_days" label="Termin bayar (hari)" type="number" min="0" :value="$supplier->payment_term_days" hint="Jatuh tempo tagihan = tanggal nota + termin. Kosong = tanpa jatuh tempo." />
                 <x-admin.field name="notes" label="Catatan" type="textarea" :value="$supplier->notes" />
                 <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" @checked($supplier->is_active)> Aktif (muncul di pilihan pembelian)</label>
                 <div class="flex justify-end"><button class="btn btn-primary">Simpan</button></div>

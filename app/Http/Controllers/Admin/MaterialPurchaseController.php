@@ -28,6 +28,7 @@ class MaterialPurchaseController extends Controller
                 fn ($query) => $query->where('supplier', 'like', "%{$search}%")->orWhere('buyer', 'like', "%{$search}%")->orWhere('invoice_number', 'like', "%{$search}%")->orWhere('supplier_invoice', 'like', "%{$search}%")->orWhere('supplier_location', 'like', "%{$search}%")
             ))
             ->when($request->input('bayar') === 'hutang', fn ($query) => $query->unpaid())
+            ->when($request->input('bayar') === 'jatuh-tempo', fn ($query) => $query->dueWithin()->orderBy('due_date'))
             ->when($request->input('terima') === 'belum', fn ($query) => $query->awaitingGoods())
             ->when($request->filled('supplier'), fn ($query) => $query->where('supplier_id', $request->integer('supplier')))
             ->latest('purchased_at')->latest('id');
@@ -85,6 +86,7 @@ class MaterialPurchaseController extends Controller
             'supplier' => ['nullable', 'string', 'max:255'],
             'supplier_location' => ['nullable', 'string', 'max:255'],
             'supplier_invoice' => ['nullable', 'string', 'max:100'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:purchased_at'],
             'buyer' => ['nullable', 'string', 'max:100'],
             'production_plan_id' => ['nullable', 'exists:production_plans,id'],
             'notes' => ['nullable', 'string'],
