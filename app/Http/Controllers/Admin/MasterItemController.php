@@ -17,10 +17,9 @@ use Illuminate\View\View;
  */
 class MasterItemController extends Controller
 {
-    /** Jenis item => label. */
+    /** Jenis item => label. Pipa termasuk Bahan Baku. */
     public const TYPES = [
         'bahan-baku' => 'Bahan Baku',
-        'pipa' => 'Pipa',
         'setengah-jadi' => 'Setengah Jadi',
         'aksesoris' => 'Aksesoris',
         'produk-jadi' => 'Produk Jadi',
@@ -28,7 +27,8 @@ class MasterItemController extends Controller
 
     public function index(Request $request): View
     {
-        $type = $request->input('jenis');
+        // Tautan lama ?jenis=pipa diarahkan ke Bahan Baku.
+        $type = $request->input('jenis') === 'pipa' ? 'bahan-baku' : $request->input('jenis');
         $search = $request->string('q')->trim()->value();
         $rows = $this->rows($search);
 
@@ -53,7 +53,6 @@ class MasterItemController extends Controller
             ->orderBy('name')->get()
             ->map(fn (Material $material) => [
                 'type' => match (true) {
-                    $material->isPipe() => 'pipa',
                     $material->warehouse_id === $semi => 'setengah-jadi',
                     $material->warehouse_id === $accessory => 'aksesoris',
                     default => 'bahan-baku',
@@ -63,6 +62,8 @@ class MasterItemController extends Controller
                 'spec' => $material->spec,
                 'category' => $material->category?->name,
                 'warehouse' => $material->warehouse?->typeLabel(),
+                'kind' => $material->isPipe() ? 'Pipa' : null,
+                'source' => $material->sourcingLabel(),
                 'units' => $material->purchaseUnit().($material->conversionLabel() ? ' → '.$material->stockUnit() : ''),
                 'conversion' => $material->conversionLabel(),
                 'price' => $material->unitCost(),
@@ -85,6 +86,8 @@ class MasterItemController extends Controller
                 'spec' => $item->formula ? 'Formula: '.$item->formula->name : null,
                 'category' => $item->brand,
                 'warehouse' => Warehouse::TYPES[Warehouse::FINISHED][1],
+                'kind' => null,
+                'source' => 'Produksi',
                 'units' => (string) $item->unit,
                 'conversion' => null,
                 'price' => (float) $item->cost_price,

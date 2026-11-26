@@ -55,7 +55,7 @@
         </div>
         <div class="overflow-x-auto">
             <table class="table">
-                <thead><tr><th>Bahan</th><th>Gudang</th><th>Dipakai untuk</th><th class="num">Butuh</th><th class="num">Stok</th><th class="num">Perlu beli</th><th class="num">Perkiraan belanja</th></tr></thead>
+                <thead><tr><th>Bahan</th><th>Gudang</th><th>Dipakai untuk</th><th class="num">Butuh</th><th class="num">Stok</th><th class="num">Buat / beli</th><th class="num">Perkiraan belanja</th></tr></thead>
                 <tbody>
                 @forelse ($rows as $row)
                     @php $material = $row['material']; @endphp
@@ -66,18 +66,39 @@
                         <td class="num whitespace-nowrap">{{ qty($row['need'], 2) }} {{ $material->stockUnit() }}</td>
                         <td class="num whitespace-nowrap text-slate-500">{{ qty($row['available'], 2) }} {{ $material->stockUnit() }}</td>
                         <td class="num font-semibold whitespace-nowrap {{ $row['buy_qty'] > 0 || $row['make_qty'] > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
-                            @if ($row['made_by'])
-                                @if ($row['make_qty'] > 0)
-                                    Perlu dibuat {{ qty($row['make_qty']) }}
-                                @else
-                                    Cukup
-                                @endif
-                                <p class="text-xs font-normal text-slate-500">dibuat lewat formula {{ $row['made_by'] }}{{ $row['planned'] > 0 ? ' · direncanakan '.qty($row['planned']) : '' }}</p>
+                            @if ($row['buy_qty'] <= 0 && $row['make_qty'] <= 0)
+                                Cukup
                             @else
-                                {{ $row['buy_qty'] > 0 ? qty($row['buy_qty']).' '.$row['buy_unit'] : 'Cukup' }}
-                                @if ($row['on_order'] > 0)
-                                    <p class="text-xs font-normal text-amber-600">sudah dipesan {{ qty($row['on_order'], 2) }} {{ $material->stockUnit() }}, belum diterima</p>
-                                @endif
+                                @if ($row['make_qty'] > 0)<p>Buat {{ qty($row['make_qty'], 2) }} {{ $material->stockUnit() }}</p>@endif
+                                @if ($row['buy_qty'] > 0)<p>Beli {{ qty($row['buy_qty']) }} {{ $row['buy_unit'] }}</p>@endif
+                            @endif
+                            @if ($row['made_by'])
+                                <p class="text-xs font-normal text-slate-500">formula {{ $row['made_by'] }}{{ $row['planned'] > 0 ? ' · direncanakan '.qty($row['planned']) : '' }}</p>
+                            @endif
+                            @if ($row['on_order'] > 0)
+                                <p class="text-xs font-normal text-amber-600">sudah dipesan {{ qty($row['on_order'], 2) }} {{ $material->stockUnit() }}, belum diterima</p>
+                            @endif
+                            @if ($row['split'] && ($row['make_qty'] + $row['buy_split']) > 0)
+                                @php $short = $row['make_qty'] + $row['buy_split']; @endphp
+                                <form method="POST" action="{{ route('admin.plans.source', $plan) }}" class="mt-2 flex items-center justify-end gap-1 text-xs font-normal text-slate-600">
+                                    @csrf
+                                    <input type="hidden" name="material_id" value="{{ $material->id }}">
+                                    <span>Beli</span>
+                                    <input name="buy_qty" type="number" step="any" min="0" max="{{ $short }}" value="{{ (float) round($row['buy_split'], 3) }}" class="input w-20 py-1 text-xs" aria-label="Jumlah dibeli {{ $material->name }}">
+                                    <span>dari {{ qty($short, 2) }}</span>
+                                    <button class="btn btn-sm">Simpan</button>
+                                </form>
+                                <p class="mt-1 text-[11px] font-normal text-slate-500">
+                                    buat ± {{ rupiah($row['make_unit_cost']) }} · beli ± {{ rupiah($row['buy_unit_cost']) }} / {{ $material->stockUnit() }}
+                                </p>
+                            @endif
+                            @if ($row['formula'] && $row['make_qty'] > 0)
+                                <form method="POST" action="{{ route('admin.plans.add-formula', $plan) }}" class="mt-1">
+                                    @csrf
+                                    <input type="hidden" name="formula_id" value="{{ $row['formula']->id }}">
+                                    <input type="hidden" name="qty" value="{{ ceil(round($row['make_qty'], 6)) }}">
+                                    <button class="btn btn-sm">+ Buat {{ qty(ceil(round($row['make_qty'], 6))) }} lewat formula</button>
+                                </form>
                             @endif
                         </td>
                         <td class="num">{{ $row['buy_cost'] > 0 ? rupiah($row['buy_cost']) : '—' }}</td>

@@ -39,6 +39,10 @@ class MasterItemTest extends TestCase
 
         $this->get(route('admin.master-items.index', ['jenis' => 'produk-jadi']))->assertOk()
             ->assertSee('Knalpot Mio Racing')->assertDontSee('Pipa SS');
+        // Pipa termasuk Bahan Baku, tidak punya tab sendiri.
+        $this->get(route('admin.master-items.index', ['jenis' => 'bahan-baku']))->assertOk()
+            ->assertSee('Pipa SS')->assertDontSee('Pureng Mio')
+            ->assertViewHas('counts', fn ($counts) => ! $counts->has('pipa'));
         $this->get(route('admin.master-items.index', ['jenis' => 'aksesoris', 'q' => 'baut']))->assertOk()
             ->assertSee('Baut L')->assertDontSee('Pureng Mio');
     }
@@ -46,10 +50,16 @@ class MasterItemTest extends TestCase
     public function test_plate_bought_per_sheet_is_stocked_and_used_per_square_cm(): void
     {
         $this->post(route('admin.materials.store'), [
-            'name' => 'Plat SS 1 mm', 'warehouse_id' => Warehouse::forType(Warehouse::RAW)->id, 'measure' => Material::UNIT,
-            'unit' => 'Lembar', 'use_unit' => 'cm²', 'conversion' => 28_800, 'last_price' => 576_000, 'is_active' => 1,
+            'name' => 'Plat SS 1 mm', 'warehouse_id' => Warehouse::forType(Warehouse::RAW)->id, 'shape' => Material::PLATE,
+            'sheet_length_cm' => 240, 'sheet_width_cm' => 120,
+            'unit' => 'Lembar', 'use_unit' => 'cm²', 'last_price' => 576_000, 'is_active' => 1,
         ])->assertSessionHasNoErrors();
         $plate = Material::where('name', 'Plat SS 1 mm')->firstOrFail();
+
+        // Ukuran plat terpisah; isi per lembar otomatis = 240 × 120 cm.
+        $this->assertTrue($plate->isPlate());
+        $this->assertEquals(28_800, (float) $plate->conversion);
+        $this->assertSame('Plat SS 1 mm · 240 × 120 cm', $plate->label());
 
         $this->assertSame('cm²', $plate->stockUnit());
         $this->assertSame('Lembar', $plate->purchaseUnit());
@@ -113,5 +123,23 @@ class MasterItemTest extends TestCase
 
         $this->delete(route('admin.units.destroy', Unit::where('name', 'Rim')->firstOrFail()))->assertSessionMissing('error');
         $this->assertDatabaseMissing('units', ['name' => 'Rim']);
+    }
+
+    public function test_pipe_size_is_entered_as_diameter_thickness_and_bar_length(): void
+    {
+        $this->post(route('admin.materials.store'), [
+            'name' => 'Pipa SS 201', 'warehouse_id' => Warehouse::forType(Warehouse::RAW)->id, 'shape' => Material::PIPE,
+            'diameter' => '1¼"', 'thickness_mm' => 1.2, 'bar_length_cm' => 600, 'min_reusable_cm' => 5, 'last_price' => 300_000, 'is_active' => 1,
+        ])->assertSessionHasNoErrors();
+        $pipe = Material::where('name', 'Pipa SS 201')->firstOrFail();
+
+        $this->assertTrue($pipe->isPipe());
+        $this->assertSame('1¼"', $pipe->diameter);
+        $this->assertEquals(1.2, (float) $pipe->thickness_mm);
+        $this->assertEquals(600, (float) $pipe->bar_length_cm);
+        $this->assertSame('Pipa SS 201 · Ø 1¼" · tebal 1,2 mm', $pipe->label());
+
+        // Form ubah menampilkan kolom-kolomnya, bukan satu teks.
+        $this->get(route('admin.materials.edit', $pipe))->assertOk()->assertSee('name="diameter"', false)->assertSee('name="sheet_width_cm"', false);
     }
 }

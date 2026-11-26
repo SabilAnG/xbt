@@ -94,6 +94,38 @@ class ProductionPlanController extends Controller
         return redirect()->route('admin.plans.index')->with('status', 'Rencana produksi dihapus.');
     }
 
+    /** Pecah kekurangan barang yang bisa dibuat & dibeli: sebagian dibeli, sisanya dibuat. */
+    public function updateSource(Request $request, ProductionPlan $plan): RedirectResponse
+    {
+        $data = $request->validate([
+            'material_id' => ['required', 'exists:materials,id'],
+            'buy_qty' => ['required', 'numeric', 'min:0'],
+        ], ['buy_qty.required' => 'Isi jumlah yang dibeli (0 bila semua dibuat).']);
+
+        $plan->sources()->updateOrCreate(['material_id' => $data['material_id']], ['buy_qty' => (float) $data['buy_qty']]);
+
+        return back()->with('status', 'Pembagian buat/beli disimpan.');
+    }
+
+    /** Tambahkan formula setengah jadi ke rencana untuk bagian yang dibuat sendiri. */
+    public function addFormula(Request $request, ProductionPlan $plan): RedirectResponse
+    {
+        $data = $request->validate([
+            'formula_id' => ['required', 'exists:formulas,id'],
+            'qty' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        $line = $plan->lines()->where('formula_id', $data['formula_id'])->whereDoesntHave('productions')->first();
+
+        if ($line) {
+            $line->increment('qty', (float) $data['qty']);
+        } else {
+            $plan->lines()->create(['formula_id' => $data['formula_id'], 'qty' => (float) $data['qty'], 'sort_order' => (int) $plan->lines()->max('sort_order') + 1]);
+        }
+
+        return back()->with('status', 'Formula ditambahkan ke rencana.');
+    }
+
     /** Buat nota produksi (draf) untuk setiap baris yang belum punya. */
     public function startProductions(ProductionPlan $plan): RedirectResponse
     {

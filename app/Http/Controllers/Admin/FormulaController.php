@@ -187,7 +187,7 @@ class FormulaController extends Controller
                 ->map(fn (array $names, string $part) => collect($names)->merge(
                     FormulaComponent::query()->whereHas('part', fn ($query) => $query->where('name', $part))->distinct()->pluck('name')
                 )->unique()->values()),
-            'semiMaterials' => Material::query()->where('measure', Material::UNIT)
+            'semiMaterials' => Material::query()->where('measure', Material::UNIT)->where('is_producible', true)
                 ->where('warehouse_id', Warehouse::forType(Warehouse::SEMI)->id)
                 ->whereNotIn('id', Formula::query()->whereNotNull('output_material_id')->whereKeyNot($formula->id ?? 0)->pluck('output_material_id'))
                 ->orderBy('name')->get()->mapWithKeys(fn (Material $material) => [$material->id => $material->label()]),
@@ -211,7 +211,7 @@ class FormulaController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'motor_category' => ['required', Rule::in(array_keys(Formula::MOTOR_CATEGORIES))],
             'output_type' => ['nullable', Rule::in(array_keys(Formula::OUTPUTS))],
-            'output_material_id' => ['nullable', Rule::exists('materials', 'id')->where('measure', Material::UNIT)],
+            'output_material_id' => ['nullable', Rule::exists('materials', 'id')->where('measure', Material::UNIT)->where('is_producible', true)],
             'motor_type' => [$request->input('output_type') === Formula::SEMI_FINISHED ? 'nullable' : 'required', 'string', 'max:100'],
             'variant' => ['nullable', 'string', 'max:150'],
             'item_id' => ['nullable', 'exists:items,id'],
@@ -338,7 +338,7 @@ class FormulaController extends Controller
 
         $material = Material::create([
             'code' => $code, 'name' => $formula->name, 'warehouse_id' => Warehouse::forType(Warehouse::SEMI)->id,
-            'measure' => Material::UNIT, 'unit' => 'Pcs', 'is_active' => true,
+            'measure' => Material::UNIT, 'unit' => 'Pcs', 'is_active' => true, 'preferred_source' => 'buat',
             'notes' => 'Dibuat dari formula '.$formula->code.'.',
         ]);
         $formula->forceFill(['output_material_id' => $material->id])->save();

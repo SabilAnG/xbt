@@ -1,13 +1,13 @@
-@extends('layouts.admin', ['title' => 'Master Item', 'subtitle' => 'Semua barang dalam satu daftar: bahan baku, pipa, setengah jadi, aksesoris, dan produk jadi. Harga & stok dalam satuan pakai; pembelian dalam satuan beli.'])
+@extends('layouts.admin', ['title' => 'Master Item', 'subtitle' => 'Semua barang dalam satu daftar: bahan baku (termasuk pipa), setengah jadi, aksesoris, dan produk jadi. Harga & stok dalam satuan pakai; pembelian dalam satuan beli.'])
 
 @php
     $types = \App\Http\Controllers\Admin\MasterItemController::TYPES;
     $createLinks = [
-        'bahan-baku' => route('admin.materials.create'),
-        'pipa' => route('admin.materials.create', ['jenis' => 'pipa']),
-        'setengah-jadi' => route('admin.materials.create', ['gudang' => 'setengah-jadi']),
-        'aksesoris' => route('admin.materials.create', ['gudang' => 'aksesoris']),
-        'produk-jadi' => route('admin.items.create'),
+        'Bahan Baku' => route('admin.materials.create'),
+        'Pipa (bahan baku)' => route('admin.materials.create', ['jenis' => 'pipa']),
+        'Setengah Jadi' => route('admin.materials.create', ['gudang' => 'setengah-jadi']),
+        'Aksesoris' => route('admin.materials.create', ['gudang' => 'aksesoris']),
+        'Produk Jadi' => route('admin.items.create'),
     ];
 @endphp
 
@@ -16,8 +16,8 @@
     <details class="relative">
         <summary class="btn btn-primary cursor-pointer list-none">+ Item</summary>
         <div class="card absolute right-0 z-20 mt-1 w-56 overflow-hidden p-1 shadow-lg">
-            @foreach ($types as $key => $label)
-                <a href="{{ $createLinks[$key] }}" class="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">{{ $label }}</a>
+            @foreach ($createLinks as $label => $link)
+                <a href="{{ $link }}" class="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">{{ $label }}</a>
             @endforeach
         </div>
     </details>
@@ -53,7 +53,7 @@
                             <a href="{{ $row['show'] }}" class="link">{{ $row['name'] }}</a>
                             @if ($row['spec'] || $row['category'])<p class="text-xs text-slate-500">{{ collect([$row['spec'], $row['category']])->filter()->implode(' · ') }}</p>@endif
                         </td>
-                        <td class="text-xs whitespace-nowrap">{{ $types[$row['type']] }}</td>
+                        <td class="text-xs whitespace-nowrap">{{ $types[$row['type']] }}{{ $row['kind'] ? ' · '.$row['kind'] : '' }}<p class="text-slate-400">{{ $row['source'] }}</p></td>
                         <td class="text-xs whitespace-nowrap text-slate-500">{{ $row['warehouse'] }}</td>
                         <td class="text-xs whitespace-nowrap">
                             {{ $row['units'] }}

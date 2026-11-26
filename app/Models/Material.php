@@ -30,12 +30,28 @@ class Material extends Model
         self::LENGTH => 'Pipa: batang & panjang (cm)',
     ];
 
+    public const PIPE = 'pipa';
+
+    public const PLATE = 'plat';
+
+    /** Bentuk bahan: menentukan kolom ukurannya. */
+    public const SHAPES = [
+        self::PIPE => 'Pipa (diameter, tebal, panjang batang)',
+        self::PLATE => 'Plat (panjang × lebar lembar)',
+        '' => 'Lainnya (per satuan)',
+    ];
+
     /** Lebar mata gergaji potong (mm) bila belum diatur. */
     public const DEFAULT_KERF_MM = 3.0;
 
+    /** Sumber utama barang yang bisa dibuat sekaligus dibeli. */
+    public const SOURCES = ['buat' => 'Buat sendiri', 'beli' => 'Beli jadi'];
+
     protected $fillable = [
-        'code', 'name', 'material_category_id', 'warehouse_id', 'measure', 'unit', 'use_unit', 'conversion', 'spec',
+        'code', 'name', 'material_category_id', 'warehouse_id', 'measure', 'shape', 'unit', 'use_unit', 'conversion', 'spec',
+        'diameter', 'thickness_mm', 'sheet_length_cm', 'sheet_width_cm',
         'bar_length_cm', 'min_reusable_cm', 'avg_cost', 'last_price', 'stock', 'min_stock', 'notes', 'is_active',
+        'is_purchasable', 'is_producible', 'preferred_source',
     ];
 
     protected function casts(): array
@@ -43,12 +59,17 @@ class Material extends Model
         return [
             'conversion' => 'decimal:4',
             'bar_length_cm' => 'decimal:2',
+            'thickness_mm' => 'decimal:2',
+            'sheet_length_cm' => 'decimal:2',
+            'sheet_width_cm' => 'decimal:2',
             'min_reusable_cm' => 'decimal:2',
             'avg_cost' => 'decimal:4',
             'last_price' => 'decimal:2',
             'stock' => 'decimal:3',
             'min_stock' => 'decimal:3',
             'is_active' => 'boolean',
+            'is_purchasable' => 'boolean',
+            'is_producible' => 'boolean',
         ];
     }
 
@@ -86,6 +107,11 @@ class Material extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(MaterialMovement::class);
+    }
+
+    public function scopePurchasable(Builder $query): Builder
+    {
+        return $query->where('is_purchasable', true);
     }
 
     public function scopeActive(Builder $query): Builder
@@ -159,6 +185,22 @@ class Material extends Model
     }
 
     /** Harga per satuan beli (per batang untuk pipa), acuan saat belanja. */
+    /** Harga beli per satuan pakai (untuk dibandingkan dengan HPP buat sendiri). */
+    public function purchaseCostPerStockUnit(): float
+    {
+        return $this->purchaseUnitCost() / $this->conversionFactor();
+    }
+
+    /** Label asal barang: Beli, Produksi, atau Beli & produksi. */
+    public function sourcingLabel(): string
+    {
+        return match (true) {
+            $this->is_purchasable && $this->is_producible => 'Beli & produksi',
+            $this->is_producible => 'Produksi',
+            default => 'Beli',
+        };
+    }
+
     public function purchaseUnitCost(): float
     {
         if ((float) $this->last_price > 0) {
@@ -192,6 +234,42 @@ class Material extends Model
     public function stockStatus(): string
     {
         return stock_status((float) $this->stock, (float) $this->min_stock);
+    }
+
+    public function isPlate(): bool
+    {
+        return $this->shape === self::PLATE;
+    }
+
+    /** Luas satu lembar plat (cm²). */
+    public function sheetArea(): float
+    {
+        return (float) $this->sheet_length_cm * (float) $this->sheet_width_cm;
+    }
+
+    /**
+     * Teks ukuran ringkas dari kolom-kolomnya, mis. "Ø 1¼\" · tebal 1,2 mm"
+     * untuk pipa atau "120 × 240 cm" untuk plat.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function composeSpec(array $data): ?string
+    {
+        $number = fn ($value) => rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
+
+        $parts = match ($data['shape'] ?? null) {
+            self::PIPE => [
+                filled($data['diameter'] ?? null) ? 'Ø '.trim($data['diameter']) : null,
+                (float) ($data['thickness_mm'] ?? 0) > 0 ? 'tebal '.$number($data['thickness_mm']).' mm' : null,
+            ],
+            self::PLATE => [
+                (float) ($data['sheet_length_cm'] ?? 0) > 0 && (float) ($data['sheet_width_cm'] ?? 0) > 0
+                    ? $number($data['sheet_length_cm']).' × '.$number($data['sheet_width_cm']).' cm' : null,
+            ],
+            default => [$data['spec'] ?? null],
+        };
+
+        return collect($parts)->filter()->implode(' · ') ?: null;
     }
 
     public function label(): string

@@ -13,7 +13,7 @@
     <x-admin.filters>
         <div class="min-w-56 flex-1">
             <label class="label" for="q">Cari</label>
-            <input id="q" name="q" value="{{ request('q') }}" class="input" placeholder="Nomor, toko, pembeli, atau nota toko">
+            <input id="q" name="q" value="{{ request('q') }}" class="input" placeholder="Nomor, toko, lokasi, pembeli, atau nota toko">
         </div>
         <x-admin.select name="supplier" label="Supplier" :options="$suppliers" :value="request('supplier')" placeholder="Semua" />
         <x-admin.select name="terima" label="Penerimaan" :options="['belum' => 'Belum diterima semua']" :value="request('terima')" placeholder="Semua" />
@@ -29,7 +29,7 @@
                     <tr>
                         <td class="font-mono text-xs whitespace-nowrap"><a href="{{ route('admin.purchases.show', $purchase) }}" class="link">{{ $purchase->invoice_number }}</a></td>
                         <td class="whitespace-nowrap">{{ $purchase->purchased_at->translatedFormat('d M Y') }}</td>
-                        <td>{{ $purchase->supplier ?? '—' }}</td>
+                        <td>{{ $purchase->supplier ?? '—' }}@if ($purchase->supplier_location)<p class="text-xs text-slate-500">{{ $purchase->supplier_location }}</p>@endif</td>
                         <td class="text-sm">{{ $purchase->buyer ?? '—' }}</td>
                         <td class="min-w-56 text-xs text-slate-600">@if ($purchase->isService())<span class="font-medium text-violet-700">Jasa vendor</span> · {{ $purchase->notes }}@else{{ $purchase->items->map(fn ($line) => $line->material->name.' × '.qty($line->qty).' '.$line->material->purchaseUnit())->implode(' · ') }}@endif</td>
                         <td class="num font-semibold">{{ rupiah($purchase->total) }}</td>

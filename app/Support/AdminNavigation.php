@@ -40,6 +40,7 @@ class AdminNavigation
         'image' => 'M4 5h16v14H4zm0 11 4.5-4.5a1.5 1.5 0 0 1 2 0L15 16m-1.5-1.5 1.5-1.5a1.5 1.5 0 0 1 2 0L20 16M15 9h.01',
         'puzzle' => 'M10 4a2 2 0 1 1 4 0v1h4a1 1 0 0 1 1 1v4h-1a2 2 0 1 0 0 4h1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 1 0-4 0v1H6a1 1 0 0 1-1-1v-4h1a2 2 0 1 0 0-4H5V6a1 1 0 0 1 1-1h4V4Z',
         'warehouse' => 'M3 21V9l9-6 9 6v12M7 21v-8h10v8M7 17h10',
+        'arrows' => 'M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4-4m-4 4 4 4',
         'inbox' => 'M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6l2-8Z',
         'truck' => 'M3 6h11v10H3zm11 4h4l3 3v3h-7M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
     ];
@@ -83,6 +84,7 @@ class AdminNavigation
             ]],
             ['label' => 'Gudang', 'items' => [
                 $item('Gudang', 'admin.warehouses.index', 'admin.warehouses.index|admin.warehouses.show:bahan-baku|admin.warehouses.show:setengah-jadi|admin.warehouses.show:aksesoris', 'warehouse'),
+                $item('Pindah Barang', 'admin.transfers.index', 'admin.transfers.*', 'arrows'),
                 $item('Penyesuaian Stok', 'admin.adjustments.index', 'admin.adjustments.*', 'sliders'),
             ]],
             ['label' => 'Produksi', 'items' => [

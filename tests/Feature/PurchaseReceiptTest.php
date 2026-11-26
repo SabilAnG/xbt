@@ -31,7 +31,7 @@ class PurchaseReceiptTest extends TestCase
     private function order(Material $bolt, Material $pipe, array $extra = []): MaterialPurchase
     {
         $this->post(route('admin.purchases.store'), $extra + [
-            'purchased_at' => '2026-12-01', 'supplier' => 'Toko Besi Jaya', 'buyer' => 'SIDIK', 'receive_now' => '0',
+            'purchased_at' => '2026-12-01', 'supplier' => 'Toko Besi Jaya', 'supplier_location' => 'Pasar Kenari', 'buyer' => 'SIDIK', 'receive_now' => '0',
             'items' => [
                 ['material_id' => $bolt->id, 'qty' => 100, 'unit_price' => 500],
                 ['material_id' => $pipe->id, 'qty' => 3, 'bar_length_cm' => 600, 'unit_price' => 300_000],
@@ -53,6 +53,8 @@ class PurchaseReceiptTest extends TestCase
         $this->assertEquals(0, $bolt->fresh()->stock);
         $this->assertEquals(900_000 + 50_000, (float) $purchase->total, 'Hutang dihitung dari pesanan.');
         $this->assertSame('Toko Besi Jaya', $purchase->supplierRecord->name);
+        $this->assertSame('Pasar Kenari', $purchase->supplier_location);
+        $this->assertSame('Pasar Kenari', $purchase->supplierRecord->address, 'Lokasi pertama jadi alamat supplier.');
         $this->get(route('admin.receipts.index'))->assertOk()->assertSee($purchase->invoice_number);
 
         // Datang pertama: 60 baut dan 2 batang pipa.

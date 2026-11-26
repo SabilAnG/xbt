@@ -17,6 +17,7 @@ class MaterialMovement extends Model
         'penyesuaian' => 'Penyesuaian',
         'hasil' => 'Hasil produksi',
         'terima_vendor' => 'Terima dari vendor',
+        'pindah' => 'Pindah gudang',
     ];
 
     protected $fillable = [

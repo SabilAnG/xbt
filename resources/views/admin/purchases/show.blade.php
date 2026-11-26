@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pembelian '.$purchase->invoice_number, 'subtitle' => $purchase->purchased_at->translatedFormat('d M Y').' · '.($purchase->supplier ?? 'tanpa supplier').($purchase->supplier_invoice ? ' · nota '.$purchase->supplier_invoice : '').($purchase->buyer ? ' · dibeli oleh '.$purchase->buyer : '')])
+@extends('layouts.admin', ['title' => 'Pembelian '.$purchase->invoice_number, 'subtitle' => $purchase->purchased_at->translatedFormat('d M Y').' · '.($purchase->supplier ?? 'tanpa supplier').($purchase->supplier_location ? ' ('.$purchase->supplier_location.')' : '').($purchase->supplier_invoice ? ' · nota '.$purchase->supplier_invoice : '').($purchase->buyer ? ' · dibeli oleh '.$purchase->buyer : '')])
 
 @section('actions')
     @if (! $purchase->isService() && $purchase->outstandingQty() > 0)

@@ -14,6 +14,30 @@
         <x-admin.stat label="Nilai stok" :value="rupiah($material->stocks->sum('value'))" />
     </section>
 
+    @if ($material->is_producible && $producedBy || $sourcing->isNotEmpty())
+        <section class="card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="card-title">Asal barang · {{ $material->sourcingLabel() }}</h2>
+                @if ($producedBy)
+                    <a href="{{ route('admin.formulas.show', $producedBy) }}" class="link text-sm">Formula {{ $producedBy->name }} · HPP ± {{ rupiah($producedBy->estimatedHpp()) }}</a>
+                @endif
+            </div>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                @foreach (['beli' => 'Dari pembelian', 'buat' => 'Dari produksi (internal & vendor)'] as $key => $label)
+                    @php $row = $sourcing->get($key); @endphp
+                    <div class="rounded-lg border border-slate-200 p-3 text-sm">
+                        <p class="text-xs text-slate-500">{{ $label }}</p>
+                        @if ($row && (float) $row->qty > 0)
+                            <p class="font-semibold">{{ qty($row->qty, 2) }} {{ $material->stockUnit() }} · rata-rata {{ rupiah((float) $row->value / (float) $row->qty) }}</p>
+                        @else
+                            <p class="text-slate-400">Belum ada</p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <section class="grid gap-4 sm:gap-6 xl:grid-cols-3">
         <div class="card overflow-hidden">
             <div class="card-header"><h2 class="card-title">Stok per gudang</h2></div>

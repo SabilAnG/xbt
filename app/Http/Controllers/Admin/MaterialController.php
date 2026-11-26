@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Formula;
 use App\Models\FormulaComponentMaterial;
 use App\Models\Material;
 use App\Models\MaterialCategory;
@@ -46,6 +47,10 @@ class MaterialController extends Controller
                 ? $material->pieces()->with('warehouse')->where('status', PipePiece::AVAILABLE)->orderBy('warehouse_id')->orderBy('length_cm')->get()
                 : collect(),
             'movements' => $material->movements()->with('warehouse', 'piece')->latest('moved_at')->latest('id')->paginate(25),
+            'producedBy' => Formula::query()->where('output_material_id', $material->id)->first(),
+            'sourcing' => $material->movements()->whereIn('type', ['pembelian', 'hasil', 'terima_vendor'])
+                ->selectRaw("CASE WHEN type = 'pembelian' THEN 'beli' ELSE 'buat' END as source, SUM(qty_in) as qty, SUM(qty_in * unit_cost) as value")
+                ->groupBy('source')->get()->keyBy('source'),
             'usedIn' => FormulaComponentMaterial::query()->with('component.part.formula')->where('material_id', $material->id)->get(),
         ]);
     }
@@ -117,9 +122,20 @@ class MaterialController extends Controller
      */
     private function validated(Request $request, ?Material $material = null): array
     {
+        // Bentuk menentukan cara hitung: pipa per batang & cm, lainnya per satuan.
+        if ($request->has('shape')) {
+            $request->merge(['measure' => $request->input('shape') === Material::PIPE ? Material::LENGTH : Material::UNIT]);
+        }
+
         $isPipe = $request->input('measure') === Material::LENGTH;
+        $isPlate = ! $isPipe && $request->input('shape') === Material::PLATE;
 
         $data = $request->validate([
+            'shape' => ['nullable', Rule::in([Material::PIPE, Material::PLATE])],
+            'diameter' => ['nullable', 'string', 'max:30'],
+            'thickness_mm' => ['nullable', 'numeric', 'gt:0'],
+            'sheet_length_cm' => [$isPlate ? 'required' : 'nullable', 'numeric', 'gt:0'],
+            'sheet_width_cm' => [$isPlate ? 'required' : 'nullable', 'numeric', 'gt:0'],
             'code' => ['nullable', 'string', 'max:50', Rule::unique('materials', 'code')->ignore($material)],
             'name' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:100'],
@@ -134,8 +150,11 @@ class MaterialController extends Controller
             'last_price' => ['nullable', 'numeric', 'min:0'],
             'min_stock' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'preferred_source' => ['nullable', Rule::in(array_keys(Material::SOURCES))],
         ], [
             'bar_length_cm.required' => 'Isi panjang satu batang pipa.',
+            'sheet_length_cm.required' => 'Isi panjang lembar plat.',
+            'sheet_width_cm.required' => 'Isi lebar lembar plat.',
             'warehouse_id.in' => 'Pilih Gudang Bahan Baku, Setengah Jadi, atau Aksesoris.',
         ]);
 
@@ -159,6 +178,18 @@ class MaterialController extends Controller
             } while (Material::where('code', $data['code'])->exists());
         }
 
+        $data['shape'] = $isPipe ? Material::PIPE : ($isPlate ? Material::PLATE : null);
+        $data['diameter'] = $isPipe ? ($data['diameter'] ?? null) : null;
+        $data['thickness_mm'] = $isPipe ? ($data['thickness_mm'] ?? null) : null;
+        $data['sheet_length_cm'] = $isPlate ? (float) $data['sheet_length_cm'] : null;
+        $data['sheet_width_cm'] = $isPlate ? (float) $data['sheet_width_cm'] : null;
+        $data['spec'] = Material::composeSpec($data);
+
+        // Plat dipakai per cm²: isi per lembar = panjang × lebar.
+        if ($isPlate && ($data['use_unit'] ?? null) === 'cm²' && (float) ($data['conversion'] ?? 0) <= 0) {
+            $data['conversion'] = $data['sheet_length_cm'] * $data['sheet_width_cm'];
+        }
+
         $data['unit'] = $isPipe ? 'Batang' : $data['unit'];
         $hasConversion = ! $isPipe && filled($data['use_unit'] ?? null) && $data['use_unit'] !== $data['unit'];
 
@@ -173,6 +204,25 @@ class MaterialController extends Controller
         $data['last_price'] = (float) ($data['last_price'] ?? 0);
         $data['min_stock'] = (float) ($data['min_stock'] ?? 0);
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_purchasable'] = $request->boolean('is_purchasable', true);
+        $data['is_producible'] = $request->boolean('is_producible', true);
+        $data['preferred_source'] = $data['preferred_source'] ?? 'beli';
+
+        if (! $data['is_purchasable'] && ! $data['is_producible']) {
+            throw ValidationException::withMessages(['is_purchasable' => 'Barang harus bisa dibeli, diproduksi, atau keduanya.']);
+        }
+
+        $producedBy = $material ? Formula::query()->where('output_material_id', $material->id)->value('name') : null;
+
+        if (! $data['is_producible'] && $producedBy) {
+            throw ValidationException::withMessages(['is_producible' => "Barang ini hasil formula {$producedBy}. Lepas dulu dari formulanya."]);
+        }
+
+        if (! $data['is_purchasable']) {
+            $data['preferred_source'] = 'buat';
+        } elseif (! $data['is_producible']) {
+            $data['preferred_source'] = 'beli';
+        }
 
         return $data;
     }

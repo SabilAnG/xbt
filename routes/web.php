@@ -77,6 +77,8 @@ Route::prefix('admin')->group(function () {
         // Inventori: formula → rencana → pembelian → gudang → produksi
         Route::post('formula/{formula}/salin', [Admin\FormulaController::class, 'duplicate'])->name('formulas.duplicate');
         Route::resource('formula', Admin\FormulaController::class)->names('formulas')->parameters(['formula' => 'formula']);
+        Route::post('rencana-produksi/{plan}/sumber', [Admin\ProductionPlanController::class, 'updateSource'])->name('plans.source');
+        Route::post('rencana-produksi/{plan}/tambah-formula', [Admin\ProductionPlanController::class, 'addFormula'])->name('plans.add-formula');
         Route::post('rencana-produksi/{plan}/produksi', [Admin\ProductionPlanController::class, 'startProductions'])->name('plans.productions');
         Route::resource('rencana-produksi', Admin\ProductionPlanController::class)->names('plans')->parameters(['rencana-produksi' => 'plan']);
         Route::post('produksi/{production}/bukukan', [Admin\ProductionController::class, 'post'])->name('productions.post');
@@ -84,6 +86,8 @@ Route::prefix('admin')->group(function () {
         Route::delete('produksi/penerimaan/{receipt}', [Admin\ProductionController::class, 'destroyReceipt'])->name('productions.receipts.destroy');
         Route::post('produksi/{production}/batalkan', [Admin\ProductionController::class, 'cancel'])->name('productions.cancel');
         Route::resource('produksi', Admin\ProductionController::class)->names('productions')->parameters(['produksi' => 'production']);
+        Route::resource('pindah-barang', Admin\StockTransferController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
+            ->names('transfers')->parameters(['pindah-barang' => 'transfer']);
         Route::post('pembelian-bahan/{purchase}/batalkan-sisa', [Admin\MaterialPurchaseController::class, 'cancelOutstanding'])->name('purchases.cancel-outstanding');
         Route::resource('penerimaan', Admin\PurchaseReceiptController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('receipts')->parameters(['penerimaan' => 'receipt']);

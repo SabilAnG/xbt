@@ -158,7 +158,8 @@ class StockService
                 $out = (float) $movement->qty_out;
                 $warehouseId = $movement->warehouse_id;
 
-                if (! $material->isPipe() && $in > 0 && $movement->type !== 'sisa') {
+                // Pindah gudang tidak mengubah harga rata-rata.
+                if (! $material->isPipe() && $in > 0 && ! in_array($movement->type, ['sisa', 'pindah'], true)) {
                     $avg = $total > 0 ? (($total * $avg) + ($in * (float) $movement->unit_cost)) / ($total + $in) : (float) $movement->unit_cost;
                 }
 

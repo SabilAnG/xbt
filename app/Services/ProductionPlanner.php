@@ -26,16 +26,20 @@ class ProductionPlanner
      */
     public function forPlan(ProductionPlan $plan): array
     {
-        $plan->loadMissing('lines.formula');
+        $plan->loadMissing('lines.formula', 'sources');
 
-        return $this->forFormulas($plan->lines->map(fn ($line) => [$line->formula, (float) $line->qty])->all());
+        return $this->forFormulas(
+            $plan->lines->map(fn ($line) => [$line->formula, (float) $line->qty])->all(),
+            $plan->sources->mapWithKeys(fn ($source) => [$source->material_id => (float) $source->buy_qty])->all(),
+        );
     }
 
     /**
      * @param  list<array{0: Formula, 1: float}>  $targets
+     * @param  array<int, float>  $buySplits  bagian kekurangan yang dibeli per bahan (satuan pakai)
      * @return array{rows: Collection<int, array<string, mixed>>, buy_total: float, estimated_cost: float, lines: Collection<int, array<string, mixed>>}
      */
-    public function forFormulas(array $targets): array
+    public function forFormulas(array $targets, array $buySplits = []): array
     {
         $requirements = collect();
         $lines = collect();
@@ -57,15 +61,15 @@ class ProductionPlanner
             ]);
         }
 
-        $madeBy = Formula::query()->whereNotNull('output_material_id')->pluck('name', 'output_material_id');
+        $madeBy = Formula::query()->whereNotNull('output_material_id')->get()->keyBy('output_material_id');
 
-        $rows = $requirements->groupBy(fn (array $line) => $line['material']->id)->map(function (Collection $group) use ($planned, $madeBy) {
+        $rows = $requirements->groupBy(fn (array $line) => $line['material']->id)->map(function (Collection $group) use ($planned, $madeBy, $buySplits) {
             /** @var Material $material */
             $material = $group->first()['material'];
 
             return $material->isPipe()
                 ? $this->pipeRow($material, $group)
-                : $this->unitRow($material, $group, (float) ($planned[$material->id] ?? 0), $madeBy[$material->id] ?? null);
+                : $this->unitRow($material, $group, (float) ($planned[$material->id] ?? 0), $material->is_producible ? $madeBy->get($material->id) : null, $buySplits[$material->id] ?? null);
         })->sortBy(fn (array $row) => [$row['material']->warehouse_id, $row['material']->name])->values();
 
         return [
@@ -100,15 +104,23 @@ class ProductionPlanner
      * @param  Collection<int, array<string, mixed>>  $group
      * @return array<string, mixed>
      */
-    private function unitRow(Material $material, Collection $group, float $planned = 0, ?string $madeBy = null): array
+    private function unitRow(Material $material, Collection $group, float $planned = 0, ?Formula $madeBy = null, ?float $buySplit = null): array
     {
         $material->loadMissing('stocks', 'warehouse');
         $need = (float) $group->sum('qty');
         $available = (float) $material->stock;
         $onOrder = $this->onOrder($material);
         $short = max($need - $available - $planned - $onOrder, 0);
-        // Barang hasil formula dibuat, bukan dibeli.
-        $buy = $madeBy ? 0 : $this->buyQty($material, $short);
+        $canMake = $madeBy !== null;
+        $canBuy = (bool) $material->is_purchasable || ! $canMake;
+
+        // Bisa keduanya: ikuti pembagian di rencana, atau sumber utamanya.
+        $buyStock = match (true) {
+            $canMake && $canBuy => min($buySplit ?? ($material->preferred_source === 'buat' ? 0 : $short), $short),
+            $canMake => 0,
+            default => $short,
+        };
+        $buy = $this->buyQty($material, $buyStock);
 
         return [
             'material' => $material,
@@ -116,8 +128,15 @@ class ProductionPlanner
             'available' => $available,
             'planned' => $planned,
             'on_order' => $onOrder,
-            'made_by' => $madeBy,
-            'make_qty' => $madeBy ? $short : 0,
+            'made_by' => $madeBy?->name,
+            'formula' => $madeBy,
+            'can_make' => $canMake,
+            'can_buy' => $canBuy,
+            'split' => $canMake && $canBuy,
+            'buy_split' => $buyStock,
+            'make_qty' => $canMake ? max($short - $buyStock, 0) : 0,
+            'make_unit_cost' => $madeBy?->estimatedHpp(),
+            'buy_unit_cost' => $material->purchaseCostPerStockUnit(),
             'short' => $short,
             'buy_qty' => $buy,
             'buy_unit' => $material->purchaseUnit(),
@@ -169,6 +188,13 @@ class ProductionPlanner
             'planned' => 0,
             'on_order' => $onOrderBars * (float) $material->bar_length_cm,
             'made_by' => null,
+            'formula' => null,
+            'can_make' => false,
+            'can_buy' => true,
+            'split' => false,
+            'buy_split' => 0,
+            'make_unit_cost' => null,
+            'buy_unit_cost' => $material->purchaseUnitCost(),
             'make_qty' => 0,
             'short' => $plan['new_bars'] > 0 || $plan['unplaced'] ? max($need - (float) $material->stock, 0) : 0,
             'buy_qty' => $buyBars,

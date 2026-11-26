@@ -24,7 +24,7 @@ class MaterialPurchaseController extends Controller
     {
         $query = MaterialPurchase::query()->with('items.material')
             ->when($request->string('q')->trim()->value(), fn ($query, $search) => $query->where(
-                fn ($query) => $query->where('supplier', 'like', "%{$search}%")->orWhere('buyer', 'like', "%{$search}%")->orWhere('invoice_number', 'like', "%{$search}%")->orWhere('supplier_invoice', 'like', "%{$search}%")
+                fn ($query) => $query->where('supplier', 'like', "%{$search}%")->orWhere('buyer', 'like', "%{$search}%")->orWhere('invoice_number', 'like', "%{$search}%")->orWhere('supplier_invoice', 'like', "%{$search}%")->orWhere('supplier_location', 'like', "%{$search}%")
             ))
             ->when($request->input('bayar') === 'hutang', fn ($query) => $query->unpaid())
             ->when($request->input('terima') === 'belum', fn ($query) => $query->awaitingGoods())
@@ -67,8 +67,8 @@ class MaterialPurchaseController extends Controller
         return view('admin.purchases.create', [
             'plan' => $plan,
             'lines' => array_values(old('items', $lines ?: [['material_id' => '', 'warehouse_id' => '', 'qty' => '', 'bar_length_cm' => '', 'unit_price' => '']])),
-            'materials' => Material::query()->active()->with('warehouse')->orderBy('name')->get(),
-            'suppliers' => Supplier::query()->active()->orderBy('name')->pluck('name'),
+            'materials' => Material::query()->active()->purchasable()->with('warehouse')->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->active()->orderBy('name')->pluck('address', 'name'),
             'buyers' => MaterialPurchase::query()->whereNotNull('buyer')->distinct()->orderBy('buyer')->pluck('buyer')
                 ->merge(Production::query()->whereNotNull('worker')->distinct()->pluck('worker'))->unique()->values(),
             'warehouses' => collect([Warehouse::RAW, Warehouse::SEMI, Warehouse::ACCESSORY, Warehouse::OFFCUT])->mapWithKeys(fn (string $type) => [Warehouse::forType($type)->id => Warehouse::forType($type)->name]),
@@ -82,6 +82,7 @@ class MaterialPurchaseController extends Controller
         $data = $request->validate([
             'purchased_at' => ['required', 'date'],
             'supplier' => ['nullable', 'string', 'max:255'],
+            'supplier_location' => ['nullable', 'string', 'max:255'],
             'supplier_invoice' => ['nullable', 'string', 'max:100'],
             'buyer' => ['nullable', 'string', 'max:100'],
             'production_plan_id' => ['nullable', 'exists:production_plans,id'],

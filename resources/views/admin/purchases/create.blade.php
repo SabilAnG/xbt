@@ -11,8 +11,13 @@
                 <div>
                     <label for="supplier" class="label">Supplier</label>
                     <input id="supplier" name="supplier" value="{{ old('supplier') }}" class="input" list="suppliers" placeholder="Pilih atau ketik nama toko">
-                    <datalist id="suppliers">@foreach ($suppliers as $supplier)<option value="{{ $supplier }}">@endforeach</datalist>
+                    <datalist id="suppliers">@foreach ($suppliers as $name => $address)<option value="{{ $name }}">@endforeach</datalist>
                     <p class="hint">Nama baru otomatis masuk <a href="{{ route('admin.suppliers.index') }}" class="link">Master Supplier</a>.</p>
+                </div>
+                <div>
+                    <label for="supplier_location" class="label">Lokasi toko / supplier</label>
+                    <input id="supplier_location" name="supplier_location" value="{{ old('supplier_location') }}" class="input" placeholder="mis. Pasar Kenari, Jakarta" data-location>
+                    @error('supplier_location')<p class="error">{{ $message }}</p>@enderror
                 </div>
                 <x-admin.field name="supplier_invoice" label="No. nota supplier" />
                 <div>
@@ -146,6 +151,13 @@
             form.addEventListener('input', refresh);
             form.addEventListener('row:added', refresh);
             form.addEventListener('row:removed', refresh);
+            var addresses = @json($suppliers);
+            var supplierInput = form.querySelector('#supplier');
+            var locationInput = form.querySelector('[data-location]');
+            supplierInput.addEventListener('change', function () {
+                var match = Object.keys(addresses).find(function (name) { return name.toLowerCase() === supplierInput.value.trim().toLowerCase(); });
+                if (match && addresses[match] && !locationInput.value) locationInput.value = addresses[match];
+            });
             form.querySelector('[data-pay-full]').addEventListener('click', function () { form.querySelector('[data-paid]').value = Math.round(total); });
             refresh();
         })();

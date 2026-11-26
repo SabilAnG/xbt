@@ -27,6 +27,12 @@ class ProductionPlan extends Model
         return ['planned_for' => 'date'];
     }
 
+    /** Pembagian buat/beli untuk barang yang bisa keduanya. */
+    public function sources(): HasMany
+    {
+        return $this->hasMany(ProductionPlanSource::class);
+    }
+
     public function lines(): HasMany
     {
         return $this->hasMany(ProductionPlanLine::class)->orderBy('sort_order')->orderBy('id');

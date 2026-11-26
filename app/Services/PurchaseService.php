@@ -24,18 +24,26 @@ class PurchaseService
     public function __construct(private StockService $stock, private WalletService $wallets) {}
 
     /**
-     * @param  array{purchased_at: string, supplier?: ?string, supplier_invoice?: ?string, buyer?: ?string, production_plan_id?: ?int, notes?: ?string, items: list<array{material_id: int, warehouse_id?: ?int, qty: float, bar_length_cm?: ?float, unit_price: float}>, paid_amount?: ?float, wallet_id?: ?int, receive_now?: bool}  $data
+     * @param  array{purchased_at: string, supplier?: ?string, supplier_location?: ?string, supplier_invoice?: ?string, buyer?: ?string, production_plan_id?: ?int, notes?: ?string, items: list<array{material_id: int, warehouse_id?: ?int, qty: float, bar_length_cm?: ?float, unit_price: float}>, paid_amount?: ?float, wallet_id?: ?int, receive_now?: bool}  $data
      */
     public function create(array $data): MaterialPurchase
     {
         return DB::transaction(function () use ($data) {
             $date = Carbon::parse($data['purchased_at']);
             $supplier = Supplier::resolve($data['supplier'] ?? null);
+            $location = trim((string) ($data['supplier_location'] ?? '')) ?: null;
+
+            // Lokasi pertama yang diisi jadi alamat di Master Supplier.
+            if ($supplier && $location && blank($supplier->address)) {
+                $supplier->update(['address' => $location]);
+            }
+
             $purchase = MaterialPurchase::create([
                 'invoice_number' => DocumentNumber::next('material_purchases', $date),
                 'purchased_at' => $date->toDateString(),
                 'supplier_id' => $supplier?->id,
                 'supplier' => $supplier?->name,
+                'supplier_location' => $location ?? $supplier?->address,
                 'supplier_invoice' => $data['supplier_invoice'] ?? null,
                 'buyer' => $data['buyer'] ?? null,
                 'production_plan_id' => $data['production_plan_id'] ?? null,
@@ -44,6 +52,11 @@ class PurchaseService
 
             foreach ($data['items'] as $row) {
                 $material = Material::with('warehouse')->findOrFail($row['material_id']);
+
+                if (! $material->is_purchasable) {
+                    throw new RuntimeException("{$material->label()} ditandai hanya diproduksi sendiri, tidak bisa dibeli.");
+                }
+
                 $warehouseId = (int) (($row['warehouse_id'] ?? null) ?: $material->warehouse_id);
                 $this->assertWarehouse($material, $warehouseId);
 
