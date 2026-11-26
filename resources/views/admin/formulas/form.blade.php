@@ -129,7 +129,7 @@
         var hint = '';
         if (m && m.pipe) { hint = 'Panjang potong per komponen · batang ' + fmt(m.bar) + ' cm · stok ' + fmt(m.stock) + ' cm'; }
         else if (m) { hint = 'Stok ' + fmt(m.stock, 3) + ' ' + esc(m.unit); }
-        return '<div class="grid gap-2 rounded-lg bg-slate-50 p-2 sm:grid-cols-[11rem_minmax(0,1fr)_8.5rem_7rem_auto] sm:items-start" data-line data-p="' + p + '" data-c="' + c + '" data-l="' + l + '">'
+        return '<div class="grid gap-2 rounded-lg bg-slate-50 p-2 sm:grid-cols-[13rem_minmax(0,1fr)_8.5rem_7rem_auto] sm:items-start" data-line data-p="' + p + '" data-c="' + c + '" data-l="' + l + '">'
             + '<select class="input" data-field="warehouse" aria-label="Gudang">' + whOptions + '</select>'
             + '<div><select name="' + base + '[material_id]" class="input" data-field="material_id" aria-label="Barang">' + materialOptions(wh, line.material_id) + '</select>'
             + (hint ? '<p class="mt-1 text-[11px] text-slate-500">' + hint + '</p>' : '') + '</div>'
@@ -253,8 +253,10 @@
     });
 
     form.addEventListener('click', function (e) {
+        // Hanya tombol penyusun formula; tombol dropdown & "+" master data dibiarkan.
         var btn = e.target.closest('button[type="button"]');
-        if (!btn) return;
+        var actions = ['data-add-part', 'data-add-cost', 'data-remove-part', 'data-add-component', 'data-remove-component', 'data-add-line', 'data-remove-line', 'data-remove-cost'];
+        if (!btn || !actions.some(function (a) { return btn.hasAttribute(a); })) return;
         var d = ref(btn);
         if (btn.hasAttribute('data-add-part')) { state.parts.push({ name: '', components: [] }); render(); return; }
         if (btn.hasAttribute('data-add-cost')) { state.costs.push({ name: '', amount: '' }); render(); return; }

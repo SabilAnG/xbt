@@ -360,6 +360,18 @@
     .cselect-option.is-placeholder {
         @apply text-muted;
     }
+    .combo-input {
+        @apply bg-no-repeat pr-9;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239aa0b8'><path d='M5 7h10l-5 6z'/></svg>");
+        background-size: 0.75rem;
+        background-position: right 0.85rem center;
+    }
+    .combo-input[aria-expanded='true'] {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23f0621f'><path d='M5 13h10l-5-6z'/></svg>");
+    }
+    .combo-mark {
+        @apply rounded-[4px] bg-brand-100 px-0.5 text-brand-700;
+    }
     .cselect-option.is-disabled {
         @apply pointer-events-none opacity-40;
     }

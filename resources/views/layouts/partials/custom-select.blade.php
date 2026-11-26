@@ -165,7 +165,8 @@
 
         function open(button) {
             const select = selectFor(button);
-            if (!select || select.disabled) return;
+            // Tombol yang sudah tidak ada di halaman (digambar ulang) tidak dibuka.
+            if (!select || select.disabled || !button.isConnected) return;
             if (current === select) { close(); return; }
             close(false);
             current = select;
@@ -234,5 +235,142 @@
 
         enhanceAll();
         window.addEventListener('load', syncAll);
+    })();
+
+    /*
+     * Isian bersaran (<input list="...">) memakai panel yang sama dengan dropdown
+     * di atas, menggantikan daftar saran bawaan browser. Teks tetap bisa diketik
+     * bebas; saran hanya membantu.
+     */
+    (() => {
+        let panel = null;
+        let input = null;
+        let active = -1;
+
+        const optionsOf = el => {
+            const list = document.getElementById(el.dataset.comboList);
+            if (!list) return [];
+            const seen = new Set();
+            return [...list.options].map(o => (o.value || o.textContent).trim()).filter(v => v && !seen.has(v.toLowerCase()) && seen.add(v.toLowerCase()));
+        };
+
+        function convert(el) {
+            if (el.dataset.comboList || !el.getAttribute('list')) return;
+            el.dataset.comboList = el.getAttribute('list');
+            el.removeAttribute('list');
+            el.setAttribute('autocomplete', 'off');
+            el.setAttribute('role', 'combobox');
+            el.setAttribute('aria-autocomplete', 'list');
+            el.classList.add('combo-input');
+        }
+        const convertAll = (root = document) => root.querySelectorAll('input[list]').forEach(convert);
+
+        function close() {
+            panel?.remove();
+            panel = null;
+            input?.setAttribute('aria-expanded', 'false');
+            input = null;
+            active = -1;
+        }
+
+        const items = () => panel ? [...panel.querySelectorAll('[role="option"]')] : [];
+        function highlight(index) {
+            const list = items();
+            if (!list.length) { active = -1; return; }
+            active = (index + list.length) % list.length;
+            list.forEach((el, i) => el.classList.toggle('is-active', i === active));
+            list[active].scrollIntoView({ block: 'nearest' });
+        }
+
+        function choose(value) {
+            const target = input;
+            target.value = value;
+            close();
+            target.dispatchEvent(new Event('input', { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+            target.focus();
+        }
+
+        function open(el) {
+            const q = el.value.trim().toLowerCase();
+            const all = optionsOf(el);
+            const matches = all.filter(v => !q || v.toLowerCase().includes(q)).slice(0, 60);
+            if (!matches.length || (matches.length === 1 && matches[0].toLowerCase() === q)) { close(); return; }
+
+            if (!panel || input !== el) {
+                close();
+                panel = document.createElement('div');
+                panel.className = 'cselect-panel';
+                panel.setAttribute('role', 'listbox');
+                panel.addEventListener('mousedown', e => e.preventDefault());
+                panel.addEventListener('click', e => { const item = e.target.closest('[role="option"]'); if (item) choose(item.dataset.value); });
+                panel.addEventListener('mousemove', e => { const item = e.target.closest('[role="option"]'); if (item) highlight(items().indexOf(item)); });
+                document.body.appendChild(panel);
+                input = el;
+                el.setAttribute('aria-expanded', 'true');
+            }
+
+            const list = document.createElement('div');
+            list.className = 'cselect-list';
+            const current = el.value.trim().toLowerCase();
+            matches.forEach(value => {
+                const item = document.createElement('div');
+                item.setAttribute('role', 'option');
+                item.dataset.value = value;
+                item.className = 'cselect-option' + (value.toLowerCase() === current ? ' is-selected' : '');
+                const label = document.createElement('span');
+                label.className = 'min-w-0 flex-1 truncate';
+                const at = q ? value.toLowerCase().indexOf(q) : -1;
+                if (at >= 0) {
+                    label.append(value.slice(0, at));
+                    const mark = document.createElement('mark');
+                    mark.className = 'combo-mark';
+                    mark.textContent = value.slice(at, at + q.length);
+                    label.append(mark, value.slice(at + q.length));
+                } else {
+                    label.textContent = value;
+                }
+                item.appendChild(label);
+                list.appendChild(item);
+            });
+            panel.replaceChildren(list);
+
+            const rect = el.getBoundingClientRect();
+            panel.style.minWidth = Math.max(rect.width, 200) + 'px';
+            panel.style.maxWidth = Math.max(rect.width, 340) + 'px';
+            const below = window.innerHeight - rect.bottom;
+            const up = below < Math.min(panel.scrollHeight, 320) + 16 && rect.top > below;
+            panel.style.left = Math.min(rect.left, window.innerWidth - panel.offsetWidth - 12) + 'px';
+            panel.style.top = (up ? rect.top - Math.min(panel.offsetHeight, 330) - 8 : rect.bottom + 8) + 'px';
+            panel.classList.toggle('is-up', up);
+            active = -1;
+        }
+
+        document.addEventListener('focusin', e => { if (e.target.dataset?.comboList) open(e.target); });
+        document.addEventListener('click', e => {
+            if (e.target.dataset?.comboList) { if (!panel || input !== e.target) open(e.target); return; }
+            if (panel && !panel.contains(e.target)) close();
+        });
+        document.addEventListener('input', e => { if (e.target.dataset?.comboList && e.isTrusted) open(e.target); });
+        document.addEventListener('focusout', e => { if (e.target === input) setTimeout(() => { if (document.activeElement !== input) close(); }, 120); });
+        document.addEventListener('keydown', e => {
+            if (!e.target.dataset?.comboList) return;
+            if (!panel && e.key === 'ArrowDown') { open(e.target); highlight(0); e.preventDefault(); return; }
+            if (!panel) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); highlight(active + 1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active - 1); }
+            else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(items()[active].dataset.value); }
+            else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            else if (e.key === 'Tab') close();
+        });
+        window.addEventListener('resize', close);
+        document.addEventListener('scroll', e => { if (panel && !panel.contains(e.target)) close(); }, true);
+
+        new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            if (node.matches('input[list]')) convert(node);
+            else convertAll(node);
+        }))).observe(document.body, { childList: true, subtree: true });
+        convertAll();
     })();
 </script>
