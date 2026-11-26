@@ -1,70 +1,155 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Masuk · {{ config('app.name') }}</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Masuk · IHC Racing</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=oxanium:500,600,700|manrope:400,500,600,700|racing-sans-one:400&display=swap">
+    <script>
+        // Splash roda hanya sekali per sesi (tidak saat gerak dikurangi atau setelah gagal masuk).
+        (() => {
+            let seen = false;
+            try { seen = sessionStorage.getItem('ihc.intro') === '1'; } catch (e) {}
+            const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const failed = {{ $errors->any() ? 'true' : 'false' }};
+            document.documentElement.dataset.intro = seen || reduce || failed ? 'off' : 'on';
+        })();
+    </script>
     @vite('resources/css/admin.css')
 </head>
-<body class="min-h-screen font-sans antialiased">
-<div class="grid min-h-screen gap-6 p-4 sm:p-6 lg:grid-cols-[1.05fr_1fr]">
-    {{-- Panel merek --}}
-    <aside class="relative hidden overflow-hidden rounded-[28px] bg-linear-to-br from-[#4a5a7c] via-[#3b4262] to-[#2c3150] p-12 text-white shadow-(--shadow-pop) lg:flex lg:flex-col">
-        <div class="pointer-events-none absolute -top-40 -right-40 size-[520px] rounded-full bg-brand-500/40 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-48 -left-32 size-[460px] rounded-full bg-[#7b5cf0]/30 blur-3xl"></div>
-        <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)] bg-size-[44px_44px]"></div>
+<body class="site-login">
 
-        <div class="relative flex items-center gap-3">
-            <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold shadow-lg">IHC</span>
-            <span class="text-sm font-semibold tracking-tight">IHC Racing</span>
+{{-- ---------------------------------------------------------- Splash: roda berapi, gaya website --}}
+<div class="intro" data-intro aria-hidden="true">
+    <div class="intro-glow"></div>
+    <div class="intro-stage">
+        <p class="intro-kicker">Professional Exhaust Full System</p>
+        <div class="intro-rider">
+            <div class="intro-fire">
+                <span class="flame f1"></span><span class="flame f2"></span><span class="flame f3"></span>
+                <span class="flame f4"></span><span class="flame f5"></span>
+                <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span><span class="spark s5"></span><span class="spark s6"></span>
+            </div>
+            <svg class="intro-wheel" viewBox="-64 -64 128 128">
+                <defs>
+                    <linearGradient id="rim-metal" x1="0" y1="-1" x2="0" y2="1">
+                        <stop offset="0" stop-color="#ff8a3d"/><stop offset=".5" stop-color="#e65200"/><stop offset="1" stop-color="#9c3300"/>
+                    </linearGradient>
+                    <radialGradient id="disc-metal">
+                        <stop offset=".55" stop-color="#d9dbe4"/><stop offset="1" stop-color="#7d8296"/>
+                    </radialGradient>
+                </defs>
+                <g class="intro-spin">
+                    <circle r="56" fill="#111"/>
+                    <circle r="56" fill="none" stroke="#262626" stroke-width="7" stroke-dasharray="6 5"/>
+                    <circle r="46" fill="#191919"/>
+                    <circle r="43" fill="none" stroke="url(#rim-metal)" stroke-width="4"/>
+                    <circle r="26" fill="url(#disc-metal)"/>
+                    @foreach (range(0, 7) as $hole)
+                        <circle cx="{{ round(18 * cos(deg2rad($hole * 45)), 2) }}" cy="{{ round(18 * sin(deg2rad($hole * 45)), 2) }}" r="2.6" fill="#4b5063"/>
+                    @endforeach
+                    @foreach (range(0, 4) as $spoke)
+                        <path d="M0 -9 C 7 -22, 4 -32, 0 -42" fill="none" stroke="url(#rim-metal)" stroke-width="6" stroke-linecap="round" transform="rotate({{ $spoke * 72 }})"/>
+                    @endforeach
+                    <circle r="10" fill="#e65200"/>
+                    <circle r="4.5" fill="#111"/>
+                </g>
+            </svg>
+            <span class="intro-speed l1"></span><span class="intro-speed l2"></span><span class="intro-speed l3"></span>
         </div>
+        <div class="intro-road"></div>
+        <p class="intro-brand">IHC <span>Racing</span></p>
+        <div class="intro-progress"><span></span></div>
+    </div>
+    <button type="button" class="intro-skip">Lewati</button>
+</div>
 
-        <div class="relative mt-auto max-w-md">
-            <h1 class="text-[34px] leading-[1.15] font-semibold tracking-tight">Produksi, stok, dan penjualan knalpot dalam satu panel.</h1>
-            <p class="mt-4 text-[15px] leading-relaxed text-slate-400">Angka yang sama dengan buku kerja Excel Anda — dihitung otomatis setiap ada produksi, penjualan, dan belanja bahan.</p>
-            <ul class="mt-10 space-y-3.5 text-sm text-slate-300">
-                @foreach (['Stok knalpot & bahan selalu terbaru', 'Formula HPP dengan harga jual per tingkatan', 'Katalog website & pesanan via WhatsApp'] as $point)
-                    <li class="flex items-center gap-3">
-                        <span class="grid size-5 place-items-center rounded-full bg-brand-500/20 text-brand-500">
-                            <svg class="size-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7"/></svg>
-                        </span>{{ $point }}
-                    </li>
+{{-- ---------------------------------------------------------- Halaman login --}}
+<div class="sl-page">
+    <div class="sl-hero" style="background-image: url('{{ asset('assets/images/header1.png') }}')"></div>
+
+    <header class="sl-top">
+        <a href="{{ route('home') }}" class="sl-brand" aria-label="IHC Racing">
+            <span class="racing-stripes" aria-hidden="true"><i></i><i></i><i></i></span>IHC <span>Racing</span>
+        </a>
+        <a href="{{ route('home') }}" class="sl-back">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18 9 12l6-6"/></svg>
+            Kembali ke website
+        </a>
+    </header>
+
+    <main class="sl-main">
+        <section class="sl-copy">
+            <div class="sl-subtitle">Admin panel</div>
+            <h1>Produksi &amp; <span>penjualan</span> dalam satu panel</h1>
+            <p>Formula, pembelian bahan, gudang, produksi, gaji tukang, sampai laporan laba — semua angka tersambung otomatis.</p>
+            <ul>
+                @foreach (['Stok gudang & opname', 'HPP formula otomatis', 'Penjualan & piutang'] as $point)
+                    <li><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7"/></svg>{{ $point }}</li>
                 @endforeach
             </ul>
-        </div>
-        <p class="relative mt-12 text-xs text-ink-soft">© {{ now()->year }} {{ config('app.name') }}</p>
-    </aside>
+        </section>
 
-    {{-- Form --}}
-    <main class="flex items-center justify-center px-1 py-12 sm:px-10">
-        <div class="card w-full max-w-[420px] p-7 sm:p-9">
-            <div class="mb-10 flex items-center gap-3 lg:hidden">
-                <span class="grid size-10 place-items-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">IHC</span>
-                <span class="text-sm font-semibold text-ink">IHC Racing</span>
-            </div>
+        <section class="sl-card">
+            <h2>Masuk panel</h2>
+            <p class="sl-lead">Gunakan akun panel untuk melanjutkan.</p>
 
-            <h2 class="text-2xl font-semibold tracking-tight text-ink">Masuk</h2>
-            <p class="mt-1.5 text-sm text-ink-soft">Gunakan akun admin untuk mengelola panel.</p>
-
-            <form method="POST" action="{{ route('login.attempt') }}" class="mt-8 space-y-5">
+            <form method="POST" action="{{ route('login.attempt') }}">
                 @csrf
-                <x-admin.field name="email" label="Email" type="email" required autofocus autocomplete="username" placeholder="nama@domain.com" />
-                <x-admin.field name="password" label="Password" type="password" required autocomplete="current-password" placeholder="••••••••" />
-                <label class="flex items-center gap-2 text-[13px] text-ink-soft">
-                    <input type="checkbox" name="remember" value="1"> Ingat saya di perangkat ini
-                </label>
-                <button class="btn btn-primary h-11 w-full text-sm">Masuk</button>
-            </form>
+                <label for="email">Email</label>
+                <div class="sl-field">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username" placeholder="nama@domain.com">
+                </div>
+                @error('email')<p class="sl-error">{{ $message }}</p>@enderror
 
-            <a href="{{ route('home') }}" class="mt-8 inline-flex items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink">
-                <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18 9 12l6-6"/></svg>
-                Kembali ke website
-            </a>
-        </div>
+                <label for="password">Password</label>
+                <div class="sl-field">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z"/></svg>
+                    <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" data-password>
+                    <button type="button" class="sl-reveal" aria-label="Tampilkan password" data-reveal>
+                        <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                @error('password')<p class="sl-error">{{ $message }}</p>@enderror
+
+                <label class="sl-check"><input type="checkbox" name="remember" value="1"> Ingat saya di perangkat ini</label>
+                <button class="sl-btn"><span>Masuk</span>
+                    <svg fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+                </button>
+            </form>
+        </section>
     </main>
+
+    <footer class="sl-foot">© {{ now()->year }} IHC Racing · Admin panel</footer>
 </div>
+
+<script>
+    (() => {
+        const root = document.documentElement;
+        const intro = document.querySelector('[data-intro]');
+
+        // Splash selesai → memudar, halaman login masuk. Klik / Enter / Esc untuk melewati.
+        function finish() {
+            if (root.dataset.intro !== 'on') return;
+            root.dataset.intro = 'leaving';
+            try { sessionStorage.setItem('ihc.intro', '1'); } catch (e) {}
+            setTimeout(() => { root.dataset.intro = 'off'; document.getElementById('email')?.focus(); }, 650);
+        }
+        if (root.dataset.intro === 'on') {
+            setTimeout(finish, 3300);
+            intro.addEventListener('click', finish);
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'Enter') finish(); });
+        }
+
+        document.querySelector('[data-reveal]').addEventListener('click', e => {
+            const input = document.querySelector('[data-password]');
+            input.type = input.type === 'password' ? 'text' : 'password';
+            e.currentTarget.setAttribute('aria-label', input.type === 'password' ? 'Tampilkan password' : 'Sembunyikan password');
+        });
+    })();
+</script>
 </body>
 </html>
