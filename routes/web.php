@@ -79,6 +79,9 @@ Route::prefix('admin')->group(function () {
         Route::post('stok-opname/bahan', [Admin\StockOpnameController::class, 'storeMaterials'])->name('stock-opname.materials');
         Route::get('laporan-produksi', Admin\ProductionReportController::class)->name('reports.production');
         Route::get('pengguna/aktivitas', [Admin\UserController::class, 'activity'])->name('users.activity');
+        Route::post('pengguna/peran', [Admin\UserController::class, 'storeRole'])->name('users.roles.store');
+        Route::put('pengguna/peran/{role}', [Admin\UserController::class, 'updateRole'])->name('users.roles.update');
+        Route::delete('pengguna/peran/{role}', [Admin\UserController::class, 'destroyRole'])->name('users.roles.destroy');
         Route::resource('pengguna', Admin\UserController::class)->only(['index', 'store', 'update', 'destroy'])->names('users')->parameters(['pengguna' => 'user']);
 
         // Inventori: formula → rencana → pembelian → gudang → produksi

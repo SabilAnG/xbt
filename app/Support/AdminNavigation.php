@@ -121,45 +121,83 @@ class AdminNavigation
     }
 
     /**
-     * Awalan nama route → grup menu, untuk hak akses. Route yang tidak ada di
-     * sini (dashboard, logout) boleh dibuka semua peran.
+     * Fitur (menu) → awalan nama route. Hak akses peran dicentang per fitur;
+     * route di luar daftar ini (dashboard, logout) terbuka untuk semua.
      */
-    private const ROUTE_GROUPS = [
-        'Pembelian' => ['purchases', 'receipts', 'suppliers'],
-        'Penjualan' => ['sales'],
-        'Katalog' => ['master-items', 'materials', 'items', 'units', 'brands', 'motor-options'],
-        'Keuangan' => ['wallets', 'expenses', 'finance'],
-        'Gudang' => ['warehouses', 'transfers', 'adjustments', 'stock-opname'],
-        'Produksi' => ['formulas', 'component-options', 'vendor-services', 'cost-options', 'plans', 'productions', 'production-settings', 'reports'],
-        'Pekerja' => ['workers', 'attendances', 'payrolls'],
-        'Pengguna' => ['users'],
-        'Website' => ['site-settings', 'content-blocks', 'web-products', 'orders', 'shipments', 'shipment-events'],
+    private const FEATURE_ROUTES = [
+        'purchases' => ['purchases'], 'receipts' => ['receipts'], 'suppliers' => ['suppliers'],
+        'sales' => ['sales'],
+        'items' => ['master-items', 'materials', 'items'], 'units' => ['units'], 'brands' => ['brands'], 'motor-options' => ['motor-options'],
+        'wallets' => ['wallets'], 'expenses' => ['expenses'], 'finance' => ['finance'],
+        'warehouses' => ['warehouses'], 'transfers' => ['transfers'], 'stock-opname' => ['stock-opname'], 'adjustments' => ['adjustments'],
+        'formulas' => ['formulas'], 'component-options' => ['component-options'], 'vendor-services' => ['vendor-services'],
+        'cost-options' => ['cost-options'], 'plans' => ['plans'], 'productions' => ['productions'], 'reports' => ['reports'],
+        'production-settings' => ['production-settings'],
+        'workers' => ['workers'], 'attendances' => ['attendances'], 'payrolls' => ['payrolls'],
+        'site-settings' => ['site-settings'], 'content-blocks' => ['content-blocks'], 'web-products' => ['web-products'],
+        'orders' => ['orders', 'shipments', 'shipment-events'],
+        'users' => ['users'],
     ];
 
-    /** Grup menu pemilik route ini (null = terbuka untuk semua yang login). */
-    public static function groupOfRoute(string $routeName): ?string
+    /** Halaman gudang per jenis yang punya menu sendiri. */
+    private const WAREHOUSE_FEATURES = ['finish-good' => 'finish-good', 'di-vendor' => 'vendor-production', 'stok-sisa' => 'offcut'];
+
+    /**
+     * Fitur pemilik route ini (null = terbuka untuk semua yang login).
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public static function featureOf(string $routeName, array $parameters = []): ?string
     {
         $segment = explode('.', $routeName)[1] ?? '';
 
-        foreach (self::ROUTE_GROUPS as $group => $prefixes) {
+        if ($segment === 'warehouses' && str_ends_with($routeName, '.show')) {
+            $type = $parameters['type'] ?? null;
+            $type = is_object($type) && method_exists($type, 'slug') ? $type->slug() : $type;
+
+            return self::WAREHOUSE_FEATURES[$type] ?? 'warehouses';
+        }
+
+        foreach (self::FEATURE_ROUTES as $feature => $prefixes) {
             if (in_array($segment, $prefixes, true)) {
-                return $group;
+                return $feature;
             }
         }
 
         return null;
     }
 
-    /** Boleh membuka route ini? Stok siap jual juga terbuka untuk bagian penjualan. */
+    /** @param  array<string, mixed>  $parameters */
     public static function allows(?User $user, string $routeName, array $parameters = []): bool
     {
-        $group = self::groupOfRoute($routeName);
+        $feature = self::featureOf($routeName, $parameters);
 
-        if (! $user || $group === null || $user->canOpenGroup($group)) {
-            return $user !== null || $group === null;
+        if ($feature === null) {
+            return true;
         }
 
-        return $routeName === 'admin.warehouses.show' && ($parameters['type'] ?? null) === 'finish-good' && $user->canOpenGroup('Penjualan');
+        return (bool) $user?->canAccess($feature);
+    }
+
+    /**
+     * Fitur yang bisa dicentang untuk peran, dikelompokkan per grup menu.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function featureChoices(): array
+    {
+        $choices = [];
+
+        foreach (static::groups() as $group) {
+            foreach ($group['items'] as $item) {
+                $feature = self::featureOf($item['route'], $item['params']);
+                if ($feature && $feature !== 'users') {
+                    $choices[$group['label']][$feature] = $item['label'];
+                }
+            }
+        }
+
+        return $choices;
     }
 
     /**

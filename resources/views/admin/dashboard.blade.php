@@ -79,7 +79,7 @@
     $openIcon = 'M14 4h6v6m0-6L10 14m-1-9H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-4';
     // Angka keuangan (omzet, laba, kas, hutang) hanya untuk peran yang boleh membuka menu Keuangan.
     $viewer = auth()->user();
-    $showFinance = (bool) $viewer?->canOpenGroup('Keuangan');
+    $showFinance = (bool) $viewer?->canAccess('finance');
     $can = fn (string $route) => \App\Support\AdminNavigation::allows($viewer, $route);
     $alerts = array_values(array_filter($alerts, fn (array $alert) => $can($alert[4])));
 @endphp
