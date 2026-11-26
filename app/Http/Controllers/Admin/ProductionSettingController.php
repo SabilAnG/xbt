@@ -3,44 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Machine;
 use App\Models\Material;
-use App\Models\OverheadItem;
-use App\Models\PriceTier;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** Angka dasar perhitungan HPP — padanan halaman "Pengaturan Produksi" lama. */
+/** Pengaturan produksi: lebar potong gergaji (kerf) yang dipakai saat memotong pipa. */
 class ProductionSettingController extends Controller
 {
     public function edit(): View
     {
-        return view('admin.production-settings', [
-            'values' => [
-                'tarif_listrik' => Machine::tarifListrik(),
-                'kerf_mm' => Material::kerf(),
-                'target_produksi_bulanan' => OverheadItem::targetPerMonth(),
-                'pembulatan_harga' => PriceTier::rounding(),
-            ],
-            'overheadPerUnit' => OverheadItem::perUnit(),
-        ]);
+        return view('admin.production-settings', ['kerfMm' => Material::kerfCm() * 10]);
     }
 
     public function update(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'tarif_listrik' => ['required', 'numeric', 'min:0'],
-            'kerf_mm' => ['required', 'numeric', 'min:0'],
-            'target_produksi_bulanan' => ['required', 'numeric', 'gt:0'],
-            'pembulatan_harga' => ['required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validate(['kerf_mm' => ['required', 'numeric', 'min:0', 'max:20']]);
 
-        foreach ($data as $key => $value) {
-            Setting::updateOrCreate(['key' => 'produksi.'.$key], ['value' => $value, 'type' => 'text', 'group' => 'produksi']);
-        }
+        Setting::updateOrCreate(['key' => 'produksi.kerf_mm'], ['value' => $data['kerf_mm'], 'type' => 'text', 'group' => 'produksi']);
 
-        return back()->with('status', 'Pengaturan produksi disimpan. Semua HPP formula ikut berubah.');
+        return back()->with('status', 'Pengaturan produksi disimpan.');
     }
 }

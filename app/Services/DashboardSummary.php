@@ -5,13 +5,12 @@ namespace App\Services;
 use App\Models\Brand;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Models\HostPayroll;
 use App\Models\Item;
 use App\Models\Material;
 use App\Models\MaterialPurchase;
 use App\Models\Production;
+use App\Models\PurchasePayment;
 use App\Models\Sale;
-use App\Models\WorkerPayroll;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -26,15 +25,12 @@ class DashboardSummary
     /** Ringkasan per bulan selalu 12 baris, seperti blok "PER BULAN". */
     public const MONTHS = 12;
 
-    /** Kategori yang ikut menampung belanja bahan yang belum dicatat di Pengeluaran. */
-    public const MATERIAL_CATEGORY = 'Bahan & Perlengkapan';
-
     /**
      * @return array{
      *     total_stock: float, stock_value: float, products_out: int, products_low: int,
      *     materials_alert: int, revenue: float, receivable: float, expenses: float,
      *     needs_detail: int, gross_profit: float, cash_in: float,
-     *     host_unpaid: float, worker_unpaid: float
+     *     purchase_payable: float, draft_productions: int
      * }
      */
     public function headline(): array
@@ -53,9 +49,9 @@ class DashboardSummary
             'gross_profit' => (float) $sales->sum(fn (Sale $sale) => (float) $sale->total - (float) $sale->total_cost),
             'cash_in' => (float) $sales->sum('paid_amount'),
             'receivable' => (float) $sales->sum(fn (Sale $sale) => $sale->receivable()),
-            'expenses' => (float) Expense::query()->posted()->sum('amount') + $this->uncountedPurchases()->sum('total'),
-            'host_unpaid' => (float) HostPayroll::query()->with('host')->where('status', 'Belum')->get()->sum(fn (HostPayroll $row) => $row->amountDue()),
-            'worker_unpaid' => (float) WorkerPayroll::query()->with('worker')->where('status', 'Belum')->get()->sum(fn (WorkerPayroll $row) => $row->amountDue()),
+            'expenses' => (float) Expense::query()->posted()->sum('amount') + (float) PurchasePayment::query()->sum('amount'),
+            'purchase_payable' => (float) MaterialPurchase::query()->unpaid()->get()->sum(fn (MaterialPurchase $row) => $row->payable()),
+            'draft_productions' => Production::query()->where('status', Production::DRAFT)->count(),
             'needs_detail' => Expense::query()->where('data_status', 'PERLU DIRINCI')->count(),
         ];
     }
@@ -68,14 +64,14 @@ class DashboardSummary
      */
     public function monthly(): Collection
     {
-        $productions = Production::query()->posted()->get(['produced_at', 'output_qty'])
+        $productions = Production::query()->posted()->get(['produced_at', 'qty'])
             ->groupBy(fn (Production $row) => $row->produced_at->format('Y-m'));
         $sales = Sale::query()->posted()->with('items:id,sale_id,qty')->get()
             ->groupBy(fn (Sale $row) => $row->sold_at->format('Y-m'));
         $expenses = Expense::query()->posted()->get(['spent_at', 'amount'])
             ->groupBy(fn (Expense $row) => $row->spent_at->format('Y-m'));
-        $purchases = $this->uncountedPurchases()
-            ->groupBy(fn (MaterialPurchase $row) => $row->purchased_at->format('Y-m'));
+        $purchases = PurchasePayment::query()->get(['paid_at', 'amount'])
+            ->groupBy(fn (PurchasePayment $row) => $row->paid_at->format('Y-m'));
 
         $months = collect([...$productions->keys(), ...$sales->keys(), ...$expenses->keys(), ...$purchases->keys()]);
         $cursor = $months->isEmpty()
@@ -94,12 +90,12 @@ class DashboardSummary
             $monthSales = $sales->get($key, collect());
             $cashIn = (float) $monthSales->sum('paid_amount');
             $expense = (float) $expenses->get($key, collect())->sum('amount');
-            $purchase = (float) $purchases->get($key, collect())->sum('total');
+            $purchase = (float) $purchases->get($key, collect())->sum('amount');
             $revenue = (float) $monthSales->sum('total');
 
             $rows->push([
                 'month' => $cursor->copy(),
-                'produced' => (float) $productions->get($key, collect())->sum('output_qty'),
+                'produced' => (float) $productions->get($key, collect())->sum('qty'),
                 'sold' => (float) $monthSales->sum(fn (Sale $sale) => $sale->items->sum('qty')),
                 'revenue' => $revenue,
                 'gross_profit' => $revenue - (float) $monthSales->sum('total_cost'),
@@ -125,7 +121,7 @@ class DashboardSummary
     {
         $items = Item::query()->get(['id', 'brand', 'stock', 'cost_price'])->groupBy(fn (Item $item) => (string) $item->brand);
         $produced = Production::query()->posted()->join('items', 'items.id', '=', 'productions.item_id')
-            ->selectRaw('items.brand AS brand, SUM(productions.output_qty) AS qty')->groupBy('items.brand')->pluck('qty', 'brand');
+            ->selectRaw('items.brand AS brand, SUM(productions.qty) AS qty')->groupBy('items.brand')->pluck('qty', 'brand');
         $sales = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')->where('sales.status', 'posted')
             ->join('items', 'items.id', '=', 'sale_items.item_id')
@@ -150,8 +146,7 @@ class DashboardSummary
 
     /**
      * Pengeluaran per kategori, urut seperti sheet Daftar, termasuk yang nol.
-     * "Bahan & Perlengkapan" ditambah pembelian bahan yang belum dicatat di
-     * Pengeluaran — sama dengan rumus Excel.
+     * Pembelian bahan tidak ikut: bahan adalah persediaan, biayanya masuk HPP.
      *
      * @return Collection<int, array{name: string, total: float}>
      */
@@ -161,23 +156,11 @@ class DashboardSummary
             ->selectRaw('expense_category_id, SUM(amount) AS total')
             ->groupBy('expense_category_id')
             ->pluck('total', 'expense_category_id');
-        $uncounted = (float) $this->uncountedPurchases()->sum('total');
 
         return ExpenseCategory::query()->orderBy('id')->get()
             ->map(fn (ExpenseCategory $category) => [
                 'name' => $category->name,
-                'total' => (float) ($totals[$category->id] ?? 0) + ($category->name === self::MATERIAL_CATEGORY ? $uncounted : 0),
+                'total' => (float) ($totals[$category->id] ?? 0),
             ]);
-    }
-
-    /**
-     * Pembelian bahan yang uangnya belum dicatat di Pengeluaran — hanya ini
-     * yang dijumlahkan sebagai uang keluar supaya tidak dihitung dobel.
-     *
-     * @return Collection<int, MaterialPurchase>
-     */
-    private function uncountedPurchases(): Collection
-    {
-        return MaterialPurchase::query()->posted()->where('recorded_in_expenses', false)->get(['purchased_at', 'total']);
     }
 }

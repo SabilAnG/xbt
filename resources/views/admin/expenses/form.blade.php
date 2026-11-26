@@ -6,7 +6,12 @@
         @if ($expense->exists) @method('PUT') @endif
         <div class="grid gap-4 sm:grid-cols-3">
             <x-admin.field name="spent_at" label="Tanggal" type="date" :value="$expense->spent_at?->toDateString()" required />
-            <x-admin.select name="expense_category_id" label="Kategori" :options="$categories->pluck('name', 'id')" :value="$expense->expense_category_id" required />
+            <div>
+                <label for="category" class="label">Kategori<span class="text-red-500"> *</span></label>
+                <input id="category" name="category" value="{{ old('category', $expense->category?->name) }}" class="input" list="expense-categories" required placeholder="mis. Listrik, Packing">
+                <datalist id="expense-categories">@foreach ($categories as $category)<option value="{{ $category->name }}">@endforeach</datalist>
+                @error('category')<p class="error">{{ $message }}</p>@enderror
+            </div>
             <x-admin.field name="amount" label="Nominal" type="number" step="any" min="0" :value="$expense->amount ? (float) $expense->amount : null" required />
             <x-admin.field name="description" label="Keterangan" :value="$expense->description" required class="sm:col-span-3" />
             <x-admin.field name="paid_to" label="Ke rekening" :value="$expense->paid_to" />

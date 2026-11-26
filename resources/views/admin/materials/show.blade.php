@@ -1,50 +1,111 @@
-@extends('layouts.admin', ['title' => $material->name, 'subtitle' => $material->sku.' · '.($material->category?->name ?? 'tanpa kategori')])
+@extends('layouts.admin', ['title' => $material->label(), 'subtitle' => $material->code.' · '.$material->warehouse?->name.($material->category ? ' · '.$material->category->name : '').($material->conversionLabel() ? ' · '.$material->conversionLabel() : '')])
 
 @section('actions')
-    <a href="{{ route('admin.materials.index') }}" class="btn">Kembali</a>
+    <a href="{{ route('admin.adjustments.create', ['material' => $material->id]) }}" class="btn hidden sm:inline-flex">Penyesuaian</a>
+    <a href="{{ route('admin.purchases.create', ['material' => $material->id]) }}" class="btn hidden sm:inline-flex">Beli</a>
     <a href="{{ route('admin.materials.edit', $material) }}" class="btn btn-primary">Ubah</a>
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <x-admin.stat label="Sisa stok" :value="qty(round((float) $material->stock, 2)).' '.$material->unit" :tone="match ($material->stockStatus()) { 'HABIS' => 'danger', 'MENIPIS' => 'warning', default => 'success' }" :hint="'Status '.$material->stockStatus()" />
-        <x-admin.stat label="Stok minimum" :value="qty($material->min_stock).' '.$material->unit" />
-        <x-admin.stat label="Harga rata-rata" :value="rupiah($material->cost_price)" hint="Rata-rata tertimbang pembelian" />
-        <x-admin.stat label="Dipakai di resep" :value="$material->formulaLines->pluck('formula.name')->unique()->count()" :hint="$material->formulaLines->pluck('formula.name')->unique()->implode(', ')" />
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <x-admin.stat label="Stok total" :value="qty($material->stock, 2).' '.$material->stockUnit()" :tone="$material->stockStatus() === 'AMAN' ? 'default' : 'warning'" />
+        <x-admin.stat :label="'Harga rata-rata / '.$material->stockUnit()" :value="rupiah($material->unitCost())" />
+        <x-admin.stat :label="'Harga beli terakhir / '.$material->purchaseUnit()" :value="rupiah($material->last_price)" />
+        <x-admin.stat label="Nilai stok" :value="rupiah($material->stocks->sum('value'))" />
     </section>
 
-    <div class="flex flex-wrap gap-2">
-        <a href="{{ route('admin.purchases.create', ['material' => $material->id]) }}" class="btn">+ Catat pembelian</a>
-        <a href="{{ route('admin.adjustments.create', ['material' => $material->id]) }}" class="btn">± Penyesuaian stok</a>
-    </div>
-
-    <section class="card">
-        <div class="card-header"><h2 class="card-title">Kartu stok bahan</h2></div>
-        <div class="overflow-x-auto">
+    <section class="grid gap-4 sm:gap-6 xl:grid-cols-3">
+        <div class="card overflow-hidden">
+            <div class="card-header"><h2 class="card-title">Stok per gudang</h2></div>
             <table class="table">
-                <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th class="num">Masuk</th><th class="num">Keluar</th><th class="num">Saldo</th></tr></thead>
                 <tbody>
-                @forelse ($movements as $movement)
+                @forelse ($material->stocks as $stock)
                     <tr>
-                        <td class="whitespace-nowrap">{{ $movement->moved_at->translatedFormat('d M Y') }}</td>
-                        <td class="whitespace-nowrap">{{ \App\Models\MaterialMovement::TYPES[$movement->type] ?? $movement->type }}</td>
-                        <td class="text-xs">{{ $movement->notes }}</td>
-                        <td class="num text-emerald-600">{{ (float) $movement->qty_in ? '+'.qty($movement->qty_in) : '' }}</td>
-                        <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out) : '' }}</td>
-                        <td class="num font-semibold">{{ qty($movement->balance_after) }}</td>
+                        <td><a href="{{ route('admin.warehouses.show', $stock->warehouse->slug()) }}" class="link">{{ $stock->warehouse->name }}</a></td>
+                        <td class="num font-semibold">{{ qty($stock->qty, 2) }} {{ $material->stockUnit() }}</td>
+                        <td class="num text-slate-500">{{ rupiah($stock->value) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center text-slate-500">Belum ada pergerakan stok.</td></tr>
+                    <tr><td class="py-6 text-center text-slate-500">Belum ada stok.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+            @if ($material->isPipe())
+                <p class="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+                    1 batang = {{ qty($material->bar_length_cm, 2) }} cm · sisa di bawah {{ qty($material->min_reusable_cm, 2) }} cm diafkir.
+                </p>
+            @endif
+        </div>
+
+        <div class="card overflow-hidden xl:col-span-2">
+            <div class="card-header"><h2 class="card-title">Dipakai di formula</h2></div>
+            <table class="table">
+                <thead><tr><th>Formula</th><th>Bagian · komponen</th><th class="num">Kebutuhan</th></tr></thead>
+                <tbody>
+                @forelse ($usedIn as $line)
+                    <tr>
+                        <td><a href="{{ route('admin.formulas.show', $line->component->part->formula) }}" class="link">{{ $line->component->part->formula->name }}</a></td>
+                        <td class="text-sm">{{ $line->component->part->name }} · {{ $line->component->name }}</td>
+                        <td class="num">{{ qty($line->qty, 2) }} {{ $material->stockUnit() }} × {{ qty($line->component->qty) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3" class="py-6 text-center text-slate-500">Belum dipakai di formula mana pun.</td></tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
     </section>
-    {{ $movements->links() }}
 
-    @if ($movements->isEmpty() && $material->formulaLines->isEmpty())
-        <div class="flex justify-end">
-            <x-admin.delete-button :action="route('admin.materials.destroy', $material)" label="Hapus bahan" />
-        </div>
+    @if ($material->isPipe())
+        <section class="card overflow-hidden">
+            <div class="card-header">
+                <h2 class="card-title">Batang & potongan tersedia</h2>
+                <span class="text-xs text-slate-500">{{ $pieces->count() }} potong</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead><tr><th>Kode</th><th>Gudang</th><th class="num">Panjang</th><th class="num">Awal</th><th class="num">Harga/cm</th><th class="num">Nilai</th></tr></thead>
+                    <tbody>
+                    @forelse ($pieces as $piece)
+                        <tr>
+                            <td class="font-mono text-xs">{{ $piece->code }}</td>
+                            <td class="text-xs">{{ $piece->warehouse->typeLabel() }}</td>
+                            <td class="num font-semibold">{{ qty($piece->length_cm, 2) }} cm</td>
+                            <td class="num text-slate-500">{{ qty($piece->initial_length_cm, 2) }} cm</td>
+                            <td class="num">{{ rupiah($piece->cost_per_cm) }}</td>
+                            <td class="num">{{ rupiah($piece->value()) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="py-6 text-center text-slate-500">Tidak ada batang atau potongan.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
     @endif
+
+    <section class="card overflow-hidden">
+        <div class="card-header"><h2 class="card-title">Kartu stok</h2></div>
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead><tr><th>Tanggal</th><th>Gudang</th><th>Jenis</th><th>Keterangan</th><th class="num">Masuk</th><th class="num">Keluar</th><th class="num">Saldo gudang</th></tr></thead>
+                <tbody>
+                @forelse ($movements as $movement)
+                    <tr>
+                        <td class="whitespace-nowrap">{{ $movement->moved_at->translatedFormat('d M Y') }}</td>
+                        <td class="text-xs whitespace-nowrap">{{ $movement->warehouse->typeLabel() }}</td>
+                        <td class="text-xs whitespace-nowrap">{{ $movement->typeLabel() }}</td>
+                        <td class="text-xs text-slate-600">{{ $movement->notes }}</td>
+                        <td class="num text-emerald-600">{{ (float) $movement->qty_in ? '+'.qty($movement->qty_in, 2) : '' }}</td>
+                        <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out, 2) : '' }}</td>
+                        <td class="num font-semibold">{{ qty($movement->balance_after, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7" class="py-6 text-center text-slate-500">Belum ada pergerakan stok.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if ($movements->hasPages())<div class="border-t border-slate-100 px-5 py-3">{{ $movements->links() }}</div>@endif
+    </section>
 @endsection

@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ExpenseCategory;
 use App\Models\Item;
 use App\Models\Sale;
 use App\Models\User;
 use App\Models\Wallet;
-use Database\Seeders\KnalpotWorkbookSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,7 +19,6 @@ class WalletTest extends TestCase
 
         $this->withoutVite();
         $this->actingAs(User::factory()->create());
-        $this->seed(KnalpotWorkbookSeeder::class);
     }
 
     private function wallet(string $name, float $opening = 0): Wallet
@@ -35,7 +32,8 @@ class WalletTest extends TestCase
     public function test_sale_income_and_expense_move_the_chosen_wallet_balance(): void
     {
         $bca = $this->wallet('BCA Usaha', 1_000_000);
-        $item = Item::query()->where('stock', '>', 0)->firstOrFail();
+        $item = Item::create(['sku' => 'KNL-1', 'name' => 'Mio Racing', 'cost_price' => 400_000, 'opening_stock' => 2]);
+        $item->recalculateStock();
 
         $this->post(route('admin.sales.store'), [
             'sold_at' => '2026-11-20', 'item_id' => $item->id, 'qty' => 1, 'unit_price' => 750_000,
@@ -50,11 +48,12 @@ class WalletTest extends TestCase
         $this->assertSame(1_750_000.0, (float) $bca->refresh()->current_balance);
 
         $this->post(route('admin.expenses.store'), [
-            'spent_at' => '2026-11-21', 'expense_category_id' => ExpenseCategory::firstOrFail()->id,
+            'spent_at' => '2026-11-21', 'category' => 'Operasional',
             'description' => 'Beli gas', 'amount' => 250_000, 'wallet_id' => $bca->id,
         ])->assertRedirect(route('admin.expenses.index'));
 
         $this->assertSame(1_500_000.0, (float) $bca->refresh()->current_balance);
+        $this->assertDatabaseHas('expense_categories', ['name' => 'Operasional']);
         $this->get(route('admin.wallets.show', $bca))->assertOk()->assertSee('Beli gas')->assertSee('Penjualan');
 
         $this->delete(route('admin.sales.destroy', $sale))->assertRedirect();

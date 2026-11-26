@@ -10,7 +10,6 @@
  *
  * Usage: php docker/php/make-webp.php [minKB] [quality]
  */
-
 $root = '/var/www/html/public';
 $minBytes = ((int) ($argv[1] ?? 100)) * 1024;
 $quality = (int) ($argv[2] ?? 82);
@@ -42,6 +41,7 @@ foreach ($it as $file) {
     $out = $path.'.webp';
     if (is_file($out) && filemtime($out) >= filemtime($path)) {
         $skipped++;
+
         continue;
     }
 
@@ -52,6 +52,7 @@ foreach ($it as $file) {
 
     if (! $img) {
         fwrite(STDERR, "  FAILED to decode {$path}\n");
+
         continue;
     }
 
@@ -64,6 +65,7 @@ foreach ($it as $file) {
     if (! imagewebp($img, $out, $quality)) {
         fwrite(STDERR, "  FAILED to encode {$out}\n");
         imagedestroy($img);
+
         continue;
     }
     imagedestroy($img);

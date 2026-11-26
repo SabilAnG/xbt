@@ -29,26 +29,18 @@
 
         <div class="card xl:col-span-2">
             <div class="card-header">
-                <h2 class="card-title">Bahan per unit — {{ $item->formula?->name ?? 'belum ada resep' }}</h2>
+                <h2 class="card-title">Formula — {{ $item->formula?->name ?? 'belum ada formula' }}</h2>
                 @if ($item->formula)
-                    <a href="{{ route('admin.formulas.edit', $item->formula) }}" class="link text-xs">Ubah resep</a>
+                    <a href="{{ route('admin.formulas.show', $item->formula) }}" class="link text-xs">Lihat formula</a>
                 @endif
             </div>
-            <div class="max-h-80 overflow-y-auto">
-                <table class="table">
-                    <thead><tr><th>Bahan</th><th class="num">Qty / knalpot</th><th>Berlaku</th></tr></thead>
-                    <tbody>
-                    @forelse ($item->formula?->materials?->filter(fn ($line) => $line->appliesToBrand($item->brand)) ?? [] as $line)
-                        <tr>
-                            <td>{{ $line->material?->name }}</td>
-                            <td class="num">{{ qty($line->qty) }} {{ $line->material?->unit }}</td>
-                            <td class="text-xs text-slate-500">{{ $line->brandList() ? implode(', ', $line->brandList()) : 'Semua merek' }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" class="text-center text-slate-500">Produk ini belum punya resep, jadi belum bisa diproduksi.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+            <div class="p-5 text-sm text-slate-600">
+                @if ($item->formula)
+                    <p>HPP perkiraan dari formula: <strong class="text-slate-900">{{ rupiah($item->formula->estimatedHpp()) }}</strong> per unit.</p>
+                    <p class="mt-1">HPP di atas adalah rata-rata dari produksi yang sudah dibukukan.</p>
+                @else
+                    <p>Produk ini belum dihubungkan ke formula, jadi belum bisa diproduksi. Buat atau ubah formula di menu <a href="{{ route('admin.formulas.index') }}" class="link">Formula Knalpot</a>.</p>
+                @endif
             </div>
         </div>
     </section>

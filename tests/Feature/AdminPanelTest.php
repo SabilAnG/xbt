@@ -2,9 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Item;
 use App\Models\User;
-use Database\Seeders\KnalpotWorkbookSeeder;
+use App\Support\AdminNavigation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -39,44 +38,45 @@ class AdminPanelTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_every_admin_page_renders_with_workbook_data(): void
+    public function test_menu_follows_the_ems_order_and_warehouse_pages_light_up_their_own_item(): void
     {
-        $this->seed(KnalpotWorkbookSeeder::class);
+        $groups = collect(AdminNavigation::groups())->pluck('label')->all();
+        $purchasing = collect(AdminNavigation::groups())->firstWhere('label', 'Pembelian')['items'];
+        $this->assertSame(['Pembelian', 'Penerimaan', 'Supplier'], array_column($purchasing, 'label'));
+        $this->assertSame(['Ringkasan', 'Pembelian', 'Penjualan', 'Katalog', 'Keuangan', 'Gudang', 'Produksi', 'Website'], $groups);
+
+        $this->actingAs(User::factory()->create());
+        $this->get(route('admin.warehouses.show', 'finish-good'));
+        $current = AdminNavigation::current(request());
+        $this->assertSame(['Penjualan', 'Stok Siap Jual'], [$current['group'], $current['item']['label']]);
+
+        $this->get(route('admin.warehouses.show', 'di-vendor'));
+        $this->assertSame('Vendor Produksi', AdminNavigation::current(request())['item']['label']);
+
+        $this->get(route('admin.warehouses.show', 'bahan-baku'));
+        $this->assertSame('Gudang', AdminNavigation::current(request())['item']['label']);
+    }
+
+    public function test_every_admin_page_renders_on_an_empty_database(): void
+    {
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('admin.dashboard'))->assertOk()->assertSee('Rp 24.859.000')->assertSee('Rp 104.015.888');
+        $this->get(route('admin.dashboard'))->assertOk();
 
         foreach ([
             'admin.items.index', 'admin.items.create', 'admin.materials.index', 'admin.materials.create',
-            'admin.formulas.index', 'admin.formulas.create', 'admin.productions.index', 'admin.productions.create',
-            'admin.sales.index', 'admin.sales.create', 'admin.purchases.index', 'admin.purchases.create',
-            'admin.adjustments.index', 'admin.adjustments.create', 'admin.expenses.index', 'admin.expenses.create',
+            'admin.formulas.index', 'admin.formulas.create', 'admin.plans.index', 'admin.plans.create',
+            'admin.productions.index', 'admin.productions.create', 'admin.sales.index', 'admin.sales.create',
+            'admin.purchases.index', 'admin.purchases.create', 'admin.adjustments.index', 'admin.adjustments.create',
+            'admin.warehouses.index', 'admin.finance.index', 'admin.expenses.index', 'admin.expenses.create',
+            'admin.wallets.index', 'admin.brands.index', 'admin.production-settings.edit', 'admin.master-items.index', 'admin.units.index',
+            'admin.receipts.index', 'admin.suppliers.index',
         ] as $route) {
             $this->get(route($route))->assertOk();
         }
 
-        $this->get(route('admin.items.show', 1))->assertOk();
-        $this->get(route('admin.materials.show', 1))->assertOk();
-        $this->get(route('admin.formulas.edit', 1))->assertOk();
-        $this->get(route('admin.productions.show', 1))->assertOk();
-        $this->get(route('admin.sales.edit', 1))->assertOk();
-        $this->get(route('admin.expenses.edit', 1))->assertOk();
-    }
-
-    public function test_recording_production_through_the_form_updates_stock(): void
-    {
-        $this->seed(KnalpotWorkbookSeeder::class);
-        $this->actingAs(User::factory()->create());
-        $item = Item::where('sku', 'KNL-009')->firstOrFail();
-
-        $this->post(route('admin.productions.store'), [
-            'produced_at' => '2026-11-20',
-            'item_id' => $item->id,
-            'qty' => 4,
-            'worker' => 'SIDIK',
-        ])->assertRedirect();
-
-        $this->assertEquals(4, (float) $item->fresh()->stock);
-        $this->assertDatabaseHas('productions', ['item_id' => $item->id, 'worker' => 'SIDIK']);
+        foreach (['bahan-baku', 'setengah-jadi', 'aksesoris', 'stok-sisa', 'di-vendor', 'finish-good'] as $type) {
+            $this->get(route('admin.warehouses.show', $type))->assertOk();
+        }
     }
 }

@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
-use App\Models\Formula;
 use App\Models\Item;
-use App\Models\ListOption;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,7 +54,7 @@ class ItemController extends Controller
     public function show(Item $item): View
     {
         return view('admin.items.show', [
-            'item' => $item->load('formula.materials.material'),
+            'item' => $item->load('formula'),
             'movements' => $item->movements()->paginate(20),
         ]);
     }
@@ -65,7 +63,6 @@ class ItemController extends Controller
     {
         return view('admin.items.form', [
             'item' => new Item(['min_stock' => 2, 'unit' => 'pcs', 'is_active' => true]),
-            'formulas' => Formula::orderBy('name')->get(),
             'options' => $this->options(),
         ]);
     }
@@ -80,7 +77,7 @@ class ItemController extends Controller
 
     public function edit(Item $item): View
     {
-        return view('admin.items.form', ['item' => $item, 'formulas' => Formula::orderBy('name')->get(), 'options' => $this->options()]);
+        return view('admin.items.form', ['item' => $item, 'options' => $this->options()]);
     }
 
     /**
@@ -111,8 +108,8 @@ class ItemController extends Controller
      */
     private function options(): array
     {
-        return collect(['model_motor', 'finishing', 'tipe', 'ukuran'])
-            ->mapWithKeys(fn (string $list) => [$list => ListOption::valuesFor($list)])
+        return collect(['model_motor' => 'model_motor', 'finishing' => 'finishing', 'tipe' => 'variant', 'ukuran' => 'size'])
+            ->map(fn (string $column) => Item::query()->whereNotNull($column)->distinct()->orderBy($column)->pluck($column))
             ->put('merek', Brand::query()->ordered()->where('is_active', true)->pluck('name'))
             ->all();
     }
@@ -130,7 +127,6 @@ class ItemController extends Controller
             'size' => ['nullable', 'string', 'max:50'],
             'brand' => ['nullable', 'string', Rule::exists('brands', 'name')],
             'name' => ['nullable', 'string', 'max:255'],
-            'formula_id' => ['nullable', 'exists:formulas,id'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'sell_price' => ['required', 'numeric', 'min:0'],
             'sell_price_online' => ['required', 'numeric', 'min:0'],
@@ -141,7 +137,7 @@ class ItemController extends Controller
         $data['opening_stock'] = $data['opening_stock'] ?? 0;
 
         // Nama produk otomatis seperti di buku kerja bila dikosongkan.
-        $data['name'] = ($data['name'] ?? null) ?: collect([$data['model_motor'], $data['finishing'], $data['variant'], $data['size'], $data['brand']])
+        $data['name'] = ($data['name'] ?? null) ?: collect([$data['model_motor'], $data['finishing'] ?? null, $data['variant'] ?? null, $data['size'] ?? null, $data['brand'] ?? null])
             ->filter()->implode(' ');
         $data['is_active'] = $request->boolean('is_active');
 

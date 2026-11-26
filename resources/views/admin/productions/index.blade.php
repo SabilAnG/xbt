@@ -1,44 +1,41 @@
-@extends('layouts.admin', ['title' => 'Produksi', 'subtitle' => 'Setiap knalpot selesai dibuat: stok knalpot bertambah & bahan berkurang otomatis'])
+@extends('layouts.admin', ['title' => 'Produksi', 'subtitle' => 'Nota produksi per formula. Draf belum menyentuh stok; setelah dibukukan bahan terpotong dari gudang, sisa pipa masuk Stok Sisa, dan knalpot jadi masuk Finish Good.'])
 
 @section('actions')
-    <a href="{{ route('admin.productions.create') }}" class="btn btn-primary">+ Input produksi</a>
+    <a href="{{ route('admin.productions.create') }}" class="btn btn-primary">+ Produksi</a>
 @endsection
 
 @section('content')
     <x-admin.filters>
-        <div class="min-w-56 flex-1">
-            <label class="label" for="q">Cari produk</label>
-            <input id="q" name="q" value="{{ request('q') }}" class="input" placeholder="Nama produk">
-        </div>
-        <div>
-            <label class="label" for="month">Bulan</label>
-            <input id="month" name="month" type="month" value="{{ request('month') }}" class="input">
-        </div>
+        <x-admin.select name="status" label="Status" :options="['draft' => 'Draf', 'posted' => 'Dibukukan']" :value="request('status')" placeholder="Semua" />
+        <x-admin.select name="mode" label="Dikerjakan" :options="['internal' => 'Sendiri', 'vendor' => 'Vendor']" :value="request('mode')" placeholder="Semua" />
+        @if (request('rencana'))<input type="hidden" name="rencana" value="{{ request('rencana') }}">@endif
     </x-admin.filters>
 
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
             <table class="table">
-                <thead><tr><th>Tanggal</th><th>No.</th><th>Produk</th><th class="num">Qty jadi</th><th>Tukang</th><th>Resep</th><th>Merek</th><th>Catatan</th><th></th></tr></thead>
+                <thead><tr><th>Nomor</th><th>Tanggal</th><th>Formula</th><th class="num">Unit</th><th>Tukang</th><th class="num">HPP / unit</th><th class="num">Total biaya</th><th>Status</th></tr></thead>
                 <tbody>
                 @forelse ($productions as $production)
                     <tr>
+                        <td class="font-mono text-xs whitespace-nowrap">
+                            <a href="{{ route('admin.productions.show', $production) }}" class="link">{{ $production->production_number }}</a>
+                            @if ($production->planLine)<p class="text-[11px] text-slate-400">{{ $production->planLine->plan->plan_number }}</p>@endif
+                        </td>
                         <td class="whitespace-nowrap">{{ $production->produced_at->translatedFormat('d M Y') }}</td>
-                        <td><a href="{{ route('admin.productions.show', $production) }}" class="link font-mono text-xs">{{ $production->production_number }}</a></td>
-                        <td class="min-w-64">{{ $production->item?->name }}</td>
-                        <td class="num font-semibold">{{ qty($production->output_qty) }}</td>
-                        <td>{{ $production->worker ?? '—' }}</td>
-                        <td class="text-xs whitespace-nowrap">{{ $production->formula?->name }}</td>
-                        <td class="text-xs">{{ $production->item?->brand }}</td>
-                        <td class="max-w-xs truncate text-xs text-slate-500" title="{{ $production->notes }}">{{ $production->notes }}</td>
-                        <td class="text-right"><x-admin.delete-button :action="route('admin.productions.destroy', $production)" confirm="Hapus produksi ini? Stok knalpot dan bahan akan dikembalikan." /></td>
+                        <td class="min-w-48">{{ $production->formula->name }}@if ($production->isVendor())<p class="text-xs text-violet-700">Vendor: {{ $production->vendor }}{{ $production->process ? ' · '.$production->process : '' }}</p>@endif</td>
+                        <td class="num font-semibold">{{ qty($production->qty) }}</td>
+                        <td class="text-sm">{{ $production->worker ?? '—' }}</td>
+                        <td class="num">{{ $production->isPosted() ? rupiah($production->hpp_per_unit) : '—' }}</td>
+                        <td class="num">{{ $production->isPosted() ? rupiah($production->total_cost) : '—' }}</td>
+                        <td><x-admin.status :value="$production->statusLabel()" /></td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="py-8 text-center text-slate-500">Belum ada produksi.</td></tr>
+                    <tr><td colspan="8" class="py-10 text-center text-slate-500">Belum ada produksi.</td></tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
+        @if ($productions->hasPages())<div class="border-t border-slate-100 px-5 py-3">{{ $productions->links() }}</div>@endif
     </div>
-    {{ $productions->links() }}
 @endsection

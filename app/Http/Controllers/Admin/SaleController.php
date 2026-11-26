@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
-use App\Models\ListOption;
 use App\Models\Sale;
 use App\Services\InventoryService;
 use App\Services\WalletService;
@@ -26,14 +25,14 @@ class SaleController extends Controller
             ->latest('sold_at')->latest('id')
             ->paginate(25)->withQueryString();
 
-        return view('admin.sales.index', ['sales' => $sales, 'channels' => ListOption::valuesFor('saluran')->all()]);
+        return view('admin.sales.index', ['sales' => $sales, 'channels' => Sale::CHANNELS]);
     }
 
     public function create(): View
     {
         return view('admin.sales.create', [
             'items' => Item::where('is_active', true)->orderBy('sku')->get(),
-            'channels' => ListOption::valuesFor('saluran')->all(),
+            'channels' => Sale::CHANNELS,
         ]);
     }
 
@@ -44,7 +43,7 @@ class SaleController extends Controller
             'item_id' => ['required', 'exists:items,id'],
             'qty' => ['required', 'numeric', 'not_in:0'],
             'unit_price' => ['required', 'numeric', 'min:0'],
-            'channel' => ['nullable', Rule::in(ListOption::valuesFor('saluran')->all())],
+            'channel' => ['nullable', Rule::in(Sale::CHANNELS)],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'wallet_id' => ['nullable', 'exists:wallets,id'],
@@ -64,7 +63,7 @@ class SaleController extends Controller
 
     public function edit(Sale $sale): View
     {
-        return view('admin.sales.edit', ['sale' => $sale->load('items.item'), 'channels' => ListOption::valuesFor('saluran')->all()]);
+        return view('admin.sales.edit', ['sale' => $sale->load('items.item'), 'channels' => Sale::CHANNELS]);
     }
 
     /** Hanya data pembayaran & pembeli yang bisa diubah; qty/harga = hapus lalu input ulang. */
@@ -72,7 +71,7 @@ class SaleController extends Controller
     {
         $sale->update($request->validate([
             'wallet_id' => ['nullable', 'exists:wallets,id'],
-            'channel' => ['nullable', Rule::in(ListOption::valuesFor('saluran')->all())],
+            'channel' => ['nullable', Rule::in(Sale::CHANNELS)],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'paid_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],

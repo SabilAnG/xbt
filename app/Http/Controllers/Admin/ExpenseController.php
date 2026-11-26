@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\ExpenseType;
 use App\Services\DocumentNumber;
 use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -95,9 +97,9 @@ class ExpenseController extends Controller
      */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'spent_at' => ['required', 'date'],
-            'expense_category_id' => ['required', 'exists:expense_categories,id'],
+            'category' => ['required', 'string', 'max:100'],
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'paid_to' => ['nullable', 'string', 'max:255'],
@@ -106,6 +108,26 @@ class ExpenseController extends Controller
             'data_status' => ['nullable', Rule::in(self::DATA_STATUSES)],
             'wallet_id' => ['nullable', 'exists:wallets,id'],
         ]);
+
+        // Kategori diketik bebas; kategori baru dibuat otomatis.
+        $name = trim($data['category']);
+        $type = ExpenseType::firstOrCreate(['slug' => 'usaha-knalpot'], ['name' => 'Usaha Knalpot']);
+        $category = ExpenseCategory::query()->where('name', $name)->first()
+            ?? ExpenseCategory::create(['name' => $name, 'slug' => $this->uniqueSlug($name), 'expense_type_id' => $type->id]);
+        unset($data['category']);
+
+        return $data + ['expense_category_id' => $category->id];
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $slug = Str::slug($name) ?: 'kategori';
+
+        for ($i = 2, $base = $slug; ExpenseCategory::where('slug', $slug)->exists(); $i++) {
+            $slug = $base.'-'.$i;
+        }
+
+        return $slug;
     }
 
     /** Uang keluar dari dompet yang dipilih. */

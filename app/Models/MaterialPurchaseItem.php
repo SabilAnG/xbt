@@ -4,27 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/** Baris pembelian. Untuk pipa: qty = jumlah batang, unit_price = harga per batang. */
 class MaterialPurchaseItem extends Model
 {
-    protected $fillable = [
-        'material_purchase_id', 'material_id', 'component_id', 'rack_id', 'qty', 'unit_cost', 'subtotal',
-    ];
+    protected $fillable = ['material_purchase_id', 'material_id', 'warehouse_id', 'qty', 'received_qty', 'cancelled_qty', 'bar_length_cm', 'unit_price', 'subtotal'];
 
     protected function casts(): array
     {
         return [
             'qty' => 'decimal:3',
-            'unit_cost' => 'decimal:2',
+            'received_qty' => 'decimal:3',
+            'cancelled_qty' => 'decimal:3',
+            'bar_length_cm' => 'decimal:2',
+            'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::saving(function (self $row) {
-            $row->subtotal = (float) $row->qty * (float) $row->unit_cost;
-        });
     }
 
     public function purchase(): BelongsTo
@@ -37,25 +33,20 @@ class MaterialPurchaseItem extends Model
         return $this->belongsTo(Material::class);
     }
 
-    /** Komponen jadi yang dibeli (masuk gudang setengah jadi); kosong bila baris bahan baku. */
-    public function component(): BelongsTo
+    public function receiptItems(): HasMany
     {
-        return $this->belongsTo(Component::class);
+        return $this->hasMany(PurchaseReceiptItem::class);
     }
 
-    /** Nama barang di baris ini, bahan atau komponen. */
-    public function goodsName(): ?string
+    /** Yang masih ditunggu datang (satuan beli). */
+    public function outstandingQty(): float
     {
-        return $this->material?->name ?? $this->component?->name;
+        return max(round((float) $this->qty - (float) $this->received_qty - (float) $this->cancelled_qty, 3), 0);
     }
 
-    public function goodsUnit(): ?string
+    /** Gudang tujuan barang ini (default: gudang asal bahan). */
+    public function warehouse(): BelongsTo
     {
-        return $this->material?->unit ?? $this->component?->unit;
-    }
-
-    public function rack(): BelongsTo
-    {
-        return $this->belongsTo(Rack::class);
+        return $this->belongsTo(Warehouse::class);
     }
 }

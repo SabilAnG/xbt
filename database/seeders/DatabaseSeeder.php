@@ -20,9 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SiteContentSeeder::class,
             ProductSeeder::class,
-            KnalpotWorkbookSeeder::class,
-            HppMasterSeeder::class,
-            ComponentSeeder::class,
         ]);
     }
 }

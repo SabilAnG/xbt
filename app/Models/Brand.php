@@ -33,19 +33,9 @@ class Brand extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
-    /** Baris resep yang menyebut merek ini. */
-    public function formulaLines(): Builder
-    {
-        return FormulaMaterial::query()->where(fn ($query) => $query
-            ->where('brand', $this->name)
-            ->orWhere('brand', 'like', $this->name.',%')
-            ->orWhere('brand', 'like', '%,'.$this->name)
-            ->orWhere('brand', 'like', '%,'.$this->name.',%'));
-    }
-
     public function isInUse(): bool
     {
-        return $this->items()->exists() || $this->formulaLines()->exists();
+        return $this->items()->exists();
     }
 
     /**
@@ -61,13 +51,6 @@ class Brand extends Model
 
         DB::transaction(function () use ($old, $newName) {
             Item::where('brand', $old)->update(['brand' => $newName]);
-
-            $this->formulaLines()->get()->each(function (FormulaMaterial $line) use ($old, $newName) {
-                $line->brand = collect(explode(',', $line->brand))
-                    ->map(fn ($name) => trim($name) === $old ? $newName : trim($name))
-                    ->implode(',');
-                $line->saveQuietly();
-            });
 
             $this->forceFill(['name' => $newName])->save();
         });

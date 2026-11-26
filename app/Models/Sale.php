@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Sale extends Model
 {
+    /** Saluran penjualan; Offline memakai harga jual offline. */
+    public const CHANNELS = ['Offline', 'Shopee', 'Tokopedia', 'TikTok Shop', 'Lazada', 'WhatsApp', 'Website'];
+
     public const STATUSES = [
         'draft' => 'Draft',
         'posted' => 'Dibukukan',

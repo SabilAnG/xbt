@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Barang di gudang. `stock` adalah cache dari stock_movements.
@@ -15,7 +15,7 @@ class Item extends Model
 {
     protected $fillable = [
         'sku', 'name', 'model_motor', 'finishing', 'variant', 'size', 'brand',
-        'item_category_id', 'item_type_id', 'product_id', 'formula_id',
+        'item_category_id', 'item_type_id', 'product_id',
         'unit', 'cost_price', 'sell_price', 'sell_price_online', 'opening_stock', 'stock', 'min_stock',
         'notes', 'is_active',
     ];
@@ -49,10 +49,10 @@ class Item extends Model
         return $this->belongsTo(Product::class);
     }
 
-    /** Resep BOM yang dipakai saat produk ini diproduksi. */
-    public function formula(): BelongsTo
+    /** Formula yang menghasilkan produk ini. */
+    public function formula(): HasOne
     {
-        return $this->belongsTo(Formula::class);
+        return $this->hasOne(Formula::class);
     }
 
     /**
@@ -62,11 +62,6 @@ class Item extends Model
     public function stockStatus(): string
     {
         return stock_status((float) $this->stock, (float) $this->min_stock);
-    }
-
-    public function motorcycleModels(): BelongsToMany
-    {
-        return $this->belongsToMany(MotorcycleModel::class);
     }
 
     public function movements(): HasMany

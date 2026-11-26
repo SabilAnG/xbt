@@ -1,40 +1,102 @@
-@extends('layouts.admin', ['title' => 'Input pembelian', 'subtitle' => 'Jangan dicatat dua kali: pilih Pembelian Bahan ATAU Pengeluaran untuk belanja yang sama'])
+@extends('layouts.admin', ['title' => 'Pembelian bahan', 'subtitle' => $plan ? 'Diisi dari kekurangan rencana '.$plan->plan_number.'. Sesuaikan jumlah & harga dengan nota pemasok.' : 'Catat nota pembelian: tanggal, toko, siapa yang belanja, barang & harganya, dan gudang tujuannya. Pipa diisi per batang.'])
 
 @section('content')
-    <form method="POST" action="{{ route('admin.purchases.store') }}" class="card max-w-3xl space-y-6 p-6">
+    <form method="POST" action="{{ route('admin.purchases.store') }}" class="max-w-5xl space-y-6" data-rows-form data-purchase-form>
         @csrf
-        @php $dest = old('destination', $destination); @endphp
-        <fieldset data-destination>
-            <legend class="label">Masuk ke gudang <span class="text-red-500">*</span></legend>
-            <div class="grid gap-2 sm:grid-cols-2">
-                @foreach (['bahan_baku' => ['Gudang Bahan Baku', 'Pipa, plat, baut, gaswool, packing, …'], 'setengah_jadi' => ['Gudang Setengah Jadi', 'Komponen yang dibeli jadi: leheran, tutup silencer, moncong, …']] as $value => [$title, $hint])
-                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
-                        <input type="radio" name="destination" value="{{ $value }}" class="mt-1" @checked($dest === $value)>
-                        <span><span class="block text-sm font-medium text-slate-900">{{ $title }}</span><span class="block text-xs text-slate-500">{{ $hint }}</span></span>
-                    </label>
+        @if ($plan)<input type="hidden" name="production_plan_id" value="{{ $plan->id }}">@endif
+
+        <section class="card space-y-4 p-6">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <x-admin.field name="purchased_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
+                <div>
+                    <label for="supplier" class="label">Supplier</label>
+                    <input id="supplier" name="supplier" value="{{ old('supplier') }}" class="input" list="suppliers" placeholder="Pilih atau ketik nama toko">
+                    <datalist id="suppliers">@foreach ($suppliers as $supplier)<option value="{{ $supplier }}">@endforeach</datalist>
+                    <p class="hint">Nama baru otomatis masuk <a href="{{ route('admin.suppliers.index') }}" class="link">Master Supplier</a>.</p>
+                </div>
+                <x-admin.field name="supplier_invoice" label="No. nota supplier" />
+                <div>
+                    <label for="buyer" class="label">Dibeli oleh</label>
+                    <input id="buyer" name="buyer" value="{{ old('buyer') }}" class="input" list="buyers" placeholder="Siapa yang belanja">
+                    <datalist id="buyers">@foreach ($buyers as $buyer)<option value="{{ $buyer }}">@endforeach</datalist>
+                    @error('buyer')<p class="error">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <label class="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                <input type="hidden" name="receive_now" value="0">
+                <input type="checkbox" name="receive_now" value="1" class="mt-0.5" @checked(old('receive_now', '1') === '1')>
+                <span><span class="font-medium">Barang sudah diterima sekarang</span>
+                    <span class="block text-xs text-slate-500">Centang untuk belanja langsung di toko. Hilangkan centang bila barang dipesan dan datang belakangan — terima lewat menu Penerimaan.</span></span>
+            </label>
+        </section>
+
+        <section class="card space-y-3 p-6">
+            <div class="flex items-center justify-between">
+                <h2 class="card-title">Barang</h2>
+                <button type="button" class="btn btn-sm" data-add-row>+ Barang</button>
+            </div>
+            @error('items')<p class="error">{{ $message }}</p>@enderror
+            <div class="hidden gap-2 text-xs font-medium text-slate-500 sm:grid sm:grid-cols-[minmax(0,1fr)_11rem_6rem_7rem_9rem_8rem_auto]">
+                <span>Bahan</span><span>Masuk ke gudang</span><span>Jumlah</span><span>Panjang batang</span><span>Harga satuan</span><span class="text-right">Subtotal</span><span></span>
+            </div>
+            <div class="space-y-2" data-rows>
+                @foreach ($lines as $i => $line)
+                    <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_6rem_7rem_9rem_8rem_auto] sm:items-start" data-row>
+                        <div>
+                            <select name="items[{{ $i }}][material_id]" class="input" data-material aria-label="Bahan">
+                                <option value="">— pilih bahan —</option>
+                                @foreach ($materials->groupBy(fn ($m) => $m->warehouse->name) as $warehouse => $group)
+                                    <optgroup label="{{ $warehouse }}">
+                                        @foreach ($group as $material)
+                                            <option value="{{ $material->id }}" data-pipe="{{ $material->isPipe() ? 1 : 0 }}" data-unit="{{ $material->purchaseUnit() }}{{ $material->hasConversion() ? ' · '.$material->conversionLabel() : '' }}" data-bar="{{ (float) $material->bar_length_cm }}" data-price="{{ (float) $material->last_price }}" data-warehouse="{{ $material->warehouse_id }}" data-allowed="{{ implode(',', $material->allowedWarehouseIds()) }}"
+                                                @selected((string) ($line['material_id'] ?? '') === (string) $material->id)>{{ $material->label() }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                            @error("items.$i.material_id")<p class="error">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <select name="items[{{ $i }}][warehouse_id]" class="input" data-warehouse aria-label="Masuk ke gudang">
+                                @foreach ($warehouses as $id => $name)
+                                    <option value="{{ $id }}" @selected((string) ($line['warehouse_id'] ?? '') === (string) $id)>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                            @error("items.$i.warehouse_id")<p class="error">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <input name="items[{{ $i }}][qty]" type="number" step="any" min="0" value="{{ $line['qty'] ?? '' }}" class="input" data-qty aria-label="Jumlah">
+                            </div>
+                            <p class="mt-1 text-[11px] text-slate-500" data-unit-label></p>
+                            @error("items.$i.qty")<p class="error">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <input name="items[{{ $i }}][bar_length_cm]" type="number" step="any" min="0" value="{{ $line['bar_length_cm'] ?? '' }}" class="input" data-bar placeholder="cm" aria-label="Panjang batang (cm)">
+                        </div>
+                        <div>
+                            <input name="items[{{ $i }}][unit_price]" type="number" step="any" min="0" value="{{ $line['unit_price'] ?? '' }}" class="input" data-price aria-label="Harga satuan">
+                            @error("items.$i.unit_price")<p class="error">{{ $message }}</p>@enderror
+                        </div>
+                        <p class="py-2 text-right text-sm font-semibold tabular-nums" data-subtotal>Rp 0</p>
+                        <button type="button" class="btn btn-ghost px-2 text-rose-600" data-remove-row aria-label="Hapus baris">✕</button>
+                    </div>
                 @endforeach
             </div>
-            @error('destination')<p class="error">{{ $message }}</p>@enderror
-        </fieldset>
-        <div class="grid gap-4 sm:grid-cols-3">
-            <x-admin.field name="purchased_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
-            <x-admin.select name="material_id" label="Bahan" class="sm:col-span-2" :value="request('material')" data-for="bahan_baku"
-                :options="$materials->mapWithKeys(fn ($m) => [$m->id => $m->name.' ('.$m->unit.')'])" />
-            <x-admin.select name="component_id" label="Komponen" class="sm:col-span-2" :value="request('component')" data-for="setengah_jadi"
-                :options="$components->mapWithKeys(fn ($c) => [$c->id => $c->code.' · '.$c->name.' ('.$c->unit.')'])"
-                :hint="$components->isEmpty() ? 'Belum ada komponen; tambahkan dulu di Master Komponen.' : null" />
-            <x-admin.field name="qty" label="Qty" type="number" step="any" min="0" required />
-            <x-admin.field name="unit_price" label="Harga satuan" type="number" step="any" min="0" required />
-            <x-admin.field name="supplier" label="Toko / supplier" />
-            <x-admin.wallet-select name="wallet_id" label="Dibayar dari dompet" class="sm:col-span-2" hint="Tidak dipotong bila dicentang 'sudah dicatat di Pengeluaran'." />
-            <x-admin.field name="paid_from" label="Dibayar dari (catatan)" class="sm:col-span-3" />
-        </div>
-        <label class="flex items-start gap-2 text-sm text-slate-700">
-            <input type="checkbox" name="recorded_in_expenses" value="1" class="mt-0.5 rounded border-slate-300" @checked(old('recorded_in_expenses'))>
-            <span>Uangnya sudah dicatat di Pengeluaran <span class="block text-xs text-slate-500">Centang agar tidak dihitung dobel di dashboard. Belanja baru: biarkan kosong.</span></span>
-        </label>
-        <x-admin.field name="notes" label="Catatan" type="textarea" />
-        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+            <div class="flex justify-end border-t border-slate-100 pt-3 text-base font-semibold">Total&nbsp;<span data-total class="tabular-nums">Rp 0</span></div>
+        </section>
+
+        <section class="card space-y-4 p-6">
+            <h2 class="card-title">Pembayaran</h2>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <x-admin.field name="paid_amount" label="Dibayar sekarang (Rp)" type="number" step="any" min="0" hint="Kosongkan bila belum dibayar (hutang)." data-paid />
+                <x-admin.wallet-select class="sm:col-span-2" placeholder="— pilih dompet —" />
+            </div>
+            <button type="button" class="btn btn-sm" data-pay-full>Bayar lunas</button>
+            <x-admin.field name="notes" label="Catatan" type="textarea" />
+        </section>
+
+        <div class="flex justify-end gap-2">
             <a href="{{ route('admin.purchases.index') }}" class="btn">Batal</a>
             <button class="btn btn-primary">Simpan pembelian</button>
         </div>
@@ -42,21 +104,50 @@
 @endsection
 
 @push('scripts')
-<script>
-    (function () {
-        var radios = document.querySelectorAll('[data-destination] input[name=destination]');
-        function sync() {
-            var dest = document.querySelector('[data-destination] input[name=destination]:checked');
-            dest = dest ? dest.value : 'bahan_baku';
-            document.querySelectorAll('[data-for]').forEach(function (select) {
-                var on = select.dataset.for === dest;
-                select.closest('div').classList.toggle('hidden', !on);
-                select.disabled = !on;
-                select.required = on;
+    @include('admin.partials.repeat-rows')
+    <script>
+        (function () {
+            var form = document.querySelector('[data-purchase-form]');
+            function rp(v) { return 'Rp ' + Math.round(v).toLocaleString('id-ID'); }
+            var total = 0;
+
+            function refresh() {
+                total = 0;
+                form.querySelectorAll('[data-row]').forEach(function (row) {
+                    var opt = row.querySelector('[data-material]').selectedOptions[0];
+                    var pipe = opt && opt.dataset.pipe === '1';
+                    var allowed = opt && opt.value ? opt.dataset.allowed.split(',') : null;
+                    Array.prototype.forEach.call(row.querySelector('[data-warehouse]').options, function (o) {
+                        o.hidden = allowed ? allowed.indexOf(o.value) === -1 : false;
+                    });
+                    var bar = row.querySelector('[data-bar]');
+                    bar.disabled = !pipe;
+                    bar.classList.toggle('opacity-40', !pipe);
+                    row.querySelector('[data-unit-label]').textContent = opt && opt.value ? opt.dataset.unit : '';
+                    var sub = (parseFloat(row.querySelector('[data-qty]').value) || 0) * (parseFloat(row.querySelector('[data-price]').value) || 0);
+                    row.querySelector('[data-subtotal]').textContent = rp(sub);
+                    total += sub;
+                });
+                form.querySelector('[data-total]').textContent = rp(total);
+            }
+
+            form.addEventListener('change', function (e) {
+                if (e.target.matches('[data-material]')) {
+                    var row = e.target.closest('[data-row]');
+                    var opt = e.target.selectedOptions[0];
+                    if (opt && opt.value) {
+                        if (!row.querySelector('[data-price]').value) row.querySelector('[data-price]').value = opt.dataset.price || '';
+                        row.querySelector('[data-bar]').value = opt.dataset.pipe === '1' ? opt.dataset.bar : '';
+                        row.querySelector('[data-warehouse]').value = opt.dataset.warehouse;
+                    }
+                }
+                refresh();
             });
-        }
-        radios.forEach(function (r) { r.addEventListener('change', sync); });
-        sync();
-    })();
-</script>
+            form.addEventListener('input', refresh);
+            form.addEventListener('row:added', refresh);
+            form.addEventListener('row:removed', refresh);
+            form.querySelector('[data-pay-full]').addEventListener('click', function () { form.querySelector('[data-paid]').value = Math.round(total); });
+            refresh();
+        })();
+    </script>
 @endpush

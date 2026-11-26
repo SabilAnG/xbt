@@ -1,48 +1,50 @@
-@extends('layouts.admin', ['title' => 'Gudang', 'subtitle' => 'Alur barang: bahan baku dibuat jadi komponen (setengah jadi), komponen dirakit jadi knalpot (finish good).'])
+@extends('layouts.admin', ['title' => 'Gudang', 'subtitle' => 'Alur barang: Bahan Baku & Setengah Jadi (dari pembelian) → produksi → sisa pipa ke Stok Sisa Produksi → knalpot jadi ke Finish Good.'])
 
-@php
-    $meta = [
-        'bahan_baku' => ['icon' => 'layers', 'tone' => 'bg-sky-50 text-sky-600', 'unit' => 'bahan', 'source' => 'Stok Bahan'],
-        'setengah_jadi' => ['icon' => 'puzzle', 'tone' => 'bg-amber-50 text-amber-600', 'unit' => 'komponen', 'source' => 'Master Komponen'],
-        'finish_good' => ['icon' => 'box', 'tone' => 'bg-emerald-50 text-emerald-600', 'unit' => 'produk', 'source' => 'Stok Produk'],
-    ];
-@endphp
+@section('actions')
+    <a href="{{ route('admin.adjustments.create') }}" class="btn">Penyesuaian stok</a>
+    <a href="{{ route('admin.purchases.create') }}" class="btn btn-primary">+ Pembelian</a>
+@endsection
 
 @section('content')
-    <section class="grid gap-4 lg:grid-cols-3">
-        @foreach ($summaries as $summary)
-            @php $warehouse = $summary['warehouse']; $m = $meta[$warehouse->type]; @endphp
-            <a href="{{ route('admin.warehouses.show', $warehouse->slug()) }}" class="card group relative block p-5 transition hover:border-slate-300 hover:shadow-md">
-                <div class="flex items-start gap-3">
-                    <span class="grid size-11 shrink-0 place-items-center rounded-xl {{ $m['tone'] }}">
-                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon($m['icon']) }}"/></svg>
-                    </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">{{ $loop->iteration }} · {{ $warehouse->typeLabel() }}</p>
-                        <p class="truncate text-[15px] font-semibold text-slate-900">{{ $warehouse->name }}</p>
-                        @if ($warehouse->description)<p class="mt-0.5 line-clamp-2 text-xs text-slate-500">{{ $warehouse->description }}</p>@endif
-                    </div>
+    <section class="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+        @foreach ($cards as $card)
+            <a href="{{ route('admin.warehouses.show', $card['warehouse']->slug()) }}" class="card group flex flex-col gap-2 p-5 transition hover:-translate-y-px hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">{{ $card['warehouse']->code }}</p>
+                    <span class="text-slate-300 group-hover:text-brand-600">→</span>
                 </div>
-                <p class="mt-5 text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ rupiah($summary['value']) }}</p>
-                <p class="text-xs text-slate-500">Nilai stok</p>
-                <dl class="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-center">
-                    <div><dt class="text-[11px] text-slate-500">Jenis {{ $m['unit'] }}</dt><dd class="text-sm font-semibold text-slate-900 tabular-nums">{{ $summary['count'] }}</dd></div>
-                    <div><dt class="text-[11px] text-slate-500">Total qty</dt><dd class="text-sm font-semibold text-slate-900 tabular-nums">{{ qty(round($summary['qty'], 2)) }}</dd></div>
-                    <div><dt class="text-[11px] text-slate-500">Habis/menipis</dt><dd @class(['text-sm font-semibold tabular-nums', 'text-rose-600' => $summary['low'] > 0, 'text-slate-900' => $summary['low'] === 0])>{{ $summary['low'] }}</dd></div>
-                </dl>
-                @unless ($loop->last)
-                    <span class="absolute top-1/2 -right-3.5 z-10 hidden size-7 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white text-slate-400 lg:grid">→</span>
-                @endunless
+                <h2 class="text-base font-semibold text-slate-900">{{ $card['warehouse']->name }}</h2>
+                <p class="text-xs text-slate-500">{{ $card['warehouse']->typeDescription() }}</p>
+                <p class="mt-auto pt-2 text-xl font-semibold tabular-nums">{{ rupiah($card['value']) }}</p>
+                <p class="text-xs text-slate-500">
+                    {{ $card['count'] }} {{ $card['unit'] }}
+                    @if ($card['qty'] !== null) · {{ qty($card['qty']) }} {{ ['finish_good' => 'pcs', 'di_vendor' => 'unit di vendor'][$card['warehouse']->type] ?? 'potongan' }} @endif
+                </p>
             </a>
         @endforeach
     </section>
 
-    <section class="card p-5 text-sm text-slate-600">
-        <h2 class="card-title mb-2">Cara kerja</h2>
-        <ol class="list-decimal space-y-1 pl-5">
-            <li><strong>Bahan Baku</strong> bertambah dari Pembelian Bahan dan berkurang saat dipakai produksi atau dibuat jadi komponen.</li>
-            <li><strong>Setengah Jadi</strong> berisi komponen dari <a href="{{ route('admin.components.index') }}" class="link">Master Komponen</a>. Catat hasil dibuat; centang "potong bahan baku" agar stok bahan ikut berkurang sesuai bahan penyusunnya.</li>
-            <li><strong>Finish Good</strong> adalah knalpot jadi dari Stok Produk: bertambah dari Produksi, berkurang dari Penjualan.</li>
-        </ol>
+    <section class="card overflow-hidden">
+        <div class="card-header"><h2 class="card-title">Pergerakan terakhir</h2></div>
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead><tr><th>Tanggal</th><th>Gudang</th><th>Bahan</th><th>Jenis</th><th>Keterangan</th><th class="num">Masuk</th><th class="num">Keluar</th></tr></thead>
+                <tbody>
+                @forelse ($movements as $movement)
+                    <tr>
+                        <td class="whitespace-nowrap">{{ $movement->moved_at->translatedFormat('d M Y') }}</td>
+                        <td class="text-xs whitespace-nowrap">{{ $movement->warehouse->typeLabel() }}</td>
+                        <td><a href="{{ route('admin.materials.show', $movement->material) }}" class="link">{{ $movement->material->label() }}</a></td>
+                        <td class="text-xs">{{ $movement->typeLabel() }}</td>
+                        <td class="text-xs text-slate-500">{{ $movement->notes }}</td>
+                        <td class="num text-emerald-600">{{ (float) $movement->qty_in ? '+'.qty($movement->qty_in, 2).' '.$movement->material->stockUnit() : '' }}</td>
+                        <td class="num text-rose-600">{{ (float) $movement->qty_out ? '−'.qty($movement->qty_out, 2).' '.$movement->material->stockUnit() : '' }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7" class="py-8 text-center text-slate-500">Gudang masih kosong. Isi lewat <a href="{{ route('admin.purchases.create') }}" class="link">pembelian</a> atau <a href="{{ route('admin.adjustments.create') }}" class="link">stok awal</a>.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
     </section>
 @endsection

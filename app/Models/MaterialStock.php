@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Stok satu bahan di satu rak.
- */
+/** Cache stok & nilai satu bahan di satu gudang (cm untuk pipa). */
 class MaterialStock extends Model
 {
-    protected $fillable = ['material_id', 'rack_id', 'qty'];
+    protected $fillable = ['material_id', 'warehouse_id', 'qty', 'value'];
 
     protected function casts(): array
     {
-        return ['qty' => 'decimal:3'];
+        return ['qty' => 'decimal:3', 'value' => 'decimal:2'];
     }
 
     public function material(): BelongsTo
@@ -22,8 +20,8 @@ class MaterialStock extends Model
         return $this->belongsTo(Material::class);
     }
 
-    public function rack(): BelongsTo
+    public function warehouse(): BelongsTo
     {
-        return $this->belongsTo(Rack::class);
+        return $this->belongsTo(Warehouse::class);
     }
 }

@@ -3,7 +3,7 @@
         return match ($row->source_type) {
             \App\Models\Sale::class => ['Penjualan', route('admin.sales.edit', $row->source_id)],
             \App\Models\Expense::class => ['Pengeluaran', route('admin.expenses.edit', $row->source_id)],
-            \App\Models\MaterialPurchase::class => ['Pembelian bahan', route('admin.purchases.index')],
+            \App\Models\PurchasePayment::class => ['Pembelian bahan', route('admin.purchases.index')],
             \App\Models\WalletTransfer::class => ['Transfer', null],
             null => ['Manual', null],
             default => ['Lainnya', null],

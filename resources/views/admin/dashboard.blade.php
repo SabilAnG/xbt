@@ -20,13 +20,13 @@
         ['Bahan habis / menipis', $headline['materials_alert'], route('admin.materials.index'), $headline['materials_alert'] ? 'danger' : 'success'],
         ['Pengeluaran perlu dirinci', $headline['needs_detail'], route('admin.expenses.index', ['data_status' => 'PERLU DIRINCI']), $headline['needs_detail'] ? 'danger' : 'success'],
         ['Piutang belum dibayar', rupiah($headline['receivable']), route('admin.sales.index', ['payment' => 'unpaid']), $headline['receivable'] > 0 ? 'danger' : 'success'],
-        ['Gaji host belum ditransfer', rupiah($headline['host_unpaid']), route('admin.payrolls.index', 'host'), $headline['host_unpaid'] > 0 ? 'danger' : 'success'],
-        ['Gaji tukang belum dibayar', rupiah($headline['worker_unpaid']), route('admin.payrolls.index', 'tukang'), $headline['worker_unpaid'] > 0 ? 'danger' : 'success'],
+        ['Hutang pembelian bahan', rupiah($headline['purchase_payable']), route('admin.purchases.index', ['bayar' => 'hutang']), $headline['purchase_payable'] > 0 ? 'danger' : 'success'],
+        ['Produksi masih draf', $headline['draft_productions'], route('admin.productions.index', ['status' => 'draft']), $headline['draft_productions'] ? 'warning' : 'success'],
         ['Total stok knalpot jadi', qty($headline['total_stock']).' unit', route('admin.items.index'), 'default'],
     ];
     $alertTone = ['danger' => 'bg-rose-500', 'warning' => 'bg-amber-500', 'success' => 'bg-emerald-500', 'default' => 'bg-slate-300'];
 @endphp
-@extends('layouts.admin', ['title' => 'Dashboard', 'subtitle' => 'Ringkasan usaha knalpot — semua angka dihitung otomatis dari transaksi, sama dengan sheet Ringkasan'])
+@extends('layouts.admin', ['title' => 'Dashboard', 'subtitle' => 'Ringkasan usaha knalpot — semua angka dihitung otomatis dari transaksi'])
 
 @section('actions')
     <a href="{{ route('admin.productions.create') }}" class="btn">
@@ -222,8 +222,8 @@
                     <tbody>
                     @forelse ($alertMaterials as $material)
                         <tr>
-                            <td><a href="{{ route('admin.materials.show', $material) }}" class="link">{{ $material->name }}</a></td>
-                            <td class="num {{ $material->stock < 0 ? 'text-rose-600' : '' }}">{{ qty(round((float) $material->stock, 2)) }} <span class="text-slate-400">{{ $material->unit }}</span></td>
+                            <td><a href="{{ route('admin.materials.show', $material) }}" class="link">{{ $material->label() }}</a></td>
+                            <td class="num {{ $material->stock < 0 ? 'text-rose-600' : '' }}">{{ qty(round((float) $material->stock, 2)) }} <span class="text-slate-400">{{ $material->stockUnit() }}</span></td>
                             <td class="num text-slate-500">{{ qty($material->min_stock) }}</td>
                             <td><x-admin.status :value="$material->stockStatus()" /></td>
                         </tr>
@@ -278,7 +278,7 @@
                                 @if ($kind === 'stock')
                                     <a href="{{ route('admin.items.show', $row) }}" class="block truncate text-[13px] text-slate-700 hover:text-brand-700">{{ $row->name }}</a>
                                 @elseif ($kind === 'production')
-                                    <p class="truncate text-[13px] text-slate-700">{{ $row->item?->name }}</p>
+                                    <p class="truncate text-[13px] text-slate-700">{{ $row->item?->name ?? $row->formula?->name }}</p>
                                     <p class="text-xs text-slate-400">{{ $row->produced_at->translatedFormat('d M Y') }} · {{ $row->production_number }}</p>
                                 @else
                                     <p class="truncate text-[13px] text-slate-700">{{ $row->items->first()?->item?->name }}</p>
@@ -288,7 +288,7 @@
                             @if ($kind === 'stock')
                                 <span class="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 tabular-nums">{{ qty($row->stock) }}</span>
                             @elseif ($kind === 'production')
-                                <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 tabular-nums">+{{ qty($row->output_qty) }}</span>
+                                <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 tabular-nums">+{{ qty($row->qty) }}</span>
                             @else
                                 <div class="space-y-1 text-right">
                                     <p class="text-[13px] font-semibold text-slate-900 tabular-nums">{{ rupiah($row->total) }}</p>

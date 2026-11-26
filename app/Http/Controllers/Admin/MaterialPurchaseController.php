@@ -3,88 +3,177 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Component;
 use App\Models\Material;
 use App\Models\MaterialPurchase;
-use App\Services\InventoryService;
-use App\Services\WalletService;
+use App\Models\Production;
+use App\Models\ProductionPlan;
+use App\Models\PurchasePayment;
+use App\Models\Supplier;
+use App\Models\Warehouse;
+use App\Services\ProductionPlanner;
+use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use InvalidArgumentException;
+use RuntimeException;
 
-/** Pembelian: bahan baku masuk Gudang Bahan Baku, komponen jadi masuk Gudang Setengah Jadi. */
+/** Pembelian bahan beserta pembayaran dan hutangnya. */
 class MaterialPurchaseController extends Controller
 {
     public function index(Request $request): View
     {
-        $purchases = MaterialPurchase::query()->with(['items.material', 'items.component', 'vendor'])
-            ->when($request->input('month'), fn ($query, $month) => $query->where('purchased_at', 'like', "{$month}%"))
-            ->when($request->input('material'), fn ($query, $material) => $query->whereHas('items', fn ($query) => $query->where('material_id', $material)))
-            ->latest('purchased_at')->latest('id')
-            ->paginate(25)->withQueryString();
+        $query = MaterialPurchase::query()->with('items.material')
+            ->when($request->string('q')->trim()->value(), fn ($query, $search) => $query->where(
+                fn ($query) => $query->where('supplier', 'like', "%{$search}%")->orWhere('buyer', 'like', "%{$search}%")->orWhere('invoice_number', 'like', "%{$search}%")->orWhere('supplier_invoice', 'like', "%{$search}%")
+            ))
+            ->when($request->input('bayar') === 'hutang', fn ($query) => $query->unpaid())
+            ->when($request->input('terima') === 'belum', fn ($query) => $query->awaitingGoods())
+            ->when($request->filled('supplier'), fn ($query) => $query->where('supplier_id', $request->integer('supplier')))
+            ->latest('purchased_at')->latest('id');
 
         return view('admin.purchases.index', [
-            'purchases' => $purchases,
-            'materials' => Material::orderBy('name')->get(['id', 'name']),
+            'purchases' => $query->paginate(20)->withQueryString(),
+            'payable' => (float) MaterialPurchase::query()->unpaid()->get()->sum(fn (MaterialPurchase $purchase) => $purchase->payable()),
+            'awaiting' => MaterialPurchase::query()->awaitingGoods()->count(),
+            'suppliers' => Supplier::query()->orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
-    public function create(Request $request): View
+    public function show(MaterialPurchase $purchase): View
     {
+        return view('admin.purchases.show', [
+            'purchase' => $purchase->load('items.material.warehouse', 'items.warehouse', 'payments.wallet', 'plan', 'supplierRecord', 'receipts.items.purchaseItem.material', 'receipts.items.warehouse'),
+        ]);
+    }
+
+    public function create(Request $request, ProductionPlanner $planner): View
+    {
+        $plan = $request->filled('rencana') ? ProductionPlan::findOrFail($request->integer('rencana')) : null;
+        $lines = [];
+
+        if ($plan) {
+            $lines = $planner->forPlan($plan)['rows']->filter(fn (array $row) => $row['buy_qty'] > 0)->map(fn (array $row) => [
+                'material_id' => $row['material']->id,
+                'warehouse_id' => $row['material']->warehouse_id,
+                'qty' => $row['buy_qty'],
+                'bar_length_cm' => $row['material']->isPipe() ? (float) $row['material']->bar_length_cm : null,
+                'unit_price' => round($row['material']->purchaseUnitCost(), 2),
+            ])->values()->all();
+        } elseif ($request->filled('material')) {
+            $material = Material::findOrFail($request->integer('material'));
+            $lines = [['material_id' => $material->id, 'warehouse_id' => $material->warehouse_id, 'qty' => 1, 'bar_length_cm' => $material->isPipe() ? (float) $material->bar_length_cm : null, 'unit_price' => (float) $material->last_price]];
+        }
+
         return view('admin.purchases.create', [
-            'materials' => Material::where('is_active', true)->orderBy('name')->get(),
-            'components' => Component::where('is_active', true)->orderBy('sort_order')->orderBy('code')->get(),
-            'destination' => $request->filled('component') ? 'setengah_jadi' : 'bahan_baku',
+            'plan' => $plan,
+            'lines' => array_values(old('items', $lines ?: [['material_id' => '', 'warehouse_id' => '', 'qty' => '', 'bar_length_cm' => '', 'unit_price' => '']])),
+            'materials' => Material::query()->active()->with('warehouse')->orderBy('name')->get(),
+            'suppliers' => Supplier::query()->active()->orderBy('name')->pluck('name'),
+            'buyers' => MaterialPurchase::query()->whereNotNull('buyer')->distinct()->orderBy('buyer')->pluck('buyer')
+                ->merge(Production::query()->whereNotNull('worker')->distinct()->pluck('worker'))->unique()->values(),
+            'warehouses' => collect([Warehouse::RAW, Warehouse::SEMI, Warehouse::ACCESSORY, Warehouse::OFFCUT])->mapWithKeys(fn (string $type) => [Warehouse::forType($type)->id => Warehouse::forType($type)->name]),
         ]);
     }
 
-    public function store(Request $request, InventoryService $inventory): RedirectResponse
+    public function store(Request $request, PurchaseService $service): RedirectResponse
     {
-        $request->mergeIfMissing(['destination' => 'bahan_baku']);
+        $request->merge(['items' => collect($request->input('items', []))->filter(fn ($row) => filled($row['material_id'] ?? null))->values()->all()]);
 
         $data = $request->validate([
             'purchased_at' => ['required', 'date'],
-            'destination' => ['required', 'in:bahan_baku,setengah_jadi'],
-            'material_id' => ['required_if:destination,bahan_baku', 'nullable', 'exists:materials,id'],
-            'component_id' => ['required_if:destination,setengah_jadi', 'nullable', 'exists:components,id'],
-            'qty' => ['required', 'numeric', 'gt:0'],
-            'unit_price' => ['required', 'numeric', 'min:0'],
             'supplier' => ['nullable', 'string', 'max:255'],
-            'paid_from' => ['nullable', 'string', 'max:255'],
-            'wallet_id' => ['nullable', 'exists:wallets,id'],
+            'supplier_invoice' => ['nullable', 'string', 'max:100'],
+            'buyer' => ['nullable', 'string', 'max:100'],
+            'production_plan_id' => ['nullable', 'exists:production_plans,id'],
             'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.material_id' => ['required', 'exists:materials,id'],
+            'items.*.warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'items.*.qty' => ['required', 'numeric', 'gt:0'],
+            'items.*.bar_length_cm' => ['nullable', 'numeric', 'gt:0'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'paid_amount' => ['nullable', 'numeric', 'min:0'],
+            'wallet_id' => ['nullable', 'exists:wallets,id'],
+            'receive_now' => ['nullable', 'boolean'],
         ], [
-            'material_id.required_if' => 'Pilih bahan yang dibeli.',
-            'component_id.required_if' => 'Pilih komponen yang dibeli.',
+            'items.required' => 'Isi minimal satu barang.',
+            'items.*.qty.required' => 'Isi jumlah.',
+            'items.*.unit_price.required' => 'Isi harga.',
         ]);
-        $data['recorded_in_expenses'] = $request->boolean('recorded_in_expenses');
-        $toComponents = $data['destination'] === 'setengah_jadi';
+
+        foreach ($data['items'] as $i => $row) {
+            $material = Material::find($row['material_id']);
+
+            if ($material->isPipe() && floor((float) $row['qty']) != (float) $row['qty']) {
+                return back()->withInput()->withErrors(["items.$i.qty" => 'Pipa dibeli per batang utuh.']);
+            }
+
+            if (filled($row['warehouse_id'] ?? null) && ! in_array((int) $row['warehouse_id'], $material->allowedWarehouseIds(), true)) {
+                return back()->withInput()->withErrors(["items.$i.warehouse_id" => $material->isPipe()
+                    ? 'Pipa hanya bisa masuk Gudang Bahan Baku atau Gudang Stok Sisa.'
+                    : 'Bahan ini hanya bisa masuk Gudang Bahan Baku atau Gudang Setengah Jadi.']);
+            }
+        }
+
+        if ((float) ($data['paid_amount'] ?? 0) > 0 && blank($data['wallet_id'] ?? null)) {
+            return back()->withInput()->withErrors(['wallet_id' => 'Pilih dompet yang dipakai membayar.']);
+        }
+
+        $data['receive_now'] = $request->boolean('receive_now', true);
 
         try {
-            $purchase = $toComponents
-                ? $inventory->recordComponentPurchase(Component::findOrFail($data['component_id']), (float) $data['qty'], (float) $data['unit_price'], $data['purchased_at'], $data)
-                : $inventory->recordMaterialPurchase(Material::findOrFail($data['material_id']), (float) $data['qty'], (float) $data['unit_price'], $data['purchased_at'], $data);
-        } catch (InvalidArgumentException $e) {
-            return back()->withInput()->withErrors(['qty' => $e->getMessage()]);
+            $purchase = $service->create($data);
+        } catch (RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
 
-        // Bila uangnya sudah dicatat di Pengeluaran, dompet dipotong dari pengeluaran itu — jangan dobel.
-        if (! $purchase->recorded_in_expenses) {
-            $line = $purchase->items()->with('material', 'component')->first();
-            app(WalletService::class)->sync($purchase, $purchase->wallet_id, 'out', (float) $purchase->total, $purchase->purchased_at,
-                ($toComponents ? 'Beli komponen ' : 'Beli bahan ').$purchase->invoice_number.($line ? ' — '.$line->goodsName().' x'.qty($line->qty) : ''));
-        }
-
-        return redirect()->route('admin.purchases.index')->with('status', $toComponents
-            ? 'Pembelian dicatat. Stok komponen di Gudang Setengah Jadi bertambah.'
-            : 'Pembelian dicatat. Stok bahan di Gudang Bahan Baku bertambah.');
+        return redirect()->route('admin.purchases.show', $purchase)->with('status', $data['receive_now'] ? 'Pembelian dicatat dan barang langsung diterima ke gudang.' : 'Pembelian dicatat. Terima barangnya lewat Penerimaan saat datang.');
     }
 
-    public function destroy(MaterialPurchase $purchase, InventoryService $inventory): RedirectResponse
+    public function destroy(MaterialPurchase $purchase, PurchaseService $service): RedirectResponse
     {
-        $inventory->deleteMaterialPurchase($purchase);
+        try {
+            $service->delete($purchase);
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return redirect()->route('admin.purchases.index')->with('status', 'Pembelian dihapus dan stoknya dikurangi kembali.');
+        return redirect()->route('admin.purchases.index')->with('status', 'Pembelian dihapus; stok dan pembayarannya dibatalkan.');
+    }
+
+    public function cancelOutstanding(MaterialPurchase $purchase, PurchaseService $service): RedirectResponse
+    {
+        try {
+            $service->cancelOutstanding($purchase);
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Sisa pesanan dibatalkan; tagihan disesuaikan dengan barang yang diterima.');
+    }
+
+    public function storePayment(Request $request, MaterialPurchase $purchase, PurchaseService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'paid_at' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'wallet_id' => ['required', 'exists:wallets,id'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $service->pay($purchase, (float) $data['amount'], (int) $data['wallet_id'], $data['paid_at'], $data['notes'] ?? null);
+        } catch (RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Pembayaran dicatat.');
+    }
+
+    public function destroyPayment(PurchasePayment $payment, PurchaseService $service): RedirectResponse
+    {
+        $service->deletePayment($payment);
+
+        return back()->with('status', 'Pembayaran dihapus.');
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\TrackingController;
 use App\Models\Product;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -73,25 +74,40 @@ Route::prefix('admin')->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('logout');
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
-        Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
-        Route::resource('bahan', Admin\MaterialController::class)->names('materials')->parameters(['bahan' => 'material']);
-        Route::resource('komponen', Admin\ComponentController::class)->names('components')->parameters(['komponen' => 'component']);
-        Route::get('gudang', [Admin\WarehouseController::class, 'index'])->name('warehouses.index');
-        Route::get('gudang/setengah-jadi/mutasi', [Admin\WarehouseController::class, 'createMovement'])->name('warehouses.movements.create');
-        Route::post('gudang/setengah-jadi/mutasi', [Admin\WarehouseController::class, 'storeMovement'])->name('warehouses.movements.store');
-        Route::delete('gudang/mutasi-komponen/{movement}', [Admin\WarehouseController::class, 'destroyMovement'])->name('warehouses.movements.destroy');
-        Route::get('gudang/{type}', [Admin\WarehouseController::class, 'show'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.show');
-        Route::get('gudang/{type}/ubah', [Admin\WarehouseController::class, 'edit'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.edit');
-        Route::put('gudang/{type}', [Admin\WarehouseController::class, 'update'])->whereIn('type', ['bahan-baku', 'setengah-jadi', 'finish-good'])->name('warehouses.update');
-        Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
-        Route::resource('resep', Admin\FormulaController::class)->except('show')->names('formulas')->parameters(['resep' => 'formula']);
-        Route::resource('produksi', Admin\ProductionController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
-            ->names('productions')->parameters(['produksi' => 'production']);
-        Route::resource('penjualan', Admin\SaleController::class)->except('show')->names('sales')->parameters(['penjualan' => 'sale']);
-        Route::resource('pembelian-bahan', Admin\MaterialPurchaseController::class)->only(['index', 'create', 'store', 'destroy'])
+        // Inventori: formula → rencana → pembelian → gudang → produksi
+        Route::post('formula/{formula}/salin', [Admin\FormulaController::class, 'duplicate'])->name('formulas.duplicate');
+        Route::resource('formula', Admin\FormulaController::class)->names('formulas')->parameters(['formula' => 'formula']);
+        Route::post('rencana-produksi/{plan}/produksi', [Admin\ProductionPlanController::class, 'startProductions'])->name('plans.productions');
+        Route::resource('rencana-produksi', Admin\ProductionPlanController::class)->names('plans')->parameters(['rencana-produksi' => 'plan']);
+        Route::post('produksi/{production}/bukukan', [Admin\ProductionController::class, 'post'])->name('productions.post');
+        Route::post('produksi/{production}/terima', [Admin\ProductionController::class, 'receive'])->name('productions.receive');
+        Route::delete('produksi/penerimaan/{receipt}', [Admin\ProductionController::class, 'destroyReceipt'])->name('productions.receipts.destroy');
+        Route::post('produksi/{production}/batalkan', [Admin\ProductionController::class, 'cancel'])->name('productions.cancel');
+        Route::resource('produksi', Admin\ProductionController::class)->names('productions')->parameters(['produksi' => 'production']);
+        Route::post('pembelian-bahan/{purchase}/batalkan-sisa', [Admin\MaterialPurchaseController::class, 'cancelOutstanding'])->name('purchases.cancel-outstanding');
+        Route::resource('penerimaan', Admin\PurchaseReceiptController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
+            ->names('receipts')->parameters(['penerimaan' => 'receipt']);
+        Route::resource('supplier', Admin\SupplierController::class)->only(['index', 'store', 'show', 'update', 'destroy'])
+            ->names('suppliers')->parameters(['supplier' => 'supplier']);
+        Route::post('pembelian-bahan/{purchase}/bayar', [Admin\MaterialPurchaseController::class, 'storePayment'])->name('purchases.payments.store');
+        Route::delete('pembelian-bahan/pembayaran/{payment}', [Admin\MaterialPurchaseController::class, 'destroyPayment'])->name('purchases.payments.destroy');
+        Route::resource('pembelian-bahan', Admin\MaterialPurchaseController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('purchases')->parameters(['pembelian-bahan' => 'purchase']);
-        Route::resource('penyesuaian-bahan', Admin\AdjustmentController::class)->only(['index', 'create', 'store', 'destroy'])
-            ->names('adjustments')->parameters(['penyesuaian-bahan' => 'adjustment']);
+        Route::get('master-item', [Admin\MasterItemController::class, 'index'])->name('master-items.index');
+        Route::get('satuan', [Admin\UnitController::class, 'index'])->name('units.index');
+        Route::post('satuan', [Admin\UnitController::class, 'store'])->name('units.store');
+        Route::put('satuan/{unit}', [Admin\UnitController::class, 'update'])->name('units.update');
+        Route::delete('satuan/{unit}', [Admin\UnitController::class, 'destroy'])->name('units.destroy');
+        Route::resource('bahan', Admin\MaterialController::class)->names('materials')->parameters(['bahan' => 'material']);
+        Route::get('gudang', [Admin\WarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('gudang/{type}', [Admin\WarehouseController::class, 'show'])->whereIn('type', Warehouse::slugs())->name('warehouses.show');
+        Route::resource('penyesuaian-stok', Admin\AdjustmentController::class)->only(['index', 'create', 'store', 'destroy'])
+            ->names('adjustments')->parameters(['penyesuaian-stok' => 'adjustment']);
+
+        Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
+        Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
+        Route::resource('penjualan', Admin\SaleController::class)->except('show')->names('sales')->parameters(['penjualan' => 'sale']);
+        Route::get('laporan-keuangan', Admin\FinanceReportController::class)->name('finance.index');
         Route::get('dompet/transfer', [Admin\WalletController::class, 'createTransfer'])->name('wallets.transfer');
         Route::post('dompet/transfer', [Admin\WalletController::class, 'storeTransfer'])->name('wallets.transfer.store');
         Route::delete('dompet/transfer/{transfer}', [Admin\WalletController::class, 'destroyTransfer'])->name('wallets.transfers.destroy');
@@ -119,52 +135,8 @@ Route::prefix('admin')->group(function () {
         Route::post('website/pengiriman/{shipment}/riwayat', [Admin\OrderController::class, 'storeEvent'])->name('shipments.events.store');
         Route::delete('website/riwayat/{event}', [Admin\OrderController::class, 'destroyEvent'])->name('shipment-events.destroy');
 
-        // Sheet Daftar, Host Live, Tukang, Riwayat Pengadaan
-        Route::get('daftar-pilihan', [Admin\ListOptionController::class, 'index'])->name('list-options.index');
-        Route::post('daftar-pilihan', [Admin\ListOptionController::class, 'store'])->name('list-options.store');
-        Route::delete('daftar-pilihan/{listOption}', [Admin\ListOptionController::class, 'destroy'])->name('list-options.destroy');
-        Route::post('daftar-pilihan/kategori', [Admin\ListOptionController::class, 'storeCategory'])->name('expense-categories.store');
-        Route::delete('daftar-pilihan/kategori/{category}', [Admin\ListOptionController::class, 'destroyCategory'])->name('expense-categories.destroy');
-
-        Route::get('jam-live', [Admin\HostController::class, 'sessions'])->name('live-sessions.index');
-        Route::get('jam-live/create', [Admin\HostController::class, 'createSession'])->name('live-sessions.create');
-        Route::post('jam-live', [Admin\HostController::class, 'storeSession'])->name('live-sessions.store');
-        Route::get('jam-live/{session}/edit', [Admin\HostController::class, 'editSession'])->name('live-sessions.edit');
-        Route::put('jam-live/{session}', [Admin\HostController::class, 'updateSession'])->name('live-sessions.update');
-        Route::delete('jam-live/{session}', [Admin\HostController::class, 'destroySession'])->name('live-sessions.destroy');
-        Route::get('data-host', [Admin\HostController::class, 'index'])->name('hosts.index');
-        Route::post('data-host', [Admin\HostController::class, 'store'])->name('hosts.store');
-        Route::put('data-host/{host}', [Admin\HostController::class, 'update'])->name('hosts.update');
-        Route::delete('data-host/{host}', [Admin\HostController::class, 'destroy'])->name('hosts.destroy');
-
-        Route::get('absen-tukang', [Admin\WorkerController::class, 'attendance'])->name('attendance.index');
-        Route::get('absen-tukang/create', [Admin\WorkerController::class, 'createDay'])->name('attendance.create');
-        Route::post('absen-tukang', [Admin\WorkerController::class, 'storeDay'])->name('attendance.store');
-        Route::get('absen-tukang/{day}/edit', [Admin\WorkerController::class, 'editDay'])->name('attendance.edit');
-        Route::put('absen-tukang/{day}', [Admin\WorkerController::class, 'updateDay'])->name('attendance.update');
-        Route::delete('absen-tukang/{day}', [Admin\WorkerController::class, 'destroyDay'])->name('attendance.destroy');
-        Route::get('data-tukang', [Admin\WorkerController::class, 'index'])->name('workers.index');
-        Route::post('data-tukang', [Admin\WorkerController::class, 'store'])->name('workers.store');
-        Route::put('data-tukang/{worker}', [Admin\WorkerController::class, 'update'])->name('workers.update');
-        Route::delete('data-tukang/{worker}', [Admin\WorkerController::class, 'destroy'])->name('workers.destroy');
-
-        Route::get('gaji/{kind}', [Admin\PayrollController::class, 'index'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.index');
-        Route::get('gaji/{kind}/create', [Admin\PayrollController::class, 'create'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.create');
-        Route::post('gaji/{kind}', [Admin\PayrollController::class, 'store'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.store');
-        Route::get('gaji/{kind}/{id}/edit', [Admin\PayrollController::class, 'edit'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.edit');
-        Route::put('gaji/{kind}/{id}', [Admin\PayrollController::class, 'update'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.update');
-        Route::delete('gaji/{kind}/{id}', [Admin\PayrollController::class, 'destroy'])->whereIn('kind', ['host', 'tukang'])->name('payrolls.destroy');
-
-        Route::get('riwayat-pengadaan', Admin\ProcurementHistoryController::class)->name('procurement.index');
-
-        // Master pendukung Formula (HPP)
+        // Pengaturan produksi: lebar potong gergaji.
         Route::get('pengaturan-produksi', [Admin\ProductionSettingController::class, 'edit'])->name('production-settings.edit');
         Route::put('pengaturan-produksi', [Admin\ProductionSettingController::class, 'update'])->name('production-settings.update');
-        Route::get('master/{master}', [Admin\MasterController::class, 'index'])->name('masters.index');
-        Route::get('master/{master}/create', [Admin\MasterController::class, 'create'])->name('masters.create');
-        Route::post('master/{master}', [Admin\MasterController::class, 'store'])->name('masters.store');
-        Route::get('master/{master}/{id}/edit', [Admin\MasterController::class, 'edit'])->whereNumber('id')->name('masters.edit');
-        Route::put('master/{master}/{id}', [Admin\MasterController::class, 'update'])->whereNumber('id')->name('masters.update');
-        Route::delete('master/{master}/{id}', [Admin\MasterController::class, 'destroy'])->whereNumber('id')->name('masters.destroy');
     });
 });

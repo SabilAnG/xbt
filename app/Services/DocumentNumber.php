@@ -25,6 +25,8 @@ class DocumentNumber
         'productions' => 'PR',
         'material_opnames' => 'SOB',    // stok opname bahan
         'production_plans' => 'RP',     // rencana produksi
+        'material_adjustments' => 'PS', // penyesuaian stok bahan
+        'purchase_receipts' => 'PN',    // penerimaan barang pembelian
     ];
 
     private const COLUMNS = [
@@ -36,6 +38,8 @@ class DocumentNumber
         'productions' => 'production_number',
         'material_opnames' => 'opname_number',
         'production_plans' => 'plan_number',
+        'material_adjustments' => 'adjustment_number',
+        'purchase_receipts' => 'receipt_number',
     ];
 
     /**

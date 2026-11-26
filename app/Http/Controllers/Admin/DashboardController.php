@@ -30,7 +30,7 @@ class DashboardController extends Controller
             'alertMaterials' => $alertMaterials,
             'lowProducts' => $lowProducts,
             'topStock' => Item::query()->where('stock', '>', 0)->orderByDesc('stock')->limit(8)->get(),
-            'recentProductions' => Production::query()->with('item')->latest('produced_at')->latest('id')->limit(5)->get(),
+            'recentProductions' => Production::query()->with('item', 'formula')->latest('produced_at')->latest('id')->limit(5)->get(),
             'recentSales' => Sale::query()->with('items.item')->latest('sold_at')->latest('id')->limit(5)->get(),
         ]);
     }

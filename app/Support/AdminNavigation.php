@@ -40,6 +40,7 @@ class AdminNavigation
         'image' => 'M4 5h16v14H4zm0 11 4.5-4.5a1.5 1.5 0 0 1 2 0L15 16m-1.5-1.5 1.5-1.5a1.5 1.5 0 0 1 2 0L20 16M15 9h.01',
         'puzzle' => 'M10 4a2 2 0 1 1 4 0v1h4a1 1 0 0 1 1 1v4h-1a2 2 0 1 0 0 4h1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 1 0-4 0v1H6a1 1 0 0 1-1-1v-4h1a2 2 0 1 0 0-4H5V6a1 1 0 0 1 1-1h4V4Z',
         'warehouse' => 'M3 21V9l9-6 9 6v12M7 21v-8h10v8M7 17h10',
+        'inbox' => 'M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6l2-8Z',
         'truck' => 'M3 6h11v10H3zm11 4h4l3 3v3h-7M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
     ];
 
@@ -60,40 +61,37 @@ class AdminNavigation
             ['label' => 'Ringkasan', 'items' => [
                 $item('Dashboard', 'admin.dashboard', 'admin.dashboard', 'home'),
             ]],
-            ['label' => 'Inventory', 'items' => [
-                $item('Stok Produk', 'admin.items.index', 'admin.items.*', 'box'),
-                $item('Stok Bahan', 'admin.materials.index', 'admin.materials.*', 'layers'),
-                $item('Master Komponen', 'admin.components.index', 'admin.components.*', 'puzzle'),
-                $item('Gudang', 'admin.warehouses.index', 'admin.warehouses.*', 'warehouse'),
-                $item('Formula (HPP)', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
+            // Urutan grup mengikuti EMS: Pembelian → Penjualan → Katalog → Keuangan → Gudang → Produksi.
+            ['label' => 'Pembelian', 'items' => [
+                $item('Pembelian', 'admin.purchases.index', 'admin.purchases.*', 'bag'),
+                $item('Penerimaan', 'admin.receipts.index', 'admin.receipts.*', 'inbox'),
+                $item('Supplier', 'admin.suppliers.index', 'admin.suppliers.*', 'users'),
+            ]],
+            ['label' => 'Penjualan', 'items' => [
+                $item('Stok Siap Jual', 'admin.warehouses.show', 'admin.warehouses.show:finish-good', 'box', ['type' => 'finish-good']),
+                $item('Penjualan', 'admin.sales.index', 'admin.sales.*', 'cart'),
+            ]],
+            ['label' => 'Katalog', 'items' => [
+                $item('Item', 'admin.master-items.index', 'admin.master-items.*|admin.materials.*|admin.items.*', 'layers'),
+                $item('Satuan', 'admin.units.index', 'admin.units.*', 'list'),
                 $item('Merek', 'admin.brands.index', 'admin.brands.*', 'tag'),
             ]],
-            ['label' => 'Transaksi', 'items' => [
-                $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
-                $item('Penjualan', 'admin.sales.index', 'admin.sales.*', 'cart'),
-                $item('Pembelian Bahan', 'admin.purchases.index', 'admin.purchases.*', 'bag'),
-                $item('Penyesuaian Bahan', 'admin.adjustments.index', 'admin.adjustments.*', 'sliders'),
-                $item('Pengeluaran', 'admin.expenses.index', 'admin.expenses.*', 'banknote'),
+            ['label' => 'Keuangan', 'items' => [
                 $item('Dompet', 'admin.wallets.index', 'admin.wallets.*', 'wallet'),
+                $item('Pengeluaran', 'admin.expenses.index', 'admin.expenses.*', 'banknote'),
+                $item('Laporan Keuangan', 'admin.finance.index', 'admin.finance.*', 'coins'),
             ]],
-            ['label' => 'Host Live & Tukang', 'items' => [
-                $item('Jam Live', 'admin.live-sessions.index', 'admin.live-sessions.*', 'video'),
-                $item('Gaji Host', 'admin.payrolls.index', 'admin.payrolls.*:host', 'coins', ['kind' => 'host']),
-                $item('Absen Tukang', 'admin.attendance.index', 'admin.attendance.*', 'calendar'),
-                $item('Gaji Tukang', 'admin.payrolls.index', 'admin.payrolls.*:tukang', 'banknote', ['kind' => 'tukang']),
-                $item('Data Host & Tukang', 'admin.hosts.index', 'admin.hosts.*|admin.workers.*', 'users'),
+            ['label' => 'Gudang', 'items' => [
+                $item('Gudang', 'admin.warehouses.index', 'admin.warehouses.index|admin.warehouses.show:bahan-baku|admin.warehouses.show:setengah-jadi|admin.warehouses.show:aksesoris', 'warehouse'),
+                $item('Penyesuaian Stok', 'admin.adjustments.index', 'admin.adjustments.*', 'sliders'),
             ]],
-            ['label' => 'Master HPP', 'items' => [
-                $item('Komponen Biaya', 'admin.masters.index', 'admin.masters.*:komponen-biaya', 'wrench', ['master' => 'komponen-biaya']),
-                $item('Mesin', 'admin.masters.index', 'admin.masters.*:mesin', 'cog', ['master' => 'mesin']),
-                $item('Overhead Bulanan', 'admin.masters.index', 'admin.masters.*:overhead', 'building', ['master' => 'overhead']),
-                $item('Tingkatan Harga', 'admin.masters.index', 'admin.masters.*:tingkatan-harga', 'tag', ['master' => 'tingkatan-harga']),
-                $item('Type & Merek Motor', 'admin.masters.index', 'admin.masters.*:type-motor|admin.masters.*:merek-motor', 'bike', ['master' => 'type-motor']),
-                $item('Pengaturan Produksi', 'admin.production-settings.edit', 'admin.production-settings.*', 'sliders'),
-            ]],
-            ['label' => 'Referensi', 'items' => [
-                $item('Daftar Pilihan', 'admin.list-options.index', 'admin.list-options.*', 'list'),
-                $item('Riwayat Pengadaan', 'admin.procurement.index', 'admin.procurement.*', 'history'),
+            ['label' => 'Produksi', 'items' => [
+                $item('Formula', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
+                $item('Rencana Produksi', 'admin.plans.index', 'admin.plans.*', 'calendar'),
+                $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
+                $item('Vendor Produksi', 'admin.warehouses.show', 'admin.warehouses.show:di-vendor', 'truck', ['type' => 'di-vendor']),
+                $item('Hasil Samping', 'admin.warehouses.show', 'admin.warehouses.show:stok-sisa', 'puzzle', ['type' => 'stok-sisa']),
+                $item('Pengaturan Produksi', 'admin.production-settings.edit', 'admin.production-settings.*', 'cog'),
             ]],
             ['label' => 'Website', 'items' => [
                 $item('Pengaturan Situs', 'admin.site-settings.edit', 'admin.site-settings.*', 'globe'),
@@ -105,8 +103,9 @@ class AdminNavigation
     }
 
     /**
-     * Pola "nama.route:param" aktif hanya bila parameter kind/master cocok,
-     * supaya Gaji Host dan Gaji Tukang (satu route) tidak menyala bersamaan.
+     * Pola "nama.route:param" aktif hanya bila parameter kind/master/type
+     * cocok, supaya menu yang memakai satu route (mis. halaman gudang) tidak
+     * menyala bersamaan.
      *
      * @param  array{active: string}  $item
      */
@@ -115,7 +114,7 @@ class AdminNavigation
         foreach (explode('|', $item['active']) as $pattern) {
             [$name, $param] = array_pad(explode(':', $pattern, 2), 2, null);
 
-            if ($request->routeIs($name) && ($param === null || in_array($param, [$request->route('kind'), $request->route('master')], true))) {
+            if ($request->routeIs($name) && ($param === null || in_array($param, [$request->route('kind'), $request->route('master'), $request->route('type')], true))) {
                 return true;
             }
         }
