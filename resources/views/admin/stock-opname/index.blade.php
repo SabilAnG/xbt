@@ -44,7 +44,9 @@
         <div class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
             <div class="min-w-0 flex-1">
                 <h2 class="card-title">Opname {{ $warehouse->name }}</h2>
-                <p class="text-[12px] text-muted">Isi stok hasil hitung fisik. Kosong / sama dengan sistem = tidak diubah.{{ $isProduct ? '' : ' Pipa dihitung per batang di Penyesuaian Stok.' }}</p>
+                <p class="text-[12px] text-muted">Isi stok hasil hitung fisik. Kosong / sama dengan sistem = tidak diubah.{{ $isProduct ? '' : ' Pipa dihitung per batang di Penyesuaian Stok.' }}
+                    @if ($lastCount)<span class="ml-1 text-ink-soft">Opname terakhir {{ $lastCount->adjusted_at->translatedFormat('d M Y') }} oleh <strong>{{ $lastCount->counted_by }}</strong>.</span>@endif
+                </p>
             </div>
             <label class="relative w-full sm:w-60">
                 <svg class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -55,15 +57,21 @@
         </div>
 
         {{-- Data opname + ringkasan --}}
-        <div class="grid items-end gap-3 border-b border-line bg-hover/40 px-5 py-4 sm:grid-cols-2 xl:grid-cols-[160px_220px_minmax(0,1fr)_auto]">
+        <div class="grid items-end gap-3 border-b border-line bg-hover/40 px-5 py-4 sm:grid-cols-2 xl:grid-cols-[170px_minmax(0,1fr)_220px_minmax(0,1.2fr)]">
             <x-admin.field name="adjusted_at" label="Tanggal hitung" type="date" :value="now()->toDateString()" required />
+            <div>
+                <label for="counted_by" class="label">Pelaksana opname <span class="text-rose-500">*</span></label>
+                <input id="counted_by" name="counted_by" value="{{ old('counted_by') }}" class="input" list="opname-counters" placeholder="Nama yang menghitung" required>
+                <datalist id="opname-counters">@foreach ($counters as $name)<option value="{{ $name }}">@endforeach</datalist>
+                @error('counted_by')<p class="error">{{ $message }}</p>@enderror
+            </div>
             @if ($isProduct)
                 <x-admin.select name="reason" label="Alasan" :options="$reasons" value="opname" :placeholder="false" required />
             @else
                 <div><p class="label">Alasan</p><p class="flex h-10 items-center text-[13px] text-ink-soft">Koreksi hitung fisik</p></div>
             @endif
             <x-admin.field name="notes" label="Catatan" placeholder="mis. opname akhir bulan" />
-            <div class="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-1 xl:justify-end">
+            <div class="flex flex-wrap items-center justify-end gap-2 sm:col-span-2 xl:col-span-4">
                 <span class="pill">Berubah <strong class="ml-1 text-ink" data-count>0</strong></span>
                 <span class="pill">Selisih <strong class="ml-1 tabular-nums" data-total>Rp 0</strong></span>
                 <button class="btn btn-primary">Simpan opname</button>

@@ -15,7 +15,7 @@ class ItemAdjustment extends Model
         'sampel' => 'Sampel / promosi',
     ];
 
-    protected $fillable = ['adjustment_number', 'adjusted_at', 'item_id', 'system_qty', 'actual_qty', 'difference', 'unit_cost', 'reason', 'notes'];
+    protected $fillable = ['adjustment_number', 'adjusted_at', 'item_id', 'system_qty', 'actual_qty', 'difference', 'unit_cost', 'reason', 'counted_by', 'notes'];
 
     protected function casts(): array
     {

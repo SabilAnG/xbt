@@ -57,6 +57,7 @@
                 <x-admin.field name="adjusted_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
             </div>
             <x-admin.select name="reason" label="Alasan" :options="$reasons" value="opname" :placeholder="false" required />
+            <x-admin.field name="counted_by" label="Pelaksana" placeholder="Nama yang menghitung" />
             <x-admin.field name="notes" label="Catatan" placeholder="mis. 1 unit penyok saat kirim" />
             <button class="btn btn-primary w-full">Simpan penyesuaian</button>
         </form>
@@ -71,7 +72,7 @@
                         <tr>
                             <td class="font-mono text-xs">{{ $adjustment->adjustment_number }}</td>
                             <td class="whitespace-nowrap">{{ $adjustment->adjusted_at->translatedFormat('d M Y') }}</td>
-                            <td>{{ $adjustment->reasonLabel() }}@if ($adjustment->notes)<p class="text-[11px] text-muted">{{ $adjustment->notes }}</p>@endif</td>
+                            <td>{{ $adjustment->reasonLabel() }}<p class="text-[11px] text-muted">{{ collect([$adjustment->counted_by ? 'oleh '.$adjustment->counted_by : null, $adjustment->notes])->filter()->implode(' · ') }}</p></td>
                             <td class="num">{{ qty($adjustment->system_qty) }}</td>
                             <td class="num">{{ qty($adjustment->actual_qty) }}</td>
                             <td class="num font-semibold {{ $adjustment->difference < 0 ? 'text-rose-600' : 'text-emerald-700' }}">{{ ($adjustment->difference > 0 ? '+' : '').qty($adjustment->difference) }}</td>

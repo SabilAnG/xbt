@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\ItemAdjustment;
 use App\Models\Material;
+use App\Models\MaterialAdjustment;
+use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Worker;
 use App\Services\AdjustmentService;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
@@ -42,6 +45,10 @@ class StockOpnameController extends Controller
             }),
             'rows' => $this->rows($current),
             'reasons' => ItemAdjustment::REASONS,
+            'lastCount' => $this->lastCount($current),
+            // Saran nama pelaksana: pekerja aktif & pengguna panel.
+            'counters' => Worker::query()->where('is_active', true)->orderBy('name')->pluck('name')
+                ->merge(User::query()->where('is_active', true)->orderBy('name')->pluck('name'))->unique()->values(),
         ]);
     }
 
@@ -49,6 +56,7 @@ class StockOpnameController extends Controller
     {
         $data = $request->validate([
             'adjusted_at' => ['required', 'date'],
+            'counted_by' => ['required', 'string', 'max:100'],
             'reason' => ['required', Rule::in(array_keys(ItemAdjustment::REASONS))],
             'notes' => ['nullable', 'string', 'max:255'],
             'actual' => ['array'],
@@ -63,7 +71,7 @@ class StockOpnameController extends Controller
         }
 
         try {
-            DB::transaction(fn () => $changed->each(fn (Item $item) => $inventory->adjustItem($item, (float) $data['actual'][$item->id], $data['reason'], $data['adjusted_at'], ($data['notes'] ?? null) ?: 'Stok opname')));
+            DB::transaction(fn () => $changed->each(fn (Item $item) => $inventory->adjustItem($item, (float) $data['actual'][$item->id], $data['reason'], $data['adjusted_at'], ($data['notes'] ?? null) ?: 'Stok opname', $data['counted_by'])));
         } catch (InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -76,6 +84,7 @@ class StockOpnameController extends Controller
         $data = $request->validate([
             'warehouse' => ['required', Rule::in([Warehouse::RAW, Warehouse::SEMI, Warehouse::ACCESSORY])],
             'adjusted_at' => ['required', 'date'],
+            'counted_by' => ['required', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:255'],
             'actual' => ['array'],
             'actual.*' => ['nullable', 'numeric', 'min:0'],
@@ -93,7 +102,7 @@ class StockOpnameController extends Controller
                 $difference = (float) $data['actual'][$material->id] - $material->stockIn($warehouse);
                 $adjustments->create([
                     'adjusted_at' => $data['adjusted_at'], 'material_id' => $material->id, 'warehouse_id' => $warehouse->id,
-                    'direction' => $difference > 0 ? 'in' : 'out', 'qty' => abs($difference), 'reason' => 'koreksi',
+                    'direction' => $difference > 0 ? 'in' : 'out', 'qty' => abs($difference), 'reason' => 'koreksi', 'counted_by' => $data['counted_by'],
                     'notes' => ($data['notes'] ?? null) ?: 'Stok opname',
                 ]);
             }));
@@ -123,6 +132,16 @@ class StockOpnameController extends Controller
             'id' => $material->id, 'name' => $material->name, 'meta' => $material->category?->name ?? '', 'unit' => $material->stockUnit(),
             'system' => $material->stockIn($warehouse), 'cost' => $material->unitCost(), 'href' => null,
         ]);
+    }
+
+    /** Opname terakhir di gudang ini: tanggal & pelaksana. */
+    private function lastCount(Warehouse $warehouse): ?object
+    {
+        $query = $warehouse->type === Warehouse::FINISHED
+            ? ItemAdjustment::query()
+            : MaterialAdjustment::query()->where('warehouse_id', $warehouse->id);
+
+        return $query->whereNotNull('counted_by')->latest('adjusted_at')->latest('id')->first(['adjusted_at', 'counted_by']);
     }
 
     /** @return Collection<int, Material> */

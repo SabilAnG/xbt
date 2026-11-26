@@ -22,7 +22,7 @@ class MaterialAdjustment extends Model
 
     protected $fillable = [
         'adjustment_number', 'adjusted_at', 'material_id', 'warehouse_id', 'pipe_piece_id',
-        'direction', 'qty', 'length_cm', 'unit_cost', 'reason', 'notes',
+        'direction', 'qty', 'length_cm', 'unit_cost', 'reason', 'counted_by', 'notes',
     ];
 
     protected function casts(): array

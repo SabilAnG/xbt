@@ -70,11 +70,12 @@ class ItemController extends Controller
             'adjusted_at' => ['required', 'date'],
             'actual_qty' => ['required', 'numeric', 'min:0'],
             'reason' => ['required', Rule::in(array_keys(ItemAdjustment::REASONS))],
+            'counted_by' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
-            $adjustment = $inventory->adjustItem($item, (float) $data['actual_qty'], $data['reason'], $data['adjusted_at'], $data['notes'] ?? null);
+            $adjustment = $inventory->adjustItem($item, (float) $data['actual_qty'], $data['reason'], $data['adjusted_at'], $data['notes'] ?? null, $data['counted_by'] ?? null);
         } catch (InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }

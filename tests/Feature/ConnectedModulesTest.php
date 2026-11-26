@@ -6,6 +6,7 @@ use App\Models\Formula;
 use App\Models\Item;
 use App\Models\ItemAdjustment;
 use App\Models\Material;
+use App\Models\MaterialAdjustment;
 use App\Models\MaterialPurchase;
 use App\Models\Order;
 use App\Models\Production;
@@ -173,15 +174,20 @@ class ConnectedModulesTest extends TestCase
         $this->get(route('admin.stock-opname.index', ['gudang' => 'aksesoris']))->assertOk()->assertSee('Baut L');
 
         // Beat dikosongkan (tidak diubah), Mio sama dengan sistem → tidak ada perubahan.
-        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-05', 'reason' => 'opname', 'actual' => [$mio->id => 10, $beat->id => null]])->assertSessionHas('error');
+        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-05', 'reason' => 'opname', 'counted_by' => 'Sidik', 'actual' => [$mio->id => 10, $beat->id => null]])->assertSessionHas('error');
 
-        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-05', 'reason' => 'opname', 'actual' => [$mio->id => 9, $beat->id => 5]])->assertSessionHasNoErrors();
+        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-05', 'reason' => 'opname', 'actual' => [$mio->id => 9]])->assertSessionHasErrors('counted_by');
+        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-05', 'reason' => 'opname', 'counted_by' => 'Sidik', 'actual' => [$mio->id => 9, $beat->id => 5]])->assertSessionHasNoErrors();
+        $this->assertSame('Sidik', ItemAdjustment::firstOrFail()->counted_by);
+        $this->get(route('admin.stock-opname.index'))->assertSee('Opname terakhir')->assertSee('Sidik');
         $this->assertEquals(9, (float) $mio->fresh()->stock);
         $this->assertEquals(5, (float) $beat->fresh()->stock);
         $this->assertSame(2, ItemAdjustment::count());
 
-        $this->post(route('admin.stock-opname.materials'), ['warehouse' => 'aksesoris', 'adjusted_at' => '2026-12-05', 'actual' => [$bolt->id => 47]])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $this->post(route('admin.stock-opname.materials'), ['warehouse' => 'aksesoris', 'adjusted_at' => '2026-12-05', 'counted_by' => 'Rudi', 'actual' => [$bolt->id => 47]])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertEquals(47, $bolt->fresh()->load('stocks')->stockIn($accessory));
+        $this->assertSame('Rudi', MaterialAdjustment::firstOrFail()->counted_by);
+        $this->get(route('admin.adjustments.index'))->assertSee('oleh Rudi');
     }
 
     public function test_purchase_return_takes_stock_out_and_refunds_overpayment(): void

@@ -1,9 +1,12 @@
 @php
     $sourceLink = function ($row) {
         return match ($row->source_type) {
-            \App\Models\Sale::class => ['Penjualan', route('admin.sales.edit', $row->source_id)],
+            \App\Models\Sale::class => ['Penjualan', route('admin.sales.show', $row->source_id)],
+            \App\Models\SalePayment::class => ['Penjualan', ($sale = \App\Models\SalePayment::find($row->source_id)?->sale_id) ? route('admin.sales.show', $sale) : null],
             \App\Models\Expense::class => ['Pengeluaran', route('admin.expenses.edit', $row->source_id)],
-            \App\Models\PurchasePayment::class => ['Pembelian bahan', route('admin.purchases.index')],
+            \App\Models\PurchasePayment::class => ['Pembelian', ($purchase = \App\Models\PurchasePayment::find($row->source_id)?->material_purchase_id) ? route('admin.purchases.show', $purchase) : route('admin.purchases.index')],
+            \App\Models\SupplierDeposit::class => ['Uang muka', ($supplier = \App\Models\SupplierDeposit::find($row->source_id)?->supplier_id) ? route('admin.suppliers.show', $supplier) : null],
+            \App\Models\WorkerAdvance::class => ['Kasbon', ($worker = \App\Models\WorkerAdvance::find($row->source_id)?->worker_id) ? route('admin.workers.show', $worker) : null],
             \App\Models\WalletTransfer::class => ['Transfer', null],
             null => ['Manual', null],
             default => ['Lainnya', null],

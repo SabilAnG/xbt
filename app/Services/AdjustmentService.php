@@ -51,6 +51,7 @@ class AdjustmentService
                 'length_cm' => $material->isPipe() ? ($piece ? (float) $piece->length_cm : (float) ($data['length_cm'] ?? 0)) : null,
                 'unit_cost' => $piece ? (float) $piece->cost_per_cm : $unitCost,
                 'reason' => $data['reason'],
+                'counted_by' => $data['counted_by'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
             $note = $adjustment->adjustment_number.' · '.$adjustment->reasonLabel().($adjustment->notes ? ' · '.$adjustment->notes : '');

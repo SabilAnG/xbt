@@ -186,7 +186,7 @@ class InventoryService
     }
 
     /** Stok sistem disamakan dengan hasil hitung fisik; selisihnya jadi mutasi penyesuaian. */
-    public function adjustItem(Item $item, float $actual, string $reason, CarbonInterface|string $date, ?string $notes = null): ItemAdjustment
+    public function adjustItem(Item $item, float $actual, string $reason, CarbonInterface|string $date, ?string $notes = null, ?string $countedBy = null): ItemAdjustment
     {
         if ($actual < 0) {
             throw new InvalidArgumentException('Stok fisik tidak boleh minus.');
@@ -194,7 +194,7 @@ class InventoryService
 
         $date = Carbon::parse($date);
 
-        return DB::transaction(function () use ($item, $actual, $reason, $date, $notes) {
+        return DB::transaction(function () use ($item, $actual, $reason, $date, $notes, $countedBy) {
             $item = Item::lockForUpdate()->findOrFail($item->id);
             $difference = $actual - (float) $item->stock;
 
@@ -211,11 +211,12 @@ class InventoryService
                 'difference' => $difference,
                 'unit_cost' => (float) $item->cost_price,
                 'reason' => $reason,
+                'counted_by' => $countedBy,
                 'notes' => $notes,
             ]);
 
             $this->moveItem($item, max($difference, 0), max(-$difference, 0), (float) $item->cost_price, 'adjustment', $adjustment, $date,
-                $adjustment->adjustment_number.' · '.$adjustment->reasonLabel().($notes ? ' · '.$notes : ''));
+                $adjustment->adjustment_number.' · '.$adjustment->reasonLabel().($countedBy ? ' · oleh '.$countedBy : '').($notes ? ' · '.$notes : ''));
 
             return $adjustment;
         });

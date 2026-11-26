@@ -17,7 +17,7 @@
                         <td class="whitespace-nowrap">{{ $adjustment->adjusted_at->translatedFormat('d M Y') }}</td>
                         <td><a href="{{ route('admin.materials.show', $material) }}" class="link">{{ $material->label() }}</a></td>
                         <td class="text-xs">{{ $adjustment->warehouse->typeLabel() }}</td>
-                        <td class="text-sm">{{ $adjustment->reasonLabel() }}@if ($adjustment->notes)<p class="text-xs text-slate-500">{{ $adjustment->notes }}</p>@endif</td>
+                        <td class="text-sm">{{ $adjustment->reasonLabel() }}@if ($adjustment->counted_by || $adjustment->notes)<p class="text-xs text-slate-500">{{ collect([$adjustment->counted_by ? 'oleh '.$adjustment->counted_by : null, $adjustment->notes])->filter()->implode(' · ') }}</p>@endif</td>
                         <td class="num font-semibold whitespace-nowrap {{ $adjustment->direction === 'in' ? 'text-emerald-600' : 'text-rose-600' }}">
                             @if ($material->isPipe() && $adjustment->direction === 'in')
                                 {{ $sign }}{{ qty($adjustment->qty) }} × {{ qty($adjustment->length_cm, 2) }} cm
