@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
+use App\Models\CostOption;
 use App\Models\Formula;
 use App\Models\Item;
 use App\Models\ItemAdjustment;
@@ -24,10 +26,13 @@ use App\Models\WalletTransfer;
 use App\Models\Warehouse;
 use App\Models\Worker;
 use App\Models\WorkerPayroll;
+use App\Models\WorkerPieceEarning;
 use App\Services\DashboardSummary;
 use App\Support\AdminNavigation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -67,7 +72,10 @@ class FullBusinessCycleTest extends TestCase
         $box = $this->material(['name' => 'Dus', 'warehouse_id' => $accessory->id, 'last_price' => 3_000]);
 
         $this->post(route('admin.vendor-services.store'), ['vendor' => 'Bengkel Bending Jaya', 'process' => 'Bending', 'rate' => 3_000, 'unit' => 'buah'])->assertSessionHasNoErrors();
+        $las = CostOption::findByName('Ongkos las');
+        $this->put(route('admin.cost-options.update', $las), ['name' => 'Ongkos las', 'amount' => 25_000, 'payment_mode' => 'borongan'])->assertSessionHasNoErrors();
         $bender = Supplier::where('name', 'Bengkel Bending Jaya')->firstOrFail();
+        $this->put(route('admin.suppliers.update', $bender), ['name' => 'Bengkel Bending Jaya', 'payment_term_days' => 7, 'is_active' => 1])->assertSessionHasNoErrors();
         $this->post(route('admin.workers.store'), ['name' => 'Sidik', 'daily_wage' => 120_000, 'meal_allowance' => 15_000, 'overtime_rate' => 20_000, 'is_active' => 1])->assertSessionHasNoErrors();
         $worker = Worker::firstOrFail();
 
@@ -141,6 +149,8 @@ class FullBusinessCycleTest extends TestCase
         // Hutang: bahan (sisa 526.000) dibayar sekaligus; jasa bending 30.000 pakai DP 10.000 + 20.000.
         $bending = MaterialPurchase::where('kind', 'jasa')->firstOrFail();
         $this->assertSame($bender->id, $bending->supplier_id);
+        $this->assertTrue($bending->due_date->isSameDay($job->produced_at->copy()->addDays(7)), 'Jatuh tempo dari termin vendor');
+        $this->assertEquals(250_000, (float) WorkerPieceEarning::sum('amount'), 'Ongkos las borongan 10 × 25.000');
         $this->post(route('admin.suppliers.pay', $bender), ['paid_at' => '2026-12-03', 'purchases' => [$bending->id], 'use_deposit' => 1, 'amount' => 20_000, 'wallet_id' => $kas->id])->assertSessionHasNoErrors();
         $this->post(route('admin.suppliers.pay', Supplier::where('name', 'Toko Besi Jaya')->firstOrFail()), ['paid_at' => '2026-12-03', 'purchases' => [$mainPurchase->id], 'amount' => 526_000, 'wallet_id' => $bca->id])
             ->assertSessionHasNoErrors();
@@ -161,12 +171,25 @@ class FullBusinessCycleTest extends TestCase
         $this->assertTrue($sale->fresh()->isPaidOff());
         $this->post(route('admin.orders.store'), ['sale_id' => $sale->id, 'order_number' => $sale->invoice_number, 'status' => 'shipped', 'customer_name' => 'Budi'])->assertSessionHasNoErrors();
 
+        // Retur 1 Beat (cacat) → uang dikembalikan ke pembeli dari BCA.
+        $this->post(route('admin.sales.store'), ['sold_at' => '2026-12-08', 'customer_name' => 'Budi', 'lines' => [['item_id' => $beat->id, 'qty' => -1, 'unit_price' => 450_000]]])->assertSessionHasNoErrors();
+        $return = Sale::latest('id')->firstOrFail();
+        $this->assertSame('UANG BELUM KEMBALI', $return->paymentStatus());
+        $this->post(route('admin.sales.refunds.store', $return), ['paid_at' => '2026-12-08', 'amount' => 450_000, 'wallet_id' => $bca->id])->assertSessionHasNoErrors();
+        $this->assertSame('LUNAS', $return->fresh()->paymentStatus());
+        $this->assertEquals(3, (float) $beat->fresh()->stock);
+
         // Stok opname per gudang dengan pelaksana.
-        $this->post(route('admin.stock-opname.items'), ['adjusted_at' => '2026-12-09', 'reason' => 'rusak', 'counted_by' => 'Sidik', 'actual' => [$item->id => 5, $beat->id => 2]])->assertSessionHasNoErrors();
+        Storage::fake('site');
+        $this->post(route('admin.stock-opname.items'), [
+            'adjusted_at' => '2026-12-09', 'reason' => 'rusak', 'counted_by' => 'Sidik', 'actual' => [$item->id => 5, $beat->id => 2],
+            'photos' => [$item->id => UploadedFile::fake()->image('rak.jpg')],
+        ])->assertSessionHasNoErrors()->assertSessionMissing('error');
+        $this->assertSame(1, $item->stockPhotos()->count());
         $this->assertEquals(5, (float) $item->fresh()->stock);
         $this->post(route('admin.stock-opname.materials'), ['warehouse' => 'aksesoris', 'adjusted_at' => '2026-12-09', 'counted_by' => 'Rudi', 'actual' => [$bolt->id => 5]])->assertSessionHasNoErrors();
         $this->assertEquals(5, $bolt->fresh()->load('stocks')->stockIn($accessory));
-        $this->assertSame(1, ItemAdjustment::count());
+        $this->assertSame(2, ItemAdjustment::count());
         $this->assertSame('Rudi', MaterialAdjustment::firstOrFail()->counted_by);
 
         // Pekerja: kasbon, absensi seminggu (1 hari setengah, 2 jam lembur), gaji dibayar.
@@ -176,19 +199,30 @@ class FullBusinessCycleTest extends TestCase
         }
         $this->post(route('admin.payrolls.store'), ['worker_id' => $worker->id, 'period_start' => '2026-11-30', 'period_end' => '2026-12-06'])->assertSessionHasNoErrors();
         $slip = WorkerPayroll::firstOrFail();
-        // 4,5 hari × 120.000 + makan 5 × 15.000 + lembur 2 × 20.000 − kasbon 100.000.
-        $this->assertEquals(540_000 + 75_000 + 40_000 - 100_000, (float) $slip->net_pay);
+        // 4,5 hari × 120.000 + makan 5 × 15.000 + lembur 2 × 20.000 + borongan las 250.000 − kasbon 100.000.
+        $this->assertEquals(540_000 + 75_000 + 40_000 + 250_000 - 100_000, (float) $slip->net_pay);
+        $this->assertEquals(250_000, (float) $slip->piece_total);
         $this->post(route('admin.payrolls.pay', $slip), ['paid_at' => '2026-12-06', 'wallet_id' => $kas->id])->assertSessionHasNoErrors();
 
         $this->assertNumbersAgree();
 
-        // Saldo akhir: Kas = 10 jt − 500.000 − 5.000 + 2.000 − DP 10.000 − 20.000 + 500.000 − kasbon 100.000 − gaji 555.000.
-        $this->assertEquals(10_000_000 - 500_000 - 5_000 + 2_000 - 10_000 - 20_000 + 500_000 - 100_000 - 555_000, (float) $kas->fresh()->current_balance);
-        $this->assertEquals(-526_000 + 1_100_000, (float) $bca->fresh()->current_balance);
+        // Laba rugi: upah las sudah di HPP tidak dihitung dua kali; selisih stok ikut.
+        $this->get(route('admin.finance.index', ['dari' => '2026-11-01', 'sampai' => '2026-12-31']))->assertOk()
+            ->assertViewHas('profit', fn (array $profit) => $profit['absorbed_labour'] == 250_000 && $profit['stock_result'] < 0
+                && abs($profit['net'] - ($profit['revenue'] - $profit['cogs'] - $profit['operating'] + $profit['stock_result'])) < 0.01);
+
+        // Jejak aktivitas tercatat atas nama pemilik.
+        $this->assertTrue(ActivityLog::where('subject_type', Sale::class)->where('action', 'created')->where('user_id', auth()->id())->exists());
+        $this->assertTrue(ActivityLog::where('subject_type', Production::class)->where('action', 'updated')->exists(), 'Pembukuan produksi tercatat');
+
+        // Saldo akhir: Kas = 10 jt − 500.000 − 5.000 + 2.000 − DP 10.000 − 20.000 + 500.000 − kasbon 100.000 − gaji 805.000.
+        $this->assertEquals(10_000_000 - 500_000 - 5_000 + 2_000 - 10_000 - 20_000 + 500_000 - 100_000 - 805_000, (float) $kas->fresh()->current_balance);
+        $this->assertEquals(-526_000 + 1_100_000 - 450_000, (float) $bca->fresh()->current_balance);
 
         // Setiap halaman: pemilik bisa semua; peran lain sesuai hak aksesnya, tidak ada yang error.
         $this->crawlAs(auth()->user());
-        foreach (['admin', 'gudang', 'kasir'] as $role) {
+        $this->post(route('admin.users.roles.store'), ['name' => 'Admin Pembelian', 'permissions' => ['purchases', 'receipts', 'suppliers', 'stock-opname']])->assertSessionHasNoErrors();
+        foreach (['admin', 'gudang', 'kasir', 'admin-pembelian'] as $role) {
             $this->crawlAs(User::factory()->create(['role' => $role]));
         }
     }
@@ -228,8 +262,10 @@ class FullBusinessCycleTest extends TestCase
         $headline = app(DashboardSummary::class)->headline();
         $business = WalletTransaction::query()->whereNotNull('source_type')->where('source_type', '!=', WalletTransfer::class);
         $refunds = (float) (clone $business)->where('source_type', PurchasePayment::class)->where('direction', 'in')->sum('amount');
-        $this->assertEqualsWithDelta((float) (clone $business)->where('direction', 'out')->sum('amount') - $refunds, $headline['expenses'], 0.01, 'Uang keluar dashboard');
-        $this->assertEqualsWithDelta((float) (clone $business)->where('source_type', SalePayment::class)->sum('amount'), $headline['cash_in'], 0.01, 'Uang masuk dashboard');
+        $salesIn = (float) (clone $business)->where('source_type', SalePayment::class)->where('direction', 'in')->sum('amount');
+        $salesOut = (float) (clone $business)->where('source_type', SalePayment::class)->where('direction', 'out')->sum('amount');
+        $this->assertEqualsWithDelta((float) (clone $business)->where('direction', 'out')->sum('amount') - $salesOut - $refunds, $headline['expenses'], 0.01, 'Uang keluar dashboard');
+        $this->assertEqualsWithDelta($salesIn - $salesOut, $headline['cash_in'], 0.01, 'Uang masuk dashboard (dikurangi uang kembali)');
         $this->assertSame(Order::firstOrFail()->sale_id, Sale::firstOrFail()->id);
     }
 
@@ -278,7 +314,7 @@ class FullBusinessCycleTest extends TestCase
         $this->assertSame([], $failures, "Halaman bermasalah:\n".implode("\n", $failures));
         $this->assertGreaterThan(75, $visited, 'Jumlah halaman yang dibuka');
 
-        if (in_array($user->role, ['gudang', 'kasir'], true)) {
+        if (in_array($user->role, ['gudang', 'kasir', 'admin-pembelian'], true)) {
             $this->assertGreaterThan(10, $forbidden);
         } else {
             // Admin hanya ditolak di menu Pengguna (kelola pengguna & riwayat aktivitas).

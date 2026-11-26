@@ -42,8 +42,9 @@ class PayrollService
         $wage = ($full + $half * 0.5) * (float) $worker->daily_wage;
         $meal = $mealDays * (float) $worker->meal_allowance;
         $overtimeTotal = $overtime * (float) $worker->overtime_rate;
+        // Upah borongan yang belum dibayar sampai akhir periode ikut terbawa (tidak hilang bila minggu lalu terlewat).
         $pieces = WorkerPieceEarning::query()->where('worker_id', $worker->id)->whereNull('worker_payroll_id')
-            ->whereBetween('earned_on', [$start, $end])->get();
+            ->whereDate('earned_on', '<=', $end)->orderBy('earned_on')->get();
         $pieceTotal = (float) $pieces->sum('amount');
         $gross = $wage + $meal + $overtimeTotal + $pieceTotal;
         $balance = $worker->advanceBalance();
