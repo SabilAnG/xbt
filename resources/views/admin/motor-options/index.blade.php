@@ -12,7 +12,13 @@
 @section('content')
     <section class="grid gap-5 lg:grid-cols-2">
         @foreach (\App\Models\MotorOption::KINDS as $kind => $label)
-            @php [$gradient, $icon] = $styles[$kind]; $rows = $options->get($kind, collect()); @endphp
+            @php
+                [$gradient, $icon] = $styles[$kind];
+                $rows = $options->get($kind, collect());
+                if ($kind === 'type') {
+                    $rows = $rows->sortBy(fn ($row) => [$row->parent?->name ?? 'zzz', $row->sort_order, $row->name])->values();
+                }
+            @endphp
             <div class="card flex flex-col p-5 sm:p-6">
                 <div class="flex items-center gap-3">
                     <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br {{ $gradient }} text-white">
@@ -22,10 +28,13 @@
                     <span class="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-(--shadow-soft)">{{ $rows->count() }}</span>
                 </div>
 
-                <form method="POST" action="{{ route('admin.motor-options.store') }}" class="mt-4 flex gap-2">
+                <form method="POST" action="{{ route('admin.motor-options.store') }}" class="mt-4 flex flex-wrap gap-2">
                     @csrf
                     <input type="hidden" name="kind" value="{{ $kind }}">
-                    <input name="name" class="input h-10 flex-1" placeholder="Tambah {{ strtolower($label) }}..." aria-label="Tambah {{ strtolower($label) }}" required>
+                    <input name="name" class="input h-10 min-w-40 flex-1" placeholder="Tambah {{ strtolower($label) }}..." aria-label="Tambah {{ strtolower($label) }}" required>
+                    @if ($kind === 'type')
+                        <div class="w-40"><select name="brand" class="input h-10" aria-label="Brand type baru"><option value="">— brand —</option>@foreach ($brands as $brand)<option value="{{ $brand }}">{{ $brand }}</option>@endforeach</select></div>
+                    @endif
                     <button class="btn btn-primary h-10">+ Tambah</button>
                 </form>
 
@@ -37,10 +46,16 @@
                                 @csrf
                                 @method('PUT')
                                 <input name="name" value="{{ $option->name }}" class="h-8 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[13px] font-medium text-ink hover:border-line focus:border-brand-400 focus:bg-white focus:outline-none" aria-label="Nama {{ $option->name }}">
+                                @if ($kind === 'type')
+                                    <div class="w-36 shrink-0"><select name="brand" class="input h-8 text-[12px]" aria-label="Brand {{ $option->name }}"><option value="">— tanpa brand —</option>@foreach ($brands as $brand)<option value="{{ $brand }}" @selected($option->parent?->name === $brand)>{{ $brand }}</option>@endforeach</select></div>
+                                @endif
                                 <button class="btn btn-sm h-8" title="Simpan nama">Simpan</button>
                             </form>
                             <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium {{ $used ? 'bg-brand-50 text-brand-700' : 'bg-surface text-muted' }}">{{ $used }} formula</span>
-                            @unless ($used)
+                            @if ($kind === 'brand' && $option->children_count)
+                                <span class="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-strong">{{ $option->children_count }} type</span>
+                            @endif
+                            @unless ($used || ($kind === 'brand' && $option->children_count))
                                 <x-admin.delete-button :action="route('admin.motor-options.destroy', $option)" label="✕" :confirm="'Hapus '.$option->name.'?'" />
                             @endunless
                         </li>

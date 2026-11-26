@@ -1,4 +1,4 @@
-@props(['name', 'label', 'kind', 'options' => [], 'value' => null, 'required' => false, 'placeholder' => '— pilih —', 'hint' => null])
+@props(['name', 'label', 'kind', 'options' => [], 'value' => null, 'required' => false, 'placeholder' => '— pilih —', 'hint' => null, 'parents' => [], 'parentField' => null])
 {{--
     Dropdown master data motor dengan tombol "+" di sampingnya: pilihan baru
     langsung disimpan ke master (tanpa pindah halaman) lalu terpilih.
@@ -10,14 +10,14 @@
         $choices->put($current, $current);
     }
 @endphp
-<div {{ $attributes->only('class')->class(['relative']) }} data-option-select data-kind="{{ $kind }}">
+<div {{ $attributes->only('class')->class(['relative']) }} data-option-select data-kind="{{ $kind }}" @if ($parentField) data-parent-field="{{ $parentField }}" @endif>
     <label for="{{ $name }}" class="label">{{ $label }}@if ($required)<span class="text-red-500"> *</span>@endif</label>
     <div class="flex items-stretch gap-2">
         <div class="min-w-0 flex-1">
             <select id="{{ $name }}" name="{{ $name }}" class="input" @required($required) {{ $attributes->except('class') }}>
                 <option value="">{{ $placeholder }}</option>
                 @foreach ($choices as $optionValue => $optionLabel)
-                    <option value="{{ $optionValue }}" @selected((string) $current === (string) $optionValue)>{{ $optionLabel }}</option>
+                    <option value="{{ $optionValue }}" @if (filled($parents[$optionValue] ?? null)) data-parent="{{ $parents[$optionValue] }}" @endif @selected((string) $current === (string) $optionValue)>{{ $optionLabel }}</option>
                 @endforeach
             </select>
         </div>
@@ -26,7 +26,7 @@
         </button>
     </div>
     <div class="absolute right-0 left-0 z-30 mt-2 hidden rounded-2xl border border-white bg-white p-3 shadow-(--shadow-pop)" data-option-pop>
-        <p class="mb-2 text-[12px] font-semibold text-ink">Tambah {{ strtolower($label) }}</p>
+        <p class="mb-2 text-[12px] font-semibold text-ink">Tambah {{ strtolower($label) }}<span class="font-normal text-muted" data-option-parent-note></span></p>
         <div class="flex gap-2">
             <input type="text" class="input h-9 flex-1 text-[13px]" placeholder="Nama baru" data-option-name aria-label="Nama {{ strtolower($label) }} baru">
             <button type="button" class="btn btn-primary btn-sm h-9" data-option-save>Simpan</button>
@@ -55,7 +55,12 @@
             root.querySelector('[data-option-add]').addEventListener('click', () => {
                 const opening = pop.classList.contains('hidden');
                 document.querySelectorAll('[data-option-pop]').forEach(el => el.classList.add('hidden'));
-                if (opening) { pop.classList.remove('hidden'); field.value = ''; field.focus(); }
+                if (opening) {
+                    const parent = root.dataset.parentField ? document.getElementById(root.dataset.parentField)?.value : '';
+                    const note = root.querySelector('[data-option-parent-note]');
+                    if (note) note.textContent = parent ? ' · brand ' + parent : '';
+                    pop.classList.remove('hidden'); field.value = ''; field.focus();
+                }
             });
 
             async function submit() {
@@ -66,7 +71,7 @@
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                        body: JSON.stringify({ kind: root.dataset.kind, name }),
+                        body: JSON.stringify({ kind: root.dataset.kind, name, brand: root.dataset.parentField ? (document.getElementById(root.dataset.parentField)?.value || null) : null }),
                     });
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.errors?.name?.[0] || data.message || 'Gagal menyimpan.');
@@ -76,6 +81,7 @@
                         option = new Option(data.name, data.name);
                         select.add(option);
                     }
+                    if (data.brand) option.dataset.parent = data.brand;
                     select.value = option.value;
                     select.dispatchEvent(new Event('input', { bubbles: true }));
                     select.dispatchEvent(new Event('change', { bubbles: true }));

@@ -21,7 +21,7 @@
                         <x-admin.select name="output_type" label="Hasil formula" :options="\App\Models\Formula::OUTPUTS" :value="$formula->output_type" :placeholder="false" required class="sm:col-span-6" data-output />
                         <x-admin.option-select name="motor_category" label="Kategori motor" kind="kategori" :options="$motorOptions['kategori']" :value="$formula->motorCategoryLabel()" required class="sm:col-span-3" />
                         <x-admin.option-select name="motor_brand" label="Brand motor" kind="brand" :options="$motorOptions['brand']" :value="$formula->motor_brand" placeholder="— pilih brand —" class="sm:col-span-3" />
-                        <x-admin.option-select name="motor_type" label="Type motor" kind="type" :options="$motorOptions['type']" :value="$formula->motor_type" placeholder="— pilih type —" :required="! $semi" class="sm:col-span-3" data-name-source />
+                        <x-admin.option-select name="motor_type" label="Type motor" kind="type" :options="$motorOptions['type']" :parents="$typeBrands" parent-field="motor_brand" :value="$formula->motor_type" placeholder="— pilih type —" :required="! $semi" class="sm:col-span-3" data-name-source />
                         <x-admin.option-select name="variant" label="Varian / model knalpot" kind="varian" :options="$motorOptions['varian']" :value="$formula->variant" placeholder="— pilih varian —" class="sm:col-span-3" data-name-source />
                         <x-admin.field name="name" label="Nama formula" :value="$formula->name" required class="sm:col-span-4" placeholder="Terisi dari type + varian" data-name />
                         <x-admin.field name="code" label="Kode" :value="$formula->code" placeholder="Kosongkan = otomatis" class="sm:col-span-2" />
@@ -282,6 +282,32 @@
         form.querySelectorAll('[data-semi-only]').forEach(function (el) { el.classList.toggle('hidden', !semi); });
         form.querySelector('#motor_type').required = !semi;
     });
+
+    // Type motor tersaring sesuai brand; memilih type mengisi brand-nya.
+    var brandSelect = form.querySelector('#motor_brand');
+    var typeSelect = form.querySelector('#motor_type');
+    function filterTypes() {
+        var brand = brandSelect.value;
+        Array.prototype.forEach.call(typeSelect.options, function (o) {
+            if (!o.value) return;
+            o.hidden = !!brand && !!o.dataset.parent && o.dataset.parent !== brand;
+        });
+        var chosen = typeSelect.selectedOptions[0];
+        if (chosen && chosen.hidden) {
+            typeSelect.value = '';
+            typeSelect.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+    brandSelect.addEventListener('change', filterTypes);
+    typeSelect.addEventListener('change', function () {
+        var chosen = typeSelect.selectedOptions[0];
+        if (chosen && chosen.dataset.parent && brandSelect.value !== chosen.dataset.parent) {
+            brandSelect.value = chosen.dataset.parent;
+            brandSelect.dispatchEvent(new Event('input', { bubbles: true }));
+            filterTypes();
+        }
+    });
+    filterTypes();
 
     // Nama formula ikut type + varian selama belum diketik manual.
     var nameInput = form.querySelector('[data-name]');

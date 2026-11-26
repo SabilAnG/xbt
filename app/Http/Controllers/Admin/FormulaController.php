@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -201,6 +202,7 @@ class FormulaController extends Controller
                 ->whereDoesntHave('formula', fn ($query) => $query->whereKeyNot($formula->id ?? 0))
                 ->orderBy('name')->pluck('name', 'id'),
             'motorOptions' => collect(array_keys(MotorOption::KINDS))->mapWithKeys(fn (string $kind) => [$kind => MotorOption::choices($kind)]),
+            'typeBrands' => MotorOption::typeBrands(),
         ]);
     }
 
@@ -251,9 +253,20 @@ class FormulaController extends Controller
         unset($data['parts'], $data['costs'], $data['item_id'], $data['output_material_id']);
 
         // Nilai motor dibakukan ke master data (dan dicatat bila baru).
+        $type = MotorOption::findByName('type', $data['motor_type'] ?? null);
+
+        if ($type?->parent && filled($data['motor_brand'] ?? null) && mb_strtolower($type->parent->name) !== mb_strtolower(trim($data['motor_brand']))) {
+            throw ValidationException::withMessages(['motor_type' => "Type {$type->name} milik brand {$type->parent->name}, bukan {$data['motor_brand']}."]);
+        }
+
+        // Brand kosong tapi type sudah punya brand → brand ikut type.
+        if ($type?->parent && blank($data['motor_brand'] ?? null)) {
+            $data['motor_brand'] = $type->parent->name;
+        }
+
         $data['motor_category'] = MotorOption::remember('kategori', Formula::MOTOR_CATEGORIES[$data['motor_category']] ?? $data['motor_category']);
         $data['motor_brand'] = MotorOption::remember('brand', $data['motor_brand'] ?? null);
-        $data['motor_type'] = MotorOption::remember('type', $data['motor_type'] ?? null);
+        $data['motor_type'] = MotorOption::remember('type', $data['motor_type'] ?? null, $data['motor_brand'] ?? null);
         $data['variant'] = MotorOption::remember('varian', $data['variant'] ?? null);
 
         $data['output_type'] = ($data['output_type'] ?? null) ?: Formula::KNALPOT;

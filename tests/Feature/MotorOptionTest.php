@@ -61,4 +61,30 @@ class MotorOptionTest extends TestCase
         $this->get(route('admin.motor-options.index'))->assertOk()->assertSee('Racing ST');
         $this->get(route('admin.formulas.index', ['brand' => 'Yamaha']))->assertOk()->assertSee('Mio Racing');
     }
+
+    public function test_motor_types_belong_to_a_brand(): void
+    {
+        $yamaha = MotorOption::where('kind', 'brand')->where('name', 'Yamaha')->firstOrFail();
+        $this->assertSame('Yamaha', MotorOption::findByName('type', 'Mio')->parent->name);
+
+        // Tambah cepat type dari form: ikut brand yang sedang dipilih.
+        $this->postJson(route('admin.motor-options.store'), ['kind' => 'type', 'name' => 'Grand Filano', 'brand' => 'Yamaha'])
+            ->assertOk()->assertJson(['name' => 'Grand Filano', 'brand' => 'Yamaha']);
+        $this->assertTrue($yamaha->children()->where('name', 'Grand Filano')->exists());
+        $this->postJson(route('admin.motor-options.store'), ['kind' => 'type', 'name' => 'Mio', 'brand' => 'Honda'])->assertUnprocessable();
+
+        $this->get(route('admin.formulas.create'))->assertOk()->assertSee('data-parent="Yamaha"', false);
+
+        // Formula: type & brand harus cocok; brand kosong terisi dari type.
+        $base = ['motor_category' => 'Matic', 'is_active' => 1, 'parts' => [['name' => 'Leheran', 'components' => []]]];
+        $this->post(route('admin.formulas.store'), $base + ['motor_brand' => 'Honda', 'motor_type' => 'Mio', 'name' => 'Salah'])->assertSessionHasErrors('motor_type');
+        $this->post(route('admin.formulas.store'), $base + ['motor_type' => 'Mio', 'name' => 'Mio Std'])->assertSessionHasNoErrors();
+        $this->assertSame('Yamaha', Formula::where('name', 'Mio Std')->value('motor_brand'));
+
+        // Brand yang masih punya type tidak bisa dihapus; type bisa dipindah brand.
+        $this->delete(route('admin.motor-options.destroy', $yamaha))->assertSessionHas('error');
+        $filano = MotorOption::findByName('type', 'Grand Filano');
+        $this->put(route('admin.motor-options.update', $filano), ['name' => 'Grand Filano', 'brand' => 'Honda'])->assertSessionHasNoErrors();
+        $this->assertSame('Honda', $filano->fresh()->parent->name);
+    }
 }
