@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $order->exists ? 'Pesanan '.$order->order_number : 'Pesanan baru', 'subtitle' => 'Pelanggan memasukkan nomor pesanan di halaman Tracking'])
+@extends('layouts.admin', ['title' => $order->exists ? 'Pesanan '.$order->order_number : 'Pesanan baru'])
 
 @section('actions')
     <a href="{{ route('admin.orders.index') }}" class="btn">Kembali</a>

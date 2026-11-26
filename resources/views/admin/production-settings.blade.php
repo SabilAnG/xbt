@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pengaturan Produksi', 'subtitle' => 'Angka yang dipakai saat memotong pipa di produksi.'])
+@extends('layouts.admin', ['title' => 'Pengaturan Produksi'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.production-settings.update') }}" class="card max-w-xl space-y-4 p-6">

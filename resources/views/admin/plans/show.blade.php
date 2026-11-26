@@ -13,7 +13,7 @@
 @section('content')
     @php $rows = $needs['rows']; $shortRows = $rows->filter(fn ($row) => $row['buy_qty'] > 0); @endphp
 
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total unit" :value="qty($plan->totalUnits()).' knalpot'" />
         <x-admin.stat label="Perkiraan biaya produksi" :value="rupiah($needs['estimated_cost'])" />
         <x-admin.stat label="Bahan kurang" :value="$shortRows->count().' jenis'" :tone="$shortRows->isEmpty() ? 'success' : 'warning'" />

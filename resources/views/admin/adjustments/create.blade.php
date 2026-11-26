@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Penyesuaian stok', 'subtitle' => 'Pipa masuk dicatat per batang/potongan beserta panjangnya. Pipa keluar = pilih potongan yang diafkir.'])
+@extends('layouts.admin', ['title' => 'Penyesuaian stok'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.adjustments.store') }}" class="card max-w-3xl space-y-4 p-6" data-adjust-form>

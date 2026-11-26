@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Mutasi manual', 'subtitle' => 'Uang masuk/keluar yang bukan penjualan atau pengeluaran: setor modal, tarik pribadi, bunga bank, koreksi saldo.'])
+@extends('layouts.admin', ['title' => 'Mutasi manual'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.wallets.manual.store') }}" class="card max-w-2xl space-y-6 p-6">

@@ -11,7 +11,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total" :value="rupiah($purchase->total)" />
         <x-admin.stat label="Dibayar" :value="rupiah($purchase->paid_amount)" />
         <x-admin.stat label="Sisa hutang" :value="rupiah($purchase->payable())" :tone="$purchase->payable() > 0 ? 'danger' : 'success'" />

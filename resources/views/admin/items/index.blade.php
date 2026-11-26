@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Stok Produk', 'subtitle' => 'Knalpot jadi — stok bertambah dari Produksi dan berkurang dari Penjualan'])
+@extends('layouts.admin', ['title' => 'Stok Produk'])
 
 @section('actions')
     <a href="{{ route('admin.items.create') }}" class="btn btn-primary">+ Produk</a>

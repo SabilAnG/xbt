@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $expense->exists ? 'Ubah pengeluaran' : 'Pengeluaran baru', 'subtitle' => $expense->reference_number ?? 'Gaji, host live, jasa, packing, operasional, kasbon, dll.'])
+@extends('layouts.admin', ['title' => $expense->exists ? 'Ubah pengeluaran' : 'Pengeluaran baru', 'subtitle' => $expense->reference_number])
 
 @section('content')
     <form method="POST" action="{{ $expense->exists ? route('admin.expenses.update', $expense) : route('admin.expenses.store') }}" class="card max-w-3xl space-y-6 p-6">

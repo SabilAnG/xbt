@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total pembelian" :value="rupiah($total)" />
         <x-admin.stat label="Hutang" :value="rupiah($payable)" :tone="$payable > 0 ? 'danger' : 'success'" />
         <x-admin.stat label="Menunggu diterima" :value="$awaiting.' pembelian'" :tone="$awaiting > 0 ? 'warning' : 'success'" />

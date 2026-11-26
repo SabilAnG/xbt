@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Produksi', 'subtitle' => 'Nota produksi per formula. Draf belum menyentuh stok; setelah dibukukan bahan terpotong dari gudang, sisa pipa masuk Stok Sisa, dan knalpot jadi masuk Finish Good.'])
+@extends('layouts.admin', ['title' => 'Produksi'])
 
 @section('actions')
     <a href="{{ route('admin.productions.create') }}" class="btn btn-primary">+ Produksi</a>

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Laporan Keuangan', 'subtitle' => 'Laba rugi '.$from->translatedFormat('d M Y').' – '.$to->translatedFormat('d M Y').'. Pembelian bahan masuk persediaan; biayanya diakui sebagai HPP saat knalpot terjual.'])
+@extends('layouts.admin', ['title' => 'Laporan Keuangan', 'subtitle' => 'Laba rugi '.$from->translatedFormat('d M Y').' – '.$to->translatedFormat('d M Y')])
 
 @section('content')
     <x-admin.filters>
@@ -6,7 +6,7 @@
         <x-admin.field name="sampai" label="Sampai" type="date" :value="$to->toDateString()" />
     </x-admin.filters>
 
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Omzet penjualan" :value="rupiah($profit['revenue'])" />
         <x-admin.stat label="Laba kotor" :value="rupiah($profit['gross'])" :tone="$profit['gross'] >= 0 ? 'success' : 'danger'" />
         <x-admin.stat label="Biaya operasional" :value="rupiah($profit['operating'])" tone="warning" />

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Terima barang', 'subtitle' => 'Pembelian '.$purchase->invoice_number.' · '.($purchase->supplier ?? 'tanpa supplier').' · '.$purchase->purchased_at->translatedFormat('d M Y').'. Isi jumlah yang benar-benar datang; sisanya tetap ditunggu.'])
+@extends('layouts.admin', ['title' => 'Terima barang', 'subtitle' => 'Pembelian '.$purchase->invoice_number.' · '.($purchase->supplier ?? 'tanpa supplier').' · '.$purchase->purchased_at->translatedFormat('d M Y')])
 
 @section('content')
     <form method="POST" action="{{ route('admin.receipts.store') }}" class="max-w-5xl space-y-6">

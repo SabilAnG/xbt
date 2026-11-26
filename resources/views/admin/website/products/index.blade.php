@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Katalog Produk', 'subtitle' => 'Produk yang tampil di halaman Products website'])
+@extends('layouts.admin', ['title' => 'Katalog Produk'])
 
 @section('actions')
     <a href="{{ route('products.index') }}" target="_blank" class="btn hidden sm:inline-flex">Lihat halaman ↗</a>

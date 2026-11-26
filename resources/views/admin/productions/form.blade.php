@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $production->exists ? 'Ubah draf '.$production->production_number : 'Produksi baru', 'subtitle' => 'Pilih formula dan jumlahnya. Setelah disimpan, sistem menunjukkan bahan yang dipakai dan dari batang/sisa pipa mana tiap potongan diambil.'])
+@extends('layouts.admin', ['title' => $production->exists ? 'Ubah draf '.$production->production_number : 'Produksi baru'])
 
 @php $vendorMode = old('mode', $production->mode) === \App\Models\Production::VENDOR; @endphp
 

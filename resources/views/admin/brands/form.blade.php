@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $brand->exists ? 'Ubah merek '.$brand->name : 'Merek baru', 'subtitle' => 'Mengganti nama ikut memperbarui semua produk dan baris resep yang memakai merek ini.'])
+@extends('layouts.admin', ['title' => $brand->exists ? 'Ubah merek '.$brand->name : 'Merek baru'])
 
 @section('content')
     <form method="POST" action="{{ $brand->exists ? route('admin.brands.update', $brand) : route('admin.brands.store') }}" class="card max-w-2xl space-y-6 p-6">

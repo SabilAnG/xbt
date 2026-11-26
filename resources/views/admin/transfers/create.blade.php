@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pindah barang', 'subtitle' => 'Pindahkan stok dari satu gudang ke gudang lain. Jumlah total dan nilainya tetap; pipa dipindah per potongan.'])
+@extends('layouts.admin', ['title' => 'Pindah barang'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.transfers.store') }}" class="max-w-4xl space-y-6" data-rows-form data-transfer-form>

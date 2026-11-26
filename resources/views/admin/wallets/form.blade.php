@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $wallet->exists ? 'Ubah dompet' : 'Dompet baru', 'subtitle' => 'Rekening bank, e-wallet (DANA, OVO, GoPay, …), atau kas tunai.'])
+@extends('layouts.admin', ['title' => $wallet->exists ? 'Ubah dompet' : 'Dompet baru'])
 
 @section('content')
     <form method="POST" action="{{ $wallet->exists ? route('admin.wallets.update', $wallet) : route('admin.wallets.store') }}" class="card max-w-2xl space-y-6 p-6">

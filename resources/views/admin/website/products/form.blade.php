@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $product->exists ? 'Ubah produk website' : 'Produk website baru', 'subtitle' => $product->exists ? $product->name : 'Tampil di halaman Products'])
+@extends('layouts.admin', ['title' => $product->exists ? 'Ubah produk website' : 'Produk website baru', 'subtitle' => $product->exists ? $product->name : null])
 
 @section('actions')
     <a href="{{ route('admin.web-products.index') }}" class="btn">Kembali</a>

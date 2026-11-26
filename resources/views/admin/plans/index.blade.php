@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Rencana Produksi', 'subtitle' => 'Rencanakan berapa knalpot yang akan dibuat per formula. Sistem menghitung kebutuhan bahan, memakai stok sisa lebih dulu, dan menunjukkan apa yang perlu dibeli.'])
+@extends('layouts.admin', ['title' => 'Rencana Produksi'])
 
 @section('actions')
     <a href="{{ route('admin.plans.create') }}" class="btn btn-primary">+ Rencana</a>

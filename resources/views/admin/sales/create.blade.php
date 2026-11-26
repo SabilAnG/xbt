@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Input penjualan', 'subtitle' => 'Pilih produk, qty, harga deal. Kalau uang belum lunas, isi uang masuk sebagian.'])
+@extends('layouts.admin', ['title' => 'Input penjualan'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.sales.store') }}" class="card max-w-3xl space-y-6 p-6">

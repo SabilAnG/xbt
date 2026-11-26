@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $item->exists ? 'Ubah produk' : 'Produk baru', 'subtitle' => $item->exists ? $item->name : 'Tambah knalpot jadi ke daftar Stok Produk'])
+@extends('layouts.admin', ['title' => $item->exists ? 'Ubah produk' : 'Produk baru', 'subtitle' => $item->exists ? $item->name : null])
 
 @section('content')
     <form method="POST" action="{{ $item->exists ? route('admin.items.update', $item) : route('admin.items.store') }}" class="card max-w-4xl space-y-6 p-6">

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pesanan & Tracking', 'subtitle' => 'Data yang dijawab halaman Tracking di website'])
+@extends('layouts.admin', ['title' => 'Pesanan & Tracking'])
 
 @section('actions')
     <a href="{{ route('tracking') }}" target="_blank" class="btn hidden sm:inline-flex">Halaman tracking ↗</a>

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Konten Halaman', 'subtitle' => 'Teks dan gambar di halaman website. Kosongkan isi untuk kembali ke teks bawaan.'])
+@extends('layouts.admin', ['title' => 'Konten Halaman'])
 
 @section('content')
     <x-admin.filters>

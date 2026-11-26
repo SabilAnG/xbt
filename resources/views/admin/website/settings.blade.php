@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pengaturan Situs', 'subtitle' => 'Nama, logo, kontak, nomor WhatsApp, dan tautan media sosial di website'])
+@extends('layouts.admin', ['title' => 'Pengaturan Situs'])
 
 @section('actions')
     <a href="{{ route('home') }}" target="_blank" class="btn">Lihat website ↗</a>

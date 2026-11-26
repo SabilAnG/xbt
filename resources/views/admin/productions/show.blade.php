@@ -15,7 +15,7 @@
 
 @section('content')
     @if ($production->isPosted())
-        <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
             <x-admin.stat :label="$production->isVendor() ? 'Bahan / unit (belum termasuk jasa)' : 'HPP / unit'" :value="rupiah($production->hpp_per_unit)" tone="brand" />
             <x-admin.stat label="Bahan" :value="rupiah($production->material_cost)" />
             <x-admin.stat label="Sisa afkir" :value="rupiah($production->waste_cost)" :tone="(float) $production->waste_cost > 0 ? 'warning' : 'default'" />
@@ -134,7 +134,7 @@
             </div>
         @endunless
 
-        <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-admin.stat label="Perkiraan HPP / knalpot" :value="rupiah($preview['hpp'])" tone="brand" />
             <x-admin.stat label="Bahan" :value="rupiah($preview['material_cost'])" />
             <x-admin.stat label="Sisa afkir" :value="rupiah($preview['waste_cost'])" />

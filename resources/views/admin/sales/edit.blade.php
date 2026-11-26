@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Ubah penjualan '.$sale->invoice_number, 'subtitle' => 'Untuk mengubah produk/qty/harga, hapus penjualan lalu input ulang.'])
+@extends('layouts.admin', ['title' => 'Ubah penjualan '.$sale->invoice_number])
 
 @section('content')
     @php $line = $sale->items->first(); @endphp

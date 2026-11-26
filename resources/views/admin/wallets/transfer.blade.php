@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Transfer antar dompet', 'subtitle' => 'mis. tarik tunai dari BCA ke kas bengkel, atau setor kas ke rekening.'])
+@extends('layouts.admin', ['title' => 'Transfer antar dompet'])
 
 @section('content')
     <form method="POST" action="{{ route('admin.wallets.transfer.store') }}" class="card max-w-2xl space-y-6 p-6">

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pindah Barang', 'subtitle' => 'Perpindahan stok antar gudang. Total stok dan nilai persediaan tidak berubah, hanya lokasinya.'])
+@extends('layouts.admin', ['title' => 'Pindah Barang'])
 
 @section('actions')
     <a href="{{ route('admin.transfers.create') }}" class="btn btn-primary">+ Pindah barang</a>

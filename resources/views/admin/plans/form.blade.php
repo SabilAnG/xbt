@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $plan->exists ? 'Ubah rencana '.$plan->plan_number : 'Rencana produksi baru', 'subtitle' => 'Pilih formula dan jumlah knalpot yang akan dibuat. Kebutuhan bahan dihitung setelah disimpan.'])
+@extends('layouts.admin', ['title' => $plan->exists ? 'Ubah rencana '.$plan->plan_number : 'Rencana produksi baru'])
 
 @section('content')
     <form method="POST" action="{{ $plan->exists ? route('admin.plans.update', $plan) : route('admin.plans.store') }}" class="max-w-4xl space-y-6" data-rows-form>

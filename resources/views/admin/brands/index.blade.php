@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Merek Produk', 'subtitle' => 'Daftar merek knalpot (XBT, FD, …). Merek menentukan baris resep mana yang dipakai saat produksi.'])
+@extends('layouts.admin', ['title' => 'Merek Produk'])
 
 @section('actions')
     <a href="{{ route('admin.brands.create') }}" class="btn btn-primary">+ Merek</a>

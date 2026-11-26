@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <x-admin.stat label="Sisa stok" :value="qty($item->stock).' '.$item->unit" :tone="match ($item->stockStatus()) { 'HABIS' => 'danger', 'MENIPIS' => 'warning', default => 'success' }" :hint="'Status '.$item->stockStatus().' · minimum '.qty($item->min_stock)" />
         <x-admin.stat label="HPP / unit" :value="rupiah($item->cost_price)" />
         <x-admin.stat label="Harga offline" :value="rupiah($item->sell_price)" />

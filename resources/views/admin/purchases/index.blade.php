@@ -1,11 +1,11 @@
-@extends('layouts.admin', ['title' => 'Pembelian Bahan', 'subtitle' => 'Pesanan ke supplier. Stok bertambah saat barang diterima (bisa bertahap lewat Penerimaan); yang belum dibayar tercatat sebagai hutang.'])
+@extends('layouts.admin', ['title' => 'Pembelian Bahan'])
 
 @section('actions')
     <a href="{{ route('admin.purchases.create') }}" class="btn btn-primary">+ Pembelian</a>
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Hutang pembelian" :value="rupiah($payable)" :tone="$payable > 0 ? 'danger' : 'success'" :href="route('admin.purchases.index', ['bayar' => 'hutang'])" />
         <x-admin.stat label="Menunggu diterima" :value="$awaiting.' pembelian'" :tone="$awaiting > 0 ? 'warning' : 'success'" :href="route('admin.receipts.index')" />
     </section>

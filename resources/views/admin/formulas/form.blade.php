@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $formula->exists ? 'Ubah formula' : 'Formula baru', 'subtitle' => 'Susun knalpot per bagian (Leheran, Silincer, Aksesoris) — atau barang setengah jadi seperti leheran bending — isi komponennya, lalu pilih bahan untuk tiap komponen. Harga bahan terbawa otomatis; untuk pipa cukup isi panjang potong dalam cm.'])
+@extends('layouts.admin', ['title' => $formula->exists ? 'Ubah formula' : 'Formula baru'])
 
 @section('content')
     <form method="POST" action="{{ $formula->exists ? route('admin.formulas.update', $formula) : route('admin.formulas.store') }}" class="space-y-6" data-formula-form>

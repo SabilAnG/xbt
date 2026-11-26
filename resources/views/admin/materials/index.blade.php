@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Master Bahan', 'subtitle' => 'Semua barang yang dipakai formula: bahan mentah di Gudang Bahan Baku (pipa, plat, baut) dan barang beli jadi di Gudang Setengah Jadi (pureng, plendes). Harga ikut terbawa ke formula.'])
+@extends('layouts.admin', ['title' => 'Master Bahan'])
 
 @section('actions')
     <a href="{{ route('admin.materials.create', ['jenis' => 'pipa']) }}" class="btn hidden sm:inline-flex">+ Pipa</a>

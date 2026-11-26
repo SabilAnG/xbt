@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Formula Knalpot', 'subtitle' => 'Satu formula = satu jenis knalpot, mis. Mio · Racing Sarangan Tengah. Isinya bagian (Leheran, Silincer), komponen, dan bahan per komponen, dengan HPP yang dihitung dari harga bahan.'])
+@extends('layouts.admin', ['title' => 'Formula Knalpot'])
 
 @section('actions')
     <a href="{{ route('admin.formulas.create', ['jenis' => 'setengah-jadi']) }}" class="btn">+ Formula setengah jadi</a>

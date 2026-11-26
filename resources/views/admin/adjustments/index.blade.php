@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Penyesuaian Stok', 'subtitle' => 'Stok awal saat mulai memakai sistem, koreksi hasil hitung fisik, dan barang rusak/afkir.'])
+@extends('layouts.admin', ['title' => 'Penyesuaian Stok'])
 
 @section('actions')
     <a href="{{ route('admin.adjustments.create') }}" class="btn btn-primary">+ Penyesuaian</a>

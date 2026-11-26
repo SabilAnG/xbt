@@ -14,7 +14,7 @@
         $other = $formula->otherCostPerUnit();
     @endphp
 
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat :label="$formula->isSemiFinished() ? 'HPP perkiraan (tanpa jasa vendor)' : 'HPP perkiraan'" :value="rupiah($material + $other)" tone="brand" />
         <x-admin.stat label="Biaya bahan" :value="rupiah($material)" />
         <x-admin.stat label="Ongkos" :value="rupiah($other)" />

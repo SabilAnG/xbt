@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $warehouse->name, 'subtitle' => 'Potongan sisa pipa hasil produksi. Saat produksi berikutnya, potongan yang panjangnya cukup dipakai lebih dulu sebelum membuka batang baru.'])
+@extends('layouts.admin', ['title' => $warehouse->name])
 
 @section('actions')
     <a href="{{ route('admin.warehouses.index') }}" class="btn">Semua gudang</a>
@@ -7,7 +7,7 @@
 
 @section('content')
     @php $all = $pieces->flatten(); @endphp
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Potongan tersedia" :value="$all->count()" />
         <x-admin.stat label="Total panjang" :value="qty($all->sum('length_cm'), 2).' cm'" />
         <x-admin.stat label="Nilai" :value="rupiah($all->sum(fn ($piece) => $piece->value()))" tone="brand" />

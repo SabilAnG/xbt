@@ -19,7 +19,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Saldo sekarang" :value="rupiah($wallet->current_balance)" :tone="$wallet->current_balance < 0 ? 'danger' : 'brand'" />
         <x-admin.stat label="Saldo awal" :value="rupiah($wallet->opening_balance)" />
         <x-admin.stat label="Total masuk" :value="rupiah($totalIn)" tone="success" />

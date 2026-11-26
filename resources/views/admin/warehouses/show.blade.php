@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $warehouse->name, 'subtitle' => $warehouse->typeDescription()])
+@extends('layouts.admin', ['title' => $warehouse->name])
 
 @section('actions')
     <a href="{{ route('admin.warehouses.index') }}" class="btn">Semua gudang</a>
@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Nilai stok" :value="rupiah($stocks->sum('value'))" tone="brand" />
         <x-admin.stat label="Jenis bahan berstok" :value="$stocks->where('qty', '>', 0)->count()" />
     </section>

@@ -5,6 +5,12 @@
     $current = AdminNavigation::current(request());
     $user = auth()->user();
     $initials = collect(explode(' ', (string) $user?->name))->filter()->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('') ?: 'A';
+    $firstName = \Illuminate\Support\Str::of((string) $user?->name)->before(' ')->value() ?: 'Admin';
+    $isDashboard = request()->routeIs('admin.dashboard');
+    // Penanda titik merah: barang menunggu diterima & produksi masih draf.
+    $awaitingGoods = \App\Models\MaterialPurchase::query()->awaitingGoods()->count();
+    $draftProductions = \App\Models\Production::query()->where('status', \App\Models\Production::DRAFT)->count();
+    $groupDots = ['Pembelian' => $awaitingGoods > 0, 'Produksi' => $draftProductions > 0];
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -15,213 +21,272 @@
     <title>{{ $title ?? 'Admin' }} · {{ config('app.name') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap">
+    <script>
+        // Sidebar lebar/sempit diingat di browser (aman bila storage diblokir).
+        try { if (localStorage.getItem('admin.nav') === 'open') document.documentElement.dataset.nav = 'open'; } catch (e) {}
+    </script>
     @vite('resources/css/admin.css')
 </head>
 <body class="min-h-screen font-sans antialiased">
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+    <defs>
+        <linearGradient id="nav-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8bff"/><stop offset="1" stop-color="#6a45ee"/></linearGradient>
+        <linearGradient id="nav-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8c3ff"/><stop offset="1" stop-color="#b9a3ff"/></linearGradient>
+        <linearGradient id="ring-orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf94"/><stop offset="1" stop-color="#e9643a"/></linearGradient>
+        <linearGradient id="ring-cyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d3f3fb"/><stop offset="1" stop-color="#3fbbe2"/></linearGradient>
+        <linearGradient id="ring-yellow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fde7a0"/><stop offset="1" stop-color="#eeaa12"/></linearGradient>
+        <linearGradient id="ring-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d2f0bd"/><stop offset="1" stop-color="#4fb83f"/></linearGradient>
+        <linearGradient id="ring-violet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e4d4fd"/><stop offset="1" stop-color="#9553e0"/></linearGradient>
+        <linearGradient id="ring-rose" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fdc2ca"/><stop offset="1" stop-color="#e5465c"/></linearGradient>
+    </defs>
+</svg>
 <input type="checkbox" id="nav-toggle" class="peer hidden">
 
 {{-- ---------------------------------------------------------------- Sidebar --}}
-<label for="nav-toggle" class="fixed inset-0 z-40 hidden bg-slate-900/40 backdrop-blur-[2px] peer-checked:block lg:hidden" aria-hidden="true"></label>
-<aside class="fixed inset-y-0 left-0 z-50 flex w-[264px] -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 peer-checked:translate-x-0 lg:translate-x-0">
-    <div class="flex h-16 shrink-0 items-center gap-3 px-5">
+<label for="nav-toggle" class="fixed inset-0 z-40 hidden bg-ink/30 backdrop-blur-[2px] peer-checked:block lg:hidden" aria-hidden="true"></label>
+<aside class="rail fixed inset-y-0 left-0 z-50 flex w-[260px] -translate-x-full flex-col rounded-tr-[22px] bg-white shadow-[6px_0_30px_-20px_rgb(60_66_110/0.5)] transition-[width,transform] duration-200 peer-checked:translate-x-0 lg:w-(--rail) lg:translate-x-0">
+    <div class="flex shrink-0 items-center gap-3 px-[19px] pt-6 pb-4">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-            <span class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-[13px] font-bold tracking-tight text-white shadow-sm ring-1 ring-brand-700/20">XBT</span>
-            <span class="leading-tight">
-                <span class="block text-sm font-semibold tracking-tight text-slate-900">Knalpot Admin</span>
-                <span class="block text-xs text-slate-500">Produksi &amp; Penjualan</span>
+            <span class="relative grid size-[46px] shrink-0 place-items-center">
+                <svg viewBox="0 0 46 46" class="absolute inset-0" aria-hidden="true">
+                    <path d="M23 3 41 34H5Z" fill="#7b5cf0" opacity=".85"/>
+                    <path d="M14 10 32 34H2Z" fill="#f0621f" opacity=".9"/>
+                    <path d="M31 12 44 34H18Z" fill="#f7b21f" opacity=".9"/>
+                </svg>
+                <span class="relative mt-5 rounded-[5px] bg-[#e2361f] px-1 text-[11px] leading-[15px] font-extrabold tracking-tight text-white">XBT</span>
+            </span>
+            <span class="nav-label leading-tight">
+                <span class="block text-sm font-semibold tracking-tight text-ink">Knalpot Admin</span>
+                <span class="block text-xs text-muted">Produksi &amp; Penjualan</span>
             </span>
         </a>
-        <label for="nav-toggle" class="btn btn-ghost btn-sm ml-auto px-1.5 lg:hidden" aria-label="Tutup menu">
-            <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
+        <label for="nav-toggle" class="tile ml-auto size-9 lg:hidden" aria-label="Tutup menu">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
         </label>
     </div>
+    <button type="button" id="nav-expand" class="mx-auto mb-5 hidden text-[#3f6bff] transition hover:translate-x-0.5 lg:block lg:[html[data-nav=open]_&]:mr-5 lg:[html[data-nav=open]_&]:rotate-180" aria-label="Lebarkan / sempitkan menu">
+        <svg class="h-4 w-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 40 16"><path d="M7 3.5C3.5 3.5 2 5.5 2 8s1.5 4.5 5 4.5h31m0 0-4-3.5m4 3.5-4 3.5"/></svg>
+    </button>
 
-    <div class="px-4 pb-3">
-        <div class="relative">
-            <svg class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z"/></svg>
-            <input id="nav-search" type="search" placeholder="Cari menu…" autocomplete="off" class="input h-9 bg-slate-50 pl-9 shadow-none">
-            <kbd class="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 bg-white px-1.5 text-[10px] font-medium text-slate-400 sm:block">/</kbd>
-        </div>
-    </div>
-
-    <nav class="scrollbar-thin flex-1 space-y-1 overflow-y-auto px-3 pb-4" id="sidebar-nav">
+    <nav class="scrollbar-thin flex-1 space-y-3 px-[19px] pb-6" id="sidebar-nav">
         @foreach ($groups as $group)
-            @php $groupActive = collect($group['items'])->contains(fn ($item) => AdminNavigation::isActive($item, request())); @endphp
-            <div class="nav-group" data-group="{{ $group['label'] }}" @if ($groupActive) data-active @endif>
-                <button type="button" class="nav-group-toggle flex w-full items-center justify-between rounded-md px-2.5 pt-3 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 uppercase hover:text-slate-600">
-                    {{ $group['label'] }}
-                    <svg class="size-3.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <ul class="nav-group-items space-y-0.5">
-                    @foreach ($group['items'] as $item)
-                        <li data-label="{{ strtolower($item['label'].' '.$group['label']) }}">
-                            <a href="{{ route($item['route'], $item['params']) }}" class="nav-item" @if (AdminNavigation::isActive($item, request())) aria-current="page" @endif>
-                                <svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $item['icon'] }}"/></svg>
+            @php
+                $active = collect($group['items'])->contains(fn ($item) => AdminNavigation::isActive($item, request()));
+                $first = $group['items'][0];
+            @endphp
+            <div class="nav-group relative" data-group="{{ $group['label'] }}">
+                <a href="{{ route($first['route'], $first['params']) }}" class="group-tile" aria-current="{{ $active ? 'true' : 'false' }}" aria-label="{{ $group['label'] }}">
+                    @include('layouts.partials.nav-glyph', ['group' => $group['label']])
+                    @if ($groupDots[$group['label']] ?? false)
+                        <span class="absolute top-2 left-[29px] size-2.5 rounded-full border-2 border-white bg-[#ef3b3b] lg:[html:not([data-nav=open])_&]:top-[7px] lg:[html:not([data-nav=open])_&]:left-auto lg:[html:not([data-nav=open])_&]:right-[7px]"></span>
+                    @endif
+                    <span class="nav-label truncate">{{ $group['label'] }}</span>
+                </a>
+                <div class="flyout">
+                    <div class="flyout-panel">
+                        <p class="flyout-title">{{ $group['label'] }}</p>
+                        @foreach ($group['items'] as $item)
+                            <a href="{{ route($item['route'], $item['params']) }}" class="flyout-link" data-key="{{ strtolower($item['label'].' '.$group['label']) }}" @if (AdminNavigation::isActive($item, request())) aria-current="page" @endif>
+                                <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $item['icon'] }}"/></svg>
                                 <span class="truncate">{{ $item['label'] }}</span>
                             </a>
-                        </li>
-                    @endforeach
-                </ul>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         @endforeach
-        <p id="nav-empty" class="hidden px-3 py-6 text-center text-xs text-slate-400">Menu tidak ditemukan.</p>
     </nav>
-
-    <div class="border-t border-slate-200 p-3">
-        <a href="{{ route('home') }}" target="_blank" class="nav-item">
-            <svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 4h6v6m0-6L10 14m-1-9H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-4"/></svg>
-            Lihat website
-        </a>
-    </div>
 </aside>
 
 {{-- ------------------------------------------------------------------ Konten --}}
-<div class="flex min-h-screen min-w-0 flex-col lg:pl-[264px]">
-    <header class="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-        <label for="nav-toggle" class="btn btn-ghost -ml-1.5 px-2 lg:hidden" aria-label="Buka menu">
-            <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </label>
+<div class="flex min-h-screen min-w-0 flex-col lg:pl-(--rail)">
+    {{-- Nav atas: kartu kaca melayang, terpisah dari sidebar. --}}
+    <header class="sticky top-0 z-30 w-full max-w-[1560px] px-3 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-5 xl:px-10">
+        <div class="flex h-[64px] items-center gap-2 rounded-[18px] border-[1.5px] border-white/90 bg-white/80 px-2.5 shadow-[0_16px_40px_-20px_rgb(60_66_110/0.35),0_2px_6px_-3px_rgb(60_66_110/0.08)] backdrop-blur-xl sm:gap-3 sm:px-3.5">
+            <label for="nav-toggle" class="topbar-icon lg:hidden" aria-label="Buka menu">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </label>
 
-        <nav class="flex min-w-0 items-center gap-1.5 text-[13px]" aria-label="Breadcrumb">
-            <a href="{{ route('admin.dashboard') }}" class="hidden text-slate-400 hover:text-slate-600 sm:block">Admin</a>
-            @if ($current && $current['group'] !== 'Ringkasan')
-                <svg class="hidden size-3.5 shrink-0 text-slate-300 sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 6 6 6-6 6"/></svg>
-                <span class="hidden truncate text-slate-400 sm:block">{{ $current['group'] }}</span>
-            @endif
-            @if ($current)
-                <svg class="hidden size-3.5 shrink-0 text-slate-300 sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m9 6 6 6-6 6"/></svg>
-                <a href="{{ route($current['item']['route'], $current['item']['params']) }}" class="truncate font-medium text-slate-700 hover:text-slate-900">{{ $current['item']['label'] }}</a>
-            @endif
-        </nav>
+            {{-- Form cari menu: "/" untuk fokus, Enter membuka hasil pertama. --}}
+            <form role="search" class="relative min-w-0 flex-1 sm:max-w-[420px]" onsubmit="return false">
+                <svg class="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-ink-soft" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z"/></svg>
+                <input id="nav-search" type="search" placeholder="Cari menu, mis. pembelian, formula..." autocomplete="off" aria-label="Cari menu"
+                       class="h-11 w-full rounded-[12px] border border-white bg-white pr-12 pl-11 text-[13px] text-ink shadow-[0_6px_16px_-10px_rgb(60_66_110/0.45)] placeholder:text-muted focus:border-brand-400 focus:ring-4 focus:ring-brand-500/12 focus:outline-none [&::-webkit-search-cancel-button]:hidden">
+                <kbd class="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:block">/</kbd>
+                <div id="nav-results" class="absolute right-0 left-0 z-40 mt-2 hidden max-h-80 min-w-64 overflow-y-auto rounded-2xl border border-white bg-white p-1.5 shadow-(--shadow-pop)"></div>
+            </form>
 
-        <div class="ml-auto flex items-center gap-2">
-            <span class="hidden text-xs text-slate-400 md:block">{{ now()->translatedFormat('l, d F Y') }}</span>
-            <details class="group relative">
-                <summary class="flex cursor-pointer list-none items-center gap-2 rounded-full py-1 pr-2 pl-1 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
-                    <span class="grid size-8 place-items-center rounded-full bg-slate-900 text-xs font-semibold text-white">{{ strtoupper($initials) }}</span>
-                    <span class="hidden text-left leading-tight sm:block">
-                        <span class="block text-[13px] font-medium text-slate-800">{{ $user?->name }}</span>
-                    </span>
-                    <svg class="size-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-                </summary>
-                <div class="absolute right-0 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-(--shadow-pop)">
-                    <div class="border-b border-slate-100 px-4 py-3">
-                        <p class="truncate text-sm font-medium text-slate-900">{{ $user?->name }}</p>
-                        <p class="truncate text-xs text-slate-500">{{ $user?->email }}</p>
+            <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
+                <span class="hidden items-center gap-2 px-2 text-[12.5px] font-medium text-ink-soft xl:inline-flex">
+                    <svg class="size-[17px] text-[#6b7cf5]" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" viewBox="0 0 24 24"><path d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
+                    {{ now()->translatedFormat('l, d M Y') }}
+                </span>
+                <span class="mx-1 hidden h-7 w-px bg-line xl:block"></span>
+
+                {{-- Buat cepat --}}
+                <details class="relative">
+                    <summary class="topbar-icon list-none bg-linear-to-b from-[#f9922a] to-[#f2621f] text-white shadow-(--shadow-orange) hover:text-white [&::-webkit-details-marker]:hidden" title="Buat baru">
+                        <svg fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    </summary>
+                    <div class="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-2xl border border-white bg-white p-1.5 shadow-(--shadow-pop)">
+                        <p class="px-3 pt-1.5 pb-1 text-[11px] font-semibold tracking-wider text-muted uppercase">Buat baru</p>
+                        @foreach ([
+                            ['Pembelian', 'admin.purchases.create', 'bag'],
+                            ['Penerimaan barang', 'admin.receipts.index', 'inbox'],
+                            ['Produksi', 'admin.productions.create', 'factory'],
+                            ['Penjualan', 'admin.sales.create', 'cart'],
+                            ['Pindah barang', 'admin.transfers.create', 'arrows'],
+                            ['Pengeluaran', 'admin.expenses.create', 'banknote'],
+                        ] as [$label, $routeName, $icon])
+                            <a href="{{ route($routeName) }}" class="flyout-link">
+                                <svg fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon($icon) }}"/></svg>
+                                {{ $label }}
+                            </a>
+                        @endforeach
                     </div>
-                    <div class="p-1.5">
-                        <a href="{{ route('home') }}" target="_blank" class="nav-item">Lihat website</a>
-                        <form method="POST" action="{{ route('admin.logout') }}">
-                            @csrf
-                            <button class="nav-item w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700">Keluar</button>
-                        </form>
+                </details>
+                <a href="{{ route('home') }}" target="_blank" class="topbar-icon hidden sm:grid" title="Lihat website">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.5 9h17m-17 6h17"/></svg>
+                </a>
+                <a href="{{ route('admin.receipts.index') }}" class="topbar-icon" title="Penerimaan: {{ $awaitingGoods }} pembelian menunggu barang">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11Zm2.4-.2 6.6 5 6.6-5H5.4Z"/></svg>
+                    @if ($awaitingGoods)<span class="topbar-badge">{{ $awaitingGoods > 9 ? '9+' : $awaitingGoods }}</span>@endif
+                </a>
+                <a href="{{ route('admin.productions.index', ['status' => 'draft']) }}" class="topbar-icon" title="Produksi draf: {{ $draftProductions }}">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v4.3L4 16v1.5h16V16l-1.5-2.7V9A6.5 6.5 0 0 0 12 2.5ZM9.5 19a2.5 2.5 0 0 0 5 0h-5Z"/></svg>
+                    @if ($draftProductions)<span class="topbar-badge">{{ $draftProductions > 9 ? '9+' : $draftProductions }}</span>@endif
+                </a>
+                <span class="mx-1 hidden h-7 w-px bg-line sm:block"></span>
+
+                <details class="group relative">
+                    <summary class="flex cursor-pointer list-none items-center gap-2.5 rounded-[12px] py-1 pr-2 pl-1 transition hover:bg-white/80 [&::-webkit-details-marker]:hidden">
+                        <span class="grid size-[38px] place-items-center rounded-[10px] bg-linear-to-br from-[#ffb36b] to-[#d9573a] text-[12.5px] font-semibold text-white shadow-(--shadow-soft)">{{ strtoupper($initials) }}</span>
+                        <span class="hidden text-left leading-tight md:block">
+                            <span class="block max-w-32 truncate text-[13px] font-semibold text-ink">{{ $user?->name }}</span>
+                            <span class="block text-[11px] text-muted">Admin</span>
+                        </span>
+                        <svg class="hidden size-3 text-ink-soft transition group-open:rotate-180 md:block" viewBox="0 0 20 20" fill="currentColor"><path d="M5 7h10l-5 6z"/></svg>
+                    </summary>
+                    <div class="absolute right-0 z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-white bg-white shadow-(--shadow-pop)">
+                        <div class="border-b border-line px-4 py-3">
+                            <p class="truncate text-sm font-medium text-ink">{{ $user?->name }}</p>
+                            <p class="truncate text-xs text-muted">{{ $user?->email }}</p>
+                        </div>
+                        <div class="p-1.5">
+                            <a href="{{ route('home') }}" target="_blank" class="flyout-link">Lihat website</a>
+                            <form method="POST" action="{{ route('admin.logout') }}">
+                                @csrf
+                                <button class="flyout-link w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700">Keluar</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            </details>
+                </details>
+            </div>
         </div>
     </header>
 
-    <main class="mx-auto w-full max-w-[1480px] min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main class="w-full max-w-[1560px] min-w-0 flex-1 px-4 pt-6 pb-8 sm:px-6 lg:px-8 xl:px-10">
+        {{-- Sapaan (dashboard) atau breadcrumb --}}
+        @if ($isDashboard)
+            <div class="mb-4">
+                <p class="text-[24px] leading-tight font-semibold tracking-tight text-ink sm:text-[27px]">Halo {{ $firstName }}!</p>
+                <p class="mt-1.5 max-w-md text-[12.5px] leading-snug font-medium text-ink-soft">Pantau perkembangan omzet, produksi, dan stok knalpot setiap bulannya.</p>
+            </div>
+        @else
+            <nav class="mb-2 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted" aria-label="Breadcrumb">
+                <a href="{{ route('admin.dashboard') }}" class="hover:text-ink">Ringkasan</a>
+                @if ($current && $current['group'] !== 'Ringkasan')
+                    <span>/</span><span class="truncate">{{ $current['group'] }}</span>
+                @endif
+                @if ($current)
+                    <span>/</span><a href="{{ route($current['item']['route'], $current['item']['params']) }}" class="truncate font-medium text-ink-soft hover:text-ink">{{ $current['item']['label'] }}</a>
+                @endif
+            </nav>
+        @endif
+
         {{-- Judul halaman + aksi --}}
-        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div class="min-w-0">
-                <h1 class="text-xl font-semibold tracking-tight text-slate-900 sm:text-[22px]">{{ $title ?? 'Admin' }}</h1>
-                @isset($subtitle)
-                    <p class="mt-1 max-w-3xl text-[13px] text-slate-500">{{ $subtitle }}</p>
-                @endisset
+                <h1 class="text-[22px] leading-tight font-semibold tracking-tight text-ink sm:text-[25px]">{{ $isDashboard ? 'Ringkasan' : ($title ?? 'Admin') }}</h1>
+                @if (isset($subtitle) && ! $isDashboard)
+                    <p class="mt-1.5 max-w-3xl text-[12.5px] leading-relaxed text-ink-soft">{{ $subtitle }}</p>
+                @endif
             </div>
             @hasSection('actions')
-                <div class="flex shrink-0 flex-wrap items-center gap-2">@yield('actions')</div>
+                <div class="flex shrink-0 flex-wrap items-center gap-2.5">@yield('actions')</div>
             @endif
         </div>
 
         @if (session('status'))
-            <div class="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-800" role="status">
-                <svg class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7"/></svg>
-                <span>{{ session('status') }}</span>
+            <div class="mb-5 flex items-start gap-3 rounded-[14px] border-[1.5px] border-white bg-emerald-50/80 px-4 py-3 text-[13px] text-emerald-800 shadow-(--shadow-card)" role="status">
+                <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"><svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5L20 7"/></svg></span>
+                <span class="pt-0.5">{{ session('status') }}</span>
             </div>
         @endif
         @if (session('error'))
-            <div class="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700" role="alert">
-                <svg class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 8v5m0 3h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-                <span>{{ session('error') }}</span>
+            <div class="mb-5 flex items-start gap-3 rounded-[14px] border-[1.5px] border-white bg-rose-50/80 px-4 py-3 text-[13px] text-rose-700 shadow-(--shadow-card)" role="alert">
+                <span class="grid size-6 shrink-0 place-items-center rounded-full bg-rose-500 text-white"><svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 7v6m0 4h.01"/></svg></span>
+                <span class="pt-0.5">{{ session('error') }}</span>
             </div>
         @endif
 
-        <div class="space-y-6">
+        <div class="space-y-5">
             @yield('content')
         </div>
     </main>
 
-    <footer class="mx-auto w-full max-w-[1480px] px-4 pb-6 text-xs text-slate-400 sm:px-6 lg:px-8">
+    <footer class="w-full max-w-[1560px] px-4 pb-6 text-xs text-muted sm:px-6 lg:px-8 xl:px-10">
         {{ config('app.name') }} · Admin panel
     </footer>
 </div>
 
 <script>
     (() => {
-        // Grup menu bisa dilipat; pilihan diingat di browser (opsional, aman bila storage diblokir).
-        const KEY = 'admin.nav.collapsed';
-        let collapsed = [];
-        try { collapsed = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
-        const save = () => { try { localStorage.setItem(KEY, JSON.stringify(collapsed)); } catch (e) {} };
+        const root = document.documentElement;
 
-        document.querySelectorAll('.nav-group').forEach(group => {
-            const name = group.dataset.group;
-            const items = group.querySelector('.nav-group-items');
-            const icon = group.querySelector('.nav-group-toggle svg');
-            const apply = (closed) => { items.hidden = closed; icon.style.transform = closed ? 'rotate(-90deg)' : ''; };
-            apply(collapsed.includes(name) && !group.hasAttribute('data-active'));
-            group.querySelector('.nav-group-toggle').addEventListener('click', () => {
-                const closed = !items.hidden;
-                apply(closed);
-                collapsed = collapsed.filter(n => n !== name);
-                if (closed) collapsed.push(name);
-                save();
-            });
+        // Lebarkan / sempitkan sidebar di desktop.
+        document.getElementById('nav-expand')?.addEventListener('click', () => {
+            const open = root.dataset.nav !== 'open';
+            if (open) root.dataset.nav = 'open'; else delete root.dataset.nav;
+            try { localStorage.setItem('admin.nav', open ? 'open' : 'closed'); } catch (e) {}
         });
 
-        // Cari menu: tekan "/" untuk fokus.
+        // Cari menu di header: tekan "/" untuk fokus, Enter membuka hasil pertama.
         const search = document.getElementById('nav-search');
-        search.addEventListener('input', () => {
+        const results = document.getElementById('nav-results');
+        const links = [...document.querySelectorAll('#sidebar-nav .flyout-link')].map(a => ({
+            href: a.href, label: a.textContent.trim(), key: a.dataset.key,
+            group: a.closest('.nav-group').dataset.group, icon: a.querySelector('svg').outerHTML,
+        }));
+        const render = () => {
             const q = search.value.trim().toLowerCase();
-            let shown = 0;
-            document.querySelectorAll('.nav-group').forEach(group => {
-                let any = false;
-                group.querySelectorAll('li[data-label]').forEach(li => {
-                    const match = !q || li.dataset.label.includes(q);
-                    li.hidden = !match;
-                    any = any || match;
-                    if (match) shown++;
-                });
-                group.hidden = !any;
-                if (q) group.querySelector('.nav-group-items').hidden = false;
+            if (!q) { results.classList.add('hidden'); return; }
+            const found = links.filter(l => l.key.includes(q)).slice(0, 8);
+            results.innerHTML = found.length
+                ? found.map(l => `<a href="${l.href}" class="flyout-link">${l.icon}<span class="min-w-0 flex-1 truncate">${l.label}</span><span class="text-[11px] text-muted">${l.group}</span></a>`).join('')
+                : '<p class="px-3 py-4 text-center text-xs text-muted">Menu tidak ditemukan.</p>';
+            results.classList.remove('hidden');
+        };
+        if (search) {
+            search.addEventListener('input', render);
+            search.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { const first = results.querySelector('a'); if (first) location.href = first.href; }
+                if (e.key === 'Escape') { search.value = ''; render(); search.blur(); }
             });
-            document.getElementById('nav-empty').classList.toggle('hidden', shown > 0);
-        });
-        search.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                const first = document.querySelector('#sidebar-nav li[data-label]:not([hidden]) a');
-                if (first) location.href = first.href;
-            }
-        });
-        document.addEventListener('keydown', e => {
-            if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
-                e.preventDefault();
-                search.focus();
-            }
-        });
+            document.addEventListener('keydown', e => {
+                if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); search.focus(); }
+            });
+        }
 
-        // Tutup menu pengguna saat klik di luar.
+        // Tutup menu pengguna & hasil cari saat klik di luar.
         document.addEventListener('click', e => {
             document.querySelectorAll('details[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); });
+            if (search && !search.parentElement.contains(e.target)) results.classList.add('hidden');
         });
-
-        // Gulir item aktif ke tampilan.
-        document.querySelector('.nav-item[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
     })();
 </script>
 @stack('scripts')
+@include('layouts.partials.custom-select')
 </body>
 </html>

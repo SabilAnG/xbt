@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Gudang', 'subtitle' => 'Alur barang: Bahan Baku & Setengah Jadi (dari pembelian) → produksi → sisa pipa ke Stok Sisa Produksi → knalpot jadi ke Finish Good.'])
+@extends('layouts.admin', ['title' => 'Gudang'])
 
 @section('actions')
     <a href="{{ route('admin.adjustments.create') }}" class="btn">Penyesuaian stok</a>

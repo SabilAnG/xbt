@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $material->exists ? 'Ubah item' : 'Item baru', 'subtitle' => 'Pipa dicatat per batang dan dipotong per cm. Bahan lain bisa punya satuan beli & satuan pakai berbeda (mis. plat: beli per lembar, pakai per cm²). Harga beli dipakai formula selama belum ada stok.'])
+@extends('layouts.admin', ['title' => $material->exists ? 'Ubah item' : 'Item baru'])
 
 @php
     $shape = old('shape', $material->measure === \App\Models\Material::LENGTH ? 'pipa' : (string) $material->shape);

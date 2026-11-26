@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $warehouse->name, 'subtitle' => 'Knalpot jadi hasil produksi. HPP = rata-rata dari produksi yang sudah dibukukan; penjualan mengurangi stok di sini.'])
+@extends('layouts.admin', ['title' => $warehouse->name])
 
 @section('actions')
     <a href="{{ route('admin.warehouses.index') }}" class="btn">Semua gudang</a>
@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Total stok" :value="qty($items->sum('stock')).' pcs'" />
         <x-admin.stat label="Nilai stok (HPP)" :value="rupiah($items->sum(fn ($item) => $item->stockValue()))" tone="brand" />
     </section>

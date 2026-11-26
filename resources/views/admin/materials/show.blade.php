@@ -7,7 +7,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Stok total" :value="qty($material->stock, 2).' '.$material->stockUnit()" :tone="$material->stockStatus() === 'AMAN' ? 'default' : 'warning'" />
         <x-admin.stat :label="'Harga rata-rata / '.$material->stockUnit()" :value="rupiah($material->unitCost())" />
         <x-admin.stat :label="'Harga beli terakhir / '.$material->purchaseUnit()" :value="rupiah($material->last_price)" />

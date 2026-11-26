@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Supplier', 'subtitle' => 'Toko bahan dan vendor jasa produksi. Nama yang diketik di pembelian atau produksi vendor otomatis masuk ke sini.'])
+@extends('layouts.admin', ['title' => 'Supplier'])
 
 @section('content')
     <div class="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

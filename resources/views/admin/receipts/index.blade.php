@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Penerimaan', 'subtitle' => 'Barang dari pembelian yang sudah datang. Stok gudang bertambah saat penerimaan disimpan; satu pembelian bisa diterima bertahap.'])
+@extends('layouts.admin', ['title' => 'Penerimaan'])
 
 @section('content')
     <section class="card overflow-hidden">

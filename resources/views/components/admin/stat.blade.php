@@ -1,29 +1,29 @@
-@props(['label', 'value', 'hint' => null, 'tone' => 'default', 'href' => null, 'icon' => null])
+@props(['label', 'value', 'hint' => null, 'tone' => 'default', 'href' => null, 'icon' => null, 'percent' => null, 'trend' => null, 'title' => null])
 @php
-    $tones = [
-        'default' => ['value' => 'text-slate-900', 'icon' => 'bg-slate-100 text-slate-500'],
-        'danger' => ['value' => 'text-rose-600', 'icon' => 'bg-rose-50 text-rose-500'],
-        'warning' => ['value' => 'text-amber-600', 'icon' => 'bg-amber-50 text-amber-500'],
-        'success' => ['value' => 'text-emerald-600', 'icon' => 'bg-emerald-50 text-emerald-500'],
-        'brand' => ['value' => 'text-slate-900', 'icon' => 'bg-brand-50 text-brand-600'],
-    ];
-    $style = $tones[$tone] ?? $tones['default'];
     $tag = $href ? 'a' : 'div';
+    // Arah panah: turun untuk angka yang "keluar/kurang", naik untuk lainnya.
+    $down = $trend ? $trend === 'down' : in_array($tone, ['danger', 'warning'], true);
+    $fill = $percent === null ? 72 : max(6, min(100, (float) $percent));
+    $valueTone = ['danger' => 'text-rose-600', 'warning' => 'text-amber-600', 'success' => 'text-emerald-600'][$tone] ?? 'text-ink';
 @endphp
-<{{ $tag }} @if ($href) href="{{ $href }}" @endif {{ $attributes->class(['card group relative flex min-w-0 flex-col p-4 sm:p-5', 'transition hover:-translate-y-px hover:border-slate-300 hover:shadow-md' => $href]) }}>
-    <div class="flex items-start justify-between gap-3">
-        <p class="text-[12.5px] leading-snug font-medium text-slate-500">{{ $label }}</p>
-        @if ($icon)
-            <span class="grid size-8 shrink-0 place-items-center rounded-lg {{ $style['icon'] }}">
-                <svg class="size-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $icon }}"/></svg>
-            </span>
+<{{ $tag }} @if ($href) href="{{ $href }}" @endif data-tone="{{ $tone }}"
+    {{ $attributes->class(['stat card group relative flex min-w-0 items-center gap-3.5 px-4 py-4 2xl:gap-4 2xl:px-6', 'transition hover:-translate-y-0.5' => $href]) }}>
+    <span class="relative grid size-[54px] shrink-0 place-items-center 2xl:size-[58px]">
+        <svg viewBox="0 0 60 60" class="absolute inset-0 size-full -rotate-[200deg]" aria-hidden="true">
+            <circle cx="30" cy="30" r="25" fill="none" stroke="#e9ebf2" stroke-width="7"/>
+            <circle cx="30" cy="30" r="25" fill="none" stroke-width="7" stroke-linecap="round" pathLength="100" stroke-dasharray="{{ round($fill, 1) }} 100" class="ring-arc"/>
+        </svg>
+        <span class="relative grid size-[36px] place-items-center rounded-full bg-linear-to-br from-white to-[#eef0f6] text-ink shadow-[0_5px_12px_-5px_rgb(60_66_110/0.55)]">
+            <svg class="size-[18px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="{{ $down ? 'M17 7 7 17m0 0h8m-8 0V9' : 'M7 17 17 7m0 0H9m8 0v8' }}"/>
+            </svg>
+        </span>
+    </span>
+    <span class="min-w-0 flex-1">
+        <span class="block truncate text-xl leading-tight font-bold tracking-tight tabular-nums sm:text-[24px] 2xl:text-[27px] {{ $valueTone }}" title="{{ $title ?? $value }}">{{ $value }}</span>
+        <span class="mt-0.5 block truncate text-[14px] font-medium text-ink-soft" title="{{ $label }}">{{ $label }}</span>
+        @if ($hint)
+            <span class="block truncate text-[11.5px] text-muted" title="{{ $hint }}">{{ $hint }}</span>
         @endif
-    </div>
-    <p class="mt-2 truncate text-lg font-semibold tracking-tight tabular-nums sm:text-[22px] {{ $style['value'] }}" title="{{ $value }}">{{ $value }}</p>
-    @if ($hint)
-        <p class="mt-1 truncate text-xs text-slate-500" title="{{ $hint }}">{{ $hint }}</p>
-    @endif
-    @if ($href)
-        <svg class="absolute right-4 bottom-4 size-4 text-slate-300 opacity-0 transition group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M7 17 17 7m0 0H8m9 0v9"/></svg>
-    @endif
+    </span>
 </{{ $tag }}>

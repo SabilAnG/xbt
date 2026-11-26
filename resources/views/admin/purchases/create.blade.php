@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pembelian bahan', 'subtitle' => $plan ? 'Diisi dari kekurangan rencana '.$plan->plan_number.'. Sesuaikan jumlah & harga dengan nota pemasok.' : 'Catat nota pembelian: tanggal, toko, siapa yang belanja, barang & harganya, dan gudang tujuannya. Pipa diisi per batang.'])
+@extends('layouts.admin', ['title' => 'Pembelian bahan', 'subtitle' => $plan ? 'Dari kekurangan rencana '.$plan->plan_number : null])
 
 @section('content')
     <form method="POST" action="{{ route('admin.purchases.store') }}" class="max-w-5xl space-y-6" data-rows-form data-purchase-form>

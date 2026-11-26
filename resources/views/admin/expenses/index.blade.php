@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Pengeluaran', 'subtitle' => 'Semua uang keluar selain belanja bahan yang dicatat stoknya'])
+@extends('layouts.admin', ['title' => 'Pengeluaran'])
 
 @section('actions')
     <a href="{{ route('admin.expenses.create') }}" class="btn btn-primary">+ Pengeluaran</a>

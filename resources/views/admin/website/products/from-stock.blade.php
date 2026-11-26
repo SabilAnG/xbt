@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Upload produk dari stok', 'subtitle' => 'Pilih knalpot dari Stok Produk untuk ditampilkan di website. Pembeli memesan lewat WhatsApp.'])
+@extends('layouts.admin', ['title' => 'Upload produk dari stok'])
 
 @section('actions')
     <a href="{{ route('admin.web-products.index') }}" class="btn">Kembali ke katalog</a>

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Master Item', 'subtitle' => 'Semua barang dalam satu daftar: bahan baku (termasuk pipa), setengah jadi, aksesoris, dan produk jadi. Harga & stok dalam satuan pakai; pembelian dalam satuan beli.'])
+@extends('layouts.admin', ['title' => 'Master Item'])
 
 @php
     $types = \App\Http\Controllers\Admin\MasterItemController::TYPES;

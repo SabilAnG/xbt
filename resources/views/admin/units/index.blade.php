@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Master Satuan', 'subtitle' => 'Satuan yang bisa dipilih di Master Item sebagai satuan beli dan satuan pakai. Konversinya (mis. 1 lembar = 28.800 cm²) diisi per item.'])
+@extends('layouts.admin', ['title' => 'Master Satuan'])
 
 @section('content')
     <div class="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

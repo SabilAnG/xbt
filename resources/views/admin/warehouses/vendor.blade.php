@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $warehouse->name, 'subtitle' => 'Barang yang sedang dikerjakan vendor. Nilainya = bahan yang sudah dikirim; jasa vendor ditambahkan saat hasilnya diterima.'])
+@extends('layouts.admin', ['title' => $warehouse->name])
 
 @section('actions')
     <a href="{{ route('admin.warehouses.index') }}" class="btn">Semua gudang</a>
@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <section class="stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-admin.stat label="Pekerjaan terbuka" :value="$open->count()" />
         <x-admin.stat label="Unit di vendor" :value="qty($open->sum(fn ($job) => $job->outstandingQty()))" />
         <x-admin.stat label="Nilai bahan di vendor" :value="rupiah($open->sum(fn ($job) => $job->outstandingValue()))" tone="brand" />

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Dompet', 'subtitle' => 'Rekening bank, e-wallet, dan kas. Saldo bergerak otomatis dari penjualan, pengeluaran, pembelian bahan, dan transfer.'])
+@extends('layouts.admin', ['title' => 'Dompet'])
 
 @php
     $typeIcon = [
