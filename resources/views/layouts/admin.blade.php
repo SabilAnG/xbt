@@ -66,14 +66,7 @@
 <aside class="rail fixed inset-y-0 left-0 z-50 flex w-[260px] -translate-x-full flex-col rounded-tr-[22px] bg-white shadow-[6px_0_30px_-20px_rgb(60_66_110/0.5)] transition-[width,transform] duration-200 peer-checked:translate-x-0 lg:w-(--rail) lg:translate-x-0">
     <div class="flex shrink-0 items-center gap-3 px-[19px] pt-6 pb-4 lg:[html:not([data-nav=open])_&]:justify-center lg:[html:not([data-nav=open])_&]:px-0">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-            <span class="relative grid size-[46px] shrink-0 place-items-center">
-                <svg viewBox="0 0 46 46" class="absolute inset-0" aria-hidden="true">
-                    <path d="M23 3 41 34H5Z" fill="#7b5cf0" opacity=".85"/>
-                    <path d="M14 10 32 34H2Z" fill="#f0621f" opacity=".9"/>
-                    <path d="M31 12 44 34H18Z" fill="#f7b21f" opacity=".9"/>
-                </svg>
-                <span class="relative mt-5 rounded-[5px] bg-[#e2361f] px-1 text-[11px] leading-[15px] font-extrabold tracking-tight text-white">IHC</span>
-            </span>
+            <img src="{{ asset('assets/images/logo-mark.png') }}" alt="Hyper Sonic" class="size-[46px] shrink-0 object-contain drop-shadow-[0_6px_10px_rgb(30_80_200/0.25)]">
             <span class="nav-label leading-tight">
                 <span class="block text-sm font-semibold tracking-tight text-ink">IHC Racing</span>
                 <span class="block text-xs text-muted">Produksi &amp; Penjualan</span>
