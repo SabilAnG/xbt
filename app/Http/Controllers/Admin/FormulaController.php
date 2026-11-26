@@ -8,6 +8,7 @@ use App\Models\FormulaComponent;
 use App\Models\FormulaCost;
 use App\Models\Item;
 use App\Models\Material;
+use App\Models\MotorOption;
 use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,13 +34,18 @@ class FormulaController extends Controller
     {
         $formulas = Formula::query()->with(['item', 'outputMaterial', 'parts.components'])
             ->when($request->string('q')->trim()->value(), fn ($query, $search) => $query->where(
-                fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")->orWhere('motor_type', 'like', "%{$search}%")
+                fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")->orWhere('motor_type', 'like', "%{$search}%")->orWhere('motor_brand', 'like', "%{$search}%")->orWhere('variant', 'like', "%{$search}%")
             ))
-            ->when($request->input('kategori'), fn ($query, $category) => $query->where('motor_category', $category))
+            ->when($request->input('kategori'), fn ($query, $category) => $query->whereIn('motor_category', [$category, array_search($category, Formula::MOTOR_CATEGORIES, true) ?: $category]))
+            ->when($request->input('brand'), fn ($query, $brand) => $query->where('motor_brand', $brand))
             ->orderBy('motor_category')->orderBy('name')
             ->get();
 
-        return view('admin.formulas.index', ['formulas' => $formulas]);
+        return view('admin.formulas.index', [
+            'formulas' => $formulas,
+            'categories' => MotorOption::choices('kategori'),
+            'brands' => MotorOption::choices('brand'),
+        ]);
     }
 
     public function show(Formula $formula): View
@@ -55,7 +61,7 @@ class FormulaController extends Controller
     public function create(Request $request): View
     {
         $output = $request->input('jenis') === 'setengah-jadi' ? Formula::SEMI_FINISHED : Formula::KNALPOT;
-        $formula = new Formula(['motor_category' => 'matic', 'output_type' => $output, 'is_active' => true]);
+        $formula = new Formula(['motor_category' => MotorOption::choices('kategori')->keys()->first() ?? 'Matic', 'output_type' => $output, 'is_active' => true]);
         $formula->setRelation('parts', collect());
         $formula->setRelation('costs', collect());
 
@@ -194,8 +200,7 @@ class FormulaController extends Controller
             'items' => Item::query()->where('is_active', true)
                 ->whereDoesntHave('formula', fn ($query) => $query->whereKeyNot($formula->id ?? 0))
                 ->orderBy('name')->pluck('name', 'id'),
-            'motorTypes' => Formula::query()->whereNotNull('motor_type')->distinct()->pluck('motor_type')
-                ->merge(Formula::MOTOR_TYPES)->unique()->values(),
+            'motorOptions' => collect(array_keys(MotorOption::KINDS))->mapWithKeys(fn (string $kind) => [$kind => MotorOption::choices($kind)]),
         ]);
     }
 
@@ -209,7 +214,8 @@ class FormulaController extends Controller
         $data = $request->validate([
             'code' => ['nullable', 'string', 'max:50', Rule::unique('formulas', 'code')->ignore($formula)],
             'name' => ['required', 'string', 'max:255'],
-            'motor_category' => ['required', Rule::in(array_keys(Formula::MOTOR_CATEGORIES))],
+            'motor_category' => ['required', 'string', 'max:100'],
+            'motor_brand' => ['nullable', 'string', 'max:100'],
             'output_type' => ['nullable', Rule::in(array_keys(Formula::OUTPUTS))],
             'output_material_id' => ['nullable', Rule::exists('materials', 'id')->where('measure', Material::UNIT)->where('is_producible', true)],
             'motor_type' => [$request->input('output_type') === Formula::SEMI_FINISHED ? 'nullable' : 'required', 'string', 'max:100'],
@@ -243,6 +249,12 @@ class FormulaController extends Controller
 
         $parts = array_values($data['parts']);
         unset($data['parts'], $data['costs'], $data['item_id'], $data['output_material_id']);
+
+        // Nilai motor dibakukan ke master data (dan dicatat bila baru).
+        $data['motor_category'] = MotorOption::remember('kategori', Formula::MOTOR_CATEGORIES[$data['motor_category']] ?? $data['motor_category']);
+        $data['motor_brand'] = MotorOption::remember('brand', $data['motor_brand'] ?? null);
+        $data['motor_type'] = MotorOption::remember('type', $data['motor_type'] ?? null);
+        $data['variant'] = MotorOption::remember('varian', $data['variant'] ?? null);
 
         $data['output_type'] = ($data['output_type'] ?? null) ?: Formula::KNALPOT;
         $data['code'] = ($data['code'] ?? null) ?: $this->nextCode();

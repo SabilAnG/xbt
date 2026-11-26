@@ -11,7 +11,8 @@
             <label class="label" for="q">Cari</label>
             <input id="q" name="q" value="{{ request('q') }}" class="input" placeholder="Nama, kode, atau type motor">
         </div>
-        <x-admin.select name="kategori" label="Kategori motor" :options="\App\Models\Formula::MOTOR_CATEGORIES" :value="request('kategori')" placeholder="Semua" />
+        <x-admin.select name="kategori" label="Kategori motor" :options="$categories" :value="request('kategori')" placeholder="Semua" />
+        <x-admin.select name="brand" label="Brand motor" :options="$brands" :value="request('brand')" placeholder="Semua" />
     </x-admin.filters>
 
     <div class="card overflow-hidden">
@@ -36,7 +37,7 @@
                             <a href="{{ route('admin.formulas.show', $formula) }}" class="link font-medium">{{ $formula->name }}</a>
                             @if ($formula->isSemiFinished())<p class="text-xs text-violet-700">Setengah jadi → {{ $formula->outputMaterial?->label() }}</p>@elseif ($formula->variant)<p class="text-xs text-slate-500">{{ $formula->variant }}</p>@endif
                         </td>
-                        <td class="text-xs whitespace-nowrap">{{ $formula->motorCategoryLabel() }}{{ $formula->motor_type ? ' · '.$formula->motor_type : '' }}</td>
+                        <td class="text-xs whitespace-nowrap">{{ $formula->motorCategoryLabel() }}{{ $formula->motor_brand ? ' · '.$formula->motor_brand : '' }}{{ $formula->motor_type ? ' · '.$formula->motor_type : '' }}</td>
                         <td class="min-w-56 text-xs text-slate-600">
                             @forelse ($formula->parts as $part)
                                 <p><strong class="font-medium text-slate-800">{{ $part->name }}</strong>: {{ $part->components->pluck('name')->implode(', ') ?: '—' }}</p>

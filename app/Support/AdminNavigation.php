@@ -76,6 +76,7 @@ class AdminNavigation
                 $item('Item', 'admin.master-items.index', 'admin.master-items.*|admin.materials.*|admin.items.*', 'layers'),
                 $item('Satuan', 'admin.units.index', 'admin.units.*', 'list'),
                 $item('Merek', 'admin.brands.index', 'admin.brands.*', 'tag'),
+                $item('Data Motor', 'admin.motor-options.index', 'admin.motor-options.*', 'bike'),
             ]],
             ['label' => 'Keuangan', 'items' => [
                 $item('Dompet', 'admin.wallets.index', 'admin.wallets.*', 'wallet'),

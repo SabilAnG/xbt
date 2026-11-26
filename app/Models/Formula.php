@@ -43,7 +43,7 @@ class Formula extends Model
     ];
 
     protected $fillable = [
-        'code', 'name', 'motor_category', 'motor_type', 'variant', 'output_type', 'item_id', 'output_material_id', 'notes', 'is_active',
+        'code', 'name', 'motor_category', 'motor_brand', 'motor_type', 'variant', 'output_type', 'item_id', 'output_material_id', 'notes', 'is_active',
     ];
 
     protected function casts(): array
@@ -101,6 +101,7 @@ class Formula extends Model
 
     public function motorCategoryLabel(): string
     {
+        // Data lama menyimpan kunci (matic); data baru menyimpan nama dari master.
         return self::MOTOR_CATEGORIES[$this->motor_category] ?? (string) $this->motor_category;
     }
 

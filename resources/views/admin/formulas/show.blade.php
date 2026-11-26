@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => $formula->name, 'subtitle' => $formula->code.' · '.($formula->isSemiFinished() ? 'Barang setengah jadi' : $formula->motorCategoryLabel()).($formula->motor_type ? ' · '.$formula->motor_type : '').($formula->variant ? ' · '.$formula->variant : '')])
+@extends('layouts.admin', ['title' => $formula->name, 'subtitle' => $formula->code.' · '.($formula->isSemiFinished() ? 'Barang setengah jadi' : $formula->motorCategoryLabel()).($formula->motor_brand ? ' · '.$formula->motor_brand : '').($formula->motor_type ? ' · '.$formula->motor_type : '').($formula->variant ? ' · '.$formula->variant : '')])
 
 @section('actions')
     <form method="POST" action="{{ route('admin.formulas.duplicate', $formula) }}" class="hidden sm:block">@csrf<button class="btn">Salin</button></form>

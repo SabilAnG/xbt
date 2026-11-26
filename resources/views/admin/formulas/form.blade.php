@@ -17,26 +17,23 @@
                 <section class="card space-y-4 p-6">
                     <h2 class="card-title">Yang dibuat</h2>
                     @php $semi = old('output_type', $formula->output_type) === \App\Models\Formula::SEMI_FINISHED; @endphp
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <x-admin.select name="output_type" label="Hasil formula" :options="\App\Models\Formula::OUTPUTS" :value="$formula->output_type" :placeholder="false" required class="sm:col-span-3" data-output />
-                        <x-admin.select name="motor_category" label="Kategori motor" :options="\App\Models\Formula::MOTOR_CATEGORIES" :value="$formula->motor_category" :placeholder="false" required />
-                        <div>
-                            <label for="motor_type" class="label">Type motor<span data-knalpot-only @class(['text-red-500', 'hidden' => $semi])> *</span></label>
-                            <input id="motor_type" name="motor_type" value="{{ old('motor_type', $formula->motor_type) }}" class="input" list="motor-types" @required(! $semi) placeholder="mis. Mio" data-name-source>
-                            <datalist id="motor-types">@foreach ($motorTypes as $type)<option value="{{ $type }}">@endforeach</datalist>
-                        </div>
-                        <x-admin.field name="variant" label="Varian / model knalpot" :value="$formula->variant" placeholder="mis. Racing Sarangan Tengah" data-name-source />
-                        <x-admin.field name="name" label="Nama formula" :value="$formula->name" required class="sm:col-span-2" placeholder="Terisi dari type + varian" data-name />
-                        <x-admin.field name="code" label="Kode" :value="$formula->code" placeholder="Kosongkan = otomatis" />
-                        <div data-knalpot-only @class(['sm:col-span-2', 'hidden' => $semi])>
+                    <div class="grid gap-4 sm:grid-cols-6">
+                        <x-admin.select name="output_type" label="Hasil formula" :options="\App\Models\Formula::OUTPUTS" :value="$formula->output_type" :placeholder="false" required class="sm:col-span-6" data-output />
+                        <x-admin.option-select name="motor_category" label="Kategori motor" kind="kategori" :options="$motorOptions['kategori']" :value="$formula->motorCategoryLabel()" required class="sm:col-span-3" />
+                        <x-admin.option-select name="motor_brand" label="Brand motor" kind="brand" :options="$motorOptions['brand']" :value="$formula->motor_brand" placeholder="— pilih brand —" class="sm:col-span-3" />
+                        <x-admin.option-select name="motor_type" label="Type motor" kind="type" :options="$motorOptions['type']" :value="$formula->motor_type" placeholder="— pilih type —" :required="! $semi" class="sm:col-span-3" data-name-source />
+                        <x-admin.option-select name="variant" label="Varian / model knalpot" kind="varian" :options="$motorOptions['varian']" :value="$formula->variant" placeholder="— pilih varian —" class="sm:col-span-3" data-name-source />
+                        <x-admin.field name="name" label="Nama formula" :value="$formula->name" required class="sm:col-span-4" placeholder="Terisi dari type + varian" data-name />
+                        <x-admin.field name="code" label="Kode" :value="$formula->code" placeholder="Kosongkan = otomatis" class="sm:col-span-2" />
+                        <div data-knalpot-only @class(['sm:col-span-4', 'hidden' => $semi])>
                             <x-admin.select name="item_id" label="Produk jadi (Finish Good)" :options="$items" :value="$formula->item_id" placeholder="— buat otomatis dari formula —"
                                 hint="Hasil produksi formula ini masuk ke stok produk ini." />
                         </div>
-                        <div data-semi-only @class(['sm:col-span-2', 'hidden' => ! $semi])>
+                        <div data-semi-only @class(['sm:col-span-4', 'hidden' => ! $semi])>
                             <x-admin.select name="output_material_id" label="Barang setengah jadi yang dihasilkan" :options="$semiMaterials" :value="$formula->output_material_id" placeholder="— buat otomatis dari formula —"
                                 hint="Masuk Gudang Setengah Jadi; bisa dikerjakan sendiri atau lewat vendor." />
                         </div>
-                        <div class="flex items-end pb-2">
+                        <div class="flex items-end pb-2 sm:col-span-2">
                             <label class="flex items-center gap-2 text-sm text-slate-700">
                                 <input type="hidden" name="is_active" value="0">
                                 <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $formula->is_active ?? true))> Aktif
