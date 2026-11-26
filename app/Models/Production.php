@@ -25,7 +25,7 @@ class Production extends Model
     protected $fillable = [
         'production_number', 'produced_at', 'formula_id', 'item_id', 'production_plan_line_id', 'qty', 'mode', 'vendor', 'process',
         'service_cost_per_unit', 'received_qty', 'worker',
-        'status', 'material_cost', 'waste_cost', 'other_cost', 'total_cost', 'hpp_per_unit', 'posted_at', 'notes',
+        'status', 'material_cost', 'waste_cost', 'other_cost', 'service_cost', 'total_cost', 'hpp_per_unit', 'posted_at', 'notes',
     ];
 
     protected function casts(): array
@@ -38,6 +38,7 @@ class Production extends Model
             'material_cost' => 'decimal:2',
             'waste_cost' => 'decimal:2',
             'other_cost' => 'decimal:2',
+            'service_cost' => 'decimal:2',
             'total_cost' => 'decimal:2',
             'hpp_per_unit' => 'decimal:2',
             'posted_at' => 'datetime',
@@ -67,6 +68,12 @@ class Production extends Model
     public function cuts(): HasMany
     {
         return $this->hasMany(ProductionCut::class)->orderBy('sequence');
+    }
+
+    /** Tagihan jasa komponen (mis. bending P1) yang dibuat saat produksi dibukukan. */
+    public function serviceBills(): HasMany
+    {
+        return $this->hasMany(MaterialPurchase::class)->where('kind', 'jasa');
     }
 
     public function receipts(): HasMany

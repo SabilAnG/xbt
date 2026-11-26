@@ -98,6 +98,27 @@ Route::prefix('admin')->group(function () {
         Route::resource('pembelian-bahan', Admin\MaterialPurchaseController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('purchases')->parameters(['pembelian-bahan' => 'purchase']);
         Route::get('master-item', [Admin\MasterItemController::class, 'index'])->name('master-items.index');
+        // Pekerja: data, kasbon, absensi, penggajian
+        Route::resource('pekerja', Admin\WorkerController::class)->names('workers')->parameters(['pekerja' => 'worker']);
+        Route::post('pekerja/{worker}/kasbon', [Admin\WorkerController::class, 'storeAdvance'])->name('workers.advances.store');
+        Route::delete('kasbon/{advance}', [Admin\WorkerController::class, 'destroyAdvance'])->name('workers.advances.destroy');
+        Route::get('absensi', [Admin\AttendanceController::class, 'index'])->name('attendances.index');
+        Route::post('absensi', [Admin\AttendanceController::class, 'store'])->name('attendances.store');
+        Route::get('penggajian', [Admin\PayrollController::class, 'index'])->name('payrolls.index');
+        Route::post('penggajian', [Admin\PayrollController::class, 'store'])->name('payrolls.store');
+        Route::post('penggajian/semua', [Admin\PayrollController::class, 'storeAll'])->name('payrolls.store-all');
+        Route::get('penggajian/{payroll}', [Admin\PayrollController::class, 'show'])->name('payrolls.show');
+        Route::post('penggajian/{payroll}/bayar', [Admin\PayrollController::class, 'pay'])->name('payrolls.pay');
+        Route::post('penggajian/{payroll}/batal-bayar', [Admin\PayrollController::class, 'unpay'])->name('payrolls.unpay');
+        Route::delete('penggajian/{payroll}', [Admin\PayrollController::class, 'destroy'])->name('payrolls.destroy');
+        Route::get('data-ongkos', [Admin\CostOptionController::class, 'index'])->name('cost-options.index');
+        Route::post('data-ongkos', [Admin\CostOptionController::class, 'store'])->name('cost-options.store');
+        Route::put('data-ongkos/{option}', [Admin\CostOptionController::class, 'update'])->name('cost-options.update');
+        Route::delete('data-ongkos/{option}', [Admin\CostOptionController::class, 'destroy'])->name('cost-options.destroy');
+        Route::get('jasa-vendor', [Admin\VendorServiceController::class, 'index'])->name('vendor-services.index');
+        Route::post('jasa-vendor', [Admin\VendorServiceController::class, 'store'])->name('vendor-services.store');
+        Route::put('jasa-vendor/{service}', [Admin\VendorServiceController::class, 'update'])->name('vendor-services.update');
+        Route::delete('jasa-vendor/{service}', [Admin\VendorServiceController::class, 'destroy'])->name('vendor-services.destroy');
         Route::get('data-komponen', [Admin\ComponentOptionController::class, 'index'])->name('component-options.index');
         Route::post('data-komponen', [Admin\ComponentOptionController::class, 'store'])->name('component-options.store');
         Route::put('data-komponen/{option}', [Admin\ComponentOptionController::class, 'update'])->name('component-options.update');

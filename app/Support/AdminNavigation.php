@@ -91,11 +91,18 @@ class AdminNavigation
             ['label' => 'Produksi', 'items' => [
                 $item('Formula', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
                 $item('Data Komponen', 'admin.component-options.index', 'admin.component-options.*', 'list'),
+                $item('Jasa Vendor', 'admin.vendor-services.index', 'admin.vendor-services.*', 'wrench'),
+                $item('Data Ongkos', 'admin.cost-options.index', 'admin.cost-options.*', 'coins'),
                 $item('Rencana Produksi', 'admin.plans.index', 'admin.plans.*', 'calendar'),
                 $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
                 $item('Vendor Produksi', 'admin.warehouses.show', 'admin.warehouses.show:di-vendor', 'truck', ['type' => 'di-vendor']),
                 $item('Hasil Samping', 'admin.warehouses.show', 'admin.warehouses.show:stok-sisa', 'puzzle', ['type' => 'stok-sisa']),
                 $item('Pengaturan Produksi', 'admin.production-settings.edit', 'admin.production-settings.*', 'cog'),
+            ]],
+            ['label' => 'Pekerja', 'items' => [
+                $item('Pekerja', 'admin.workers.index', 'admin.workers.*', 'users'),
+                $item('Absensi', 'admin.attendances.index', 'admin.attendances.*', 'calendar'),
+                $item('Penggajian', 'admin.payrolls.index', 'admin.payrolls.*', 'banknote'),
             ]],
             ['label' => 'Website', 'items' => [
                 $item('Pengaturan Situs', 'admin.site-settings.edit', 'admin.site-settings.*', 'globe'),

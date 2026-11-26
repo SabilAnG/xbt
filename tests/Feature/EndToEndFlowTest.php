@@ -11,8 +11,11 @@ use App\Models\PipePiece;
 use App\Models\Production;
 use App\Models\ProductionPlan;
 use App\Models\User;
+use App\Models\VendorService;
 use App\Models\Wallet;
 use App\Models\Warehouse;
+use App\Models\Worker;
+use App\Models\WorkerPayroll;
 use App\Services\ProductionPlanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -75,8 +78,7 @@ class EndToEndFlowTest extends TestCase
                 ]],
                 ['name' => 'Silincer', 'components' => [
                     ['name' => 'Tabung', 'qty' => 1, 'materials' => [['material_id' => $plate->id, 'qty' => 1_200]]],
-                ]],
-                ['name' => 'Aksesoris', 'components' => [
+                    // Aksesoris diambil dari Gudang Aksesoris, dipakai di dalam bagian Silincer.
                     ['name' => 'Baut', 'qty' => 4, 'materials' => [['material_id' => $bolt->id, 'qty' => 1]]],
                     ['name' => 'Dus', 'qty' => 1, 'materials' => [['material_id' => $box->id, 'qty' => 1]]],
                 ]],
@@ -213,6 +215,135 @@ class EndToEndFlowTest extends TestCase
             route('admin.plans.show', $plan), route('admin.productions.show', $leheranJob), route('admin.productions.show', $knalpotJob),
             route('admin.purchases.show', $purchase), route('admin.purchases.show', $bills[0]), route('admin.materials.show', $pipe),
             route('admin.formulas.show', $knalpot), route('admin.items.show', $item), route('admin.dashboard'),
+        ] as $url) {
+            $this->get($url)->assertOk();
+        }
+    }
+
+    public function test_two_part_formula_with_accessories_vendor_component_leftovers_and_payroll(): void
+    {
+        $raw = Warehouse::forType(Warehouse::RAW);
+        $accessory = Warehouse::forType(Warehouse::ACCESSORY);
+        $offcut = Warehouse::forType(Warehouse::OFFCUT);
+
+        // 1. Bahan: pipa & plat di Bahan Baku; pureng, baut, dus di Gudang Aksesoris.
+        $pipe = $this->item(['name' => 'Pipa SS 32', 'warehouse_id' => $raw->id, 'measure' => 'length', 'bar_length_cm' => 600, 'min_reusable_cm' => 5, 'last_price' => 300_000]);
+        $plate = $this->item(['name' => 'Plat SS 1 mm', 'warehouse_id' => $raw->id, 'unit' => 'Lembar', 'use_unit' => 'cm²', 'conversion' => 28_800, 'last_price' => 576_000]);
+        $pureng = $this->item(['name' => 'Pureng Mio', 'warehouse_id' => $accessory->id, 'last_price' => 10_000]);
+        $bolt = $this->item(['name' => 'Baut L', 'warehouse_id' => $accessory->id, 'last_price' => 500]);
+        $box = $this->item(['name' => 'Dus', 'warehouse_id' => $accessory->id, 'last_price' => 3_000]);
+        $this->post(route('admin.wallets.store'), ['name' => 'Kas', 'type' => 'cash', 'opening_balance' => 5_000_000, 'is_active' => 1]);
+        $cash = Wallet::where('name', 'Kas')->firstOrFail();
+
+        // 2. Formula baru hanya berisi bagian Leheran & Silincer.
+        $this->get(route('admin.formulas.create'))->assertOk()
+            ->assertViewHas('parts', fn (array $parts) => collect($parts)->pluck('name')->all() === ['Leheran', 'Silincer']);
+
+        $this->post(route('admin.vendor-services.store'), ['vendor' => 'Bengkel Bending Jaya', 'process' => 'Bending', 'rate' => 3_000, 'unit' => 'buah'])->assertSessionHasNoErrors();
+        $bending = VendorService::firstOrFail();
+
+        $this->post(route('admin.formulas.store'), [
+            'motor_category' => 'Matic', 'motor_brand' => 'Yamaha', 'motor_type' => 'Mio', 'variant' => 'Racing', 'name' => 'Mio Racing', 'is_active' => 1,
+            'parts' => [
+                ['name' => 'Leheran', 'components' => [
+                    ['name' => 'P1', 'qty' => 1, 'work_mode' => 'vendor', 'vendor_service_id' => $bending->id, 'materials' => [['material_id' => $pipe->id, 'qty' => 30]]],
+                    ['name' => 'P2', 'qty' => 1, 'materials' => [['material_id' => $pipe->id, 'qty' => 20]]],
+                    ['name' => 'Pureng', 'qty' => 1, 'materials' => [['material_id' => $pureng->id, 'qty' => 1]]],
+                    ['name' => 'Baut', 'qty' => 2, 'materials' => [['material_id' => $bolt->id, 'qty' => 1]]],
+                ]],
+                ['name' => 'Silincer', 'components' => [
+                    ['name' => 'Tabung', 'qty' => 1, 'materials' => [['material_id' => $plate->id, 'qty' => 1_200]]],
+                    ['name' => 'Baut', 'qty' => 2, 'materials' => [['material_id' => $bolt->id, 'qty' => 1]]],
+                    ['name' => 'Dus', 'qty' => 1, 'materials' => [['material_id' => $box->id, 'qty' => 1]]],
+                ]],
+            ],
+            'costs' => [['name' => 'Ongkos las', 'amount' => 25_000]],
+        ])->assertSessionHasNoErrors();
+        $formula = Formula::where('name', 'Mio Racing')->firstOrFail();
+        // HPP perkiraan: pipa 50 cm × 500 + pureng 10.000 + baut 4 × 500 + plat 1.200 × 20 + dus 3.000 + las 25.000 + bending 3.000.
+        $this->assertEquals(92_000, $formula->estimatedHpp());
+
+        // 3. Rencana 10 knalpot → kekurangan → pembelian (aksesoris masuk Gudang Aksesoris).
+        $this->post(route('admin.plans.store'), ['planned_for' => '2026-12-01', 'lines' => [['formula_id' => $formula->id, 'qty' => 10]]])->assertSessionHasNoErrors();
+        $plan = ProductionPlan::firstOrFail();
+        $needs = app(ProductionPlanner::class)->forPlan($plan)['rows']->keyBy(fn ($row) => $row['material']->id);
+        $this->assertEquals(40, $needs[$bolt->id]['need'], '10 × (2 baut Leheran + 2 baut Silincer)');
+        $this->assertSame($accessory->id, $needs[$pureng->id]['material']->warehouse_id);
+
+        $this->post(route('admin.purchases.store'), [
+            'purchased_at' => '2026-12-01', 'supplier' => 'Toko Besi Jaya', 'production_plan_id' => $plan->id,
+            'items' => [
+                ['material_id' => $pipe->id, 'qty' => 1, 'bar_length_cm' => 600, 'unit_price' => 300_000],
+                ['material_id' => $plate->id, 'qty' => 1, 'unit_price' => 576_000],
+                ['material_id' => $pureng->id, 'qty' => 10, 'unit_price' => 10_000],
+                ['material_id' => $bolt->id, 'qty' => 40, 'unit_price' => 500],
+                ['material_id' => $box->id, 'qty' => 10, 'unit_price' => 3_000],
+            ],
+            'paid_amount' => 1_026_000, 'wallet_id' => $cash->id,
+        ])->assertSessionHasNoErrors();
+        $this->assertEquals(10, $pureng->fresh()->load('stocks')->stockIn($accessory));
+        $this->assertEquals(40, $bolt->fresh()->load('stocks')->stockIn($accessory));
+
+        // 4. Produksi dari rencana: sisa pipa terlihat, dipilih kembali ke stok.
+        $this->post(route('admin.plans.productions', $plan))->assertRedirect();
+        $job = Production::firstOrFail();
+        $this->get(route('admin.productions.show', $job))->assertOk()
+            ->assertSee('Sisa produksi')->assertSee('Komponen dijasakan')->assertSee('Bengkel Bending Jaya');
+        $bar = PipePiece::firstOrFail();
+        $this->post(route('admin.productions.post', $job), ['leftover' => [$bar->id => 'stok']])->assertSessionMissing('error');
+        $job->refresh();
+
+        // Pipa 10 × (30 + 20) + 20 × 0,3 cm serbuk = 506 cm; sisa 94 cm ke Stok Sisa.
+        $this->assertEqualsWithDelta(94, (float) $bar->fresh()->length_cm, 0.001);
+        $this->assertSame($offcut->id, $bar->fresh()->warehouse_id);
+        // Bahan 253.000 + pureng 100.000 + baut 20.000 + plat 240.000 + dus 30.000 = 643.000; las 250.000; bending 30.000.
+        $this->assertEquals(643_000, (float) $job->material_cost);
+        $this->assertEquals(30_000, (float) $job->service_cost);
+        $this->assertEquals(923_000, (float) $job->total_cost);
+        $this->assertEquals(92_300, (float) $job->hpp_per_unit);
+        $this->assertEquals(0, $pureng->fresh()->load('stocks')->stockIn($accessory), 'Pureng diambil dari Gudang Aksesoris');
+        $this->assertEquals(0, $bolt->fresh()->load('stocks')->stockIn($accessory));
+        $item = $formula->item->fresh();
+        $this->assertEquals(10, (float) $item->stock);
+
+        // 5. Tagihan jasa bending → hutang ke vendor, dibayar dari Kas.
+        $bill = MaterialPurchase::where('kind', 'jasa')->firstOrFail();
+        $this->assertEquals(30_000, (float) $bill->total);
+        $this->assertSame('Bengkel Bending Jaya', $bill->supplier);
+        $this->post(route('admin.purchases.payments.store', $bill), ['paid_at' => '2026-12-03', 'amount' => 30_000, 'wallet_id' => $cash->id])->assertSessionMissing('error');
+
+        // 6. Jual 4 knalpot.
+        $this->post(route('admin.sales.store'), [
+            'sold_at' => '2026-12-04', 'item_id' => $item->id, 'qty' => 4, 'unit_price' => 300_000, 'channel' => 'Offline',
+            'paid_amount' => 1_200_000, 'wallet_id' => $cash->id,
+        ])->assertSessionHasNoErrors();
+
+        // 7. Gaji pekerja: 5 hari × 120.000 + makan 5 × 15.000, dibayar dari Kas.
+        $this->post(route('admin.workers.store'), ['name' => 'Sidik', 'daily_wage' => 120_000, 'meal_allowance' => 15_000, 'overtime_rate' => 0, 'is_active' => 1])->assertSessionHasNoErrors();
+        $worker = Worker::firstOrFail();
+        foreach (['2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03', '2026-12-04'] as $day) {
+            $this->post(route('admin.attendances.store'), ['worked_on' => $day, 'rows' => [$worker->id => ['status' => 'hadir']]])->assertSessionHasNoErrors();
+        }
+        $this->post(route('admin.payrolls.store'), ['worker_id' => $worker->id, 'period_start' => '2026-11-30', 'period_end' => '2026-12-06'])->assertSessionHasNoErrors();
+        $slip = WorkerPayroll::firstOrFail();
+        $this->assertEquals(675_000, (float) $slip->net_pay);
+        $this->post(route('admin.payrolls.pay', $slip), ['paid_at' => '2026-12-06', 'wallet_id' => $cash->id])->assertSessionHasNoErrors();
+
+        // 8. Kas = awal − belanja − jasa vendor + penjualan − gaji.
+        $this->assertEquals(5_000_000 - 1_026_000 - 30_000 + 1_200_000 - 675_000, (float) $cash->fresh()->current_balance);
+        $this->assertSame(0.0, $bill->fresh()->payable());
+
+        // 9. Sinkron: stok total = stok per gudang; nilai masuk = persediaan + HPP terjual.
+        foreach (Material::with('stocks')->get() as $material) {
+            $this->assertEqualsWithDelta((float) $material->stock, (float) $material->stocks->sum('qty'), 0.001, $material->name);
+        }
+        $inventory = (float) MaterialStock::sum('value') + (float) $item->fresh()->stockValue();
+        $this->assertEqualsWithDelta(1_026_000 + 30_000 + 250_000, $inventory + 4 * 92_300, 1);
+
+        foreach ([
+            route('admin.productions.show', $job), route('admin.formulas.show', $formula), route('admin.warehouses.show', 'aksesoris'),
+            route('admin.warehouses.show', 'stok-sisa'), route('admin.payrolls.show', $slip), route('admin.workers.show', $worker),
+            route('admin.finance.index', ['dari' => '2026-12-01', 'sampai' => '2026-12-31']), route('admin.dashboard'),
         ] as $url) {
             $this->get($url)->assertOk();
         }

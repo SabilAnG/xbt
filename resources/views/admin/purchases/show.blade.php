@@ -2,7 +2,7 @@
 
 @section('actions')
     @if (! $purchase->isService() && $purchase->outstandingQty() > 0)
-        <form method="POST" action="{{ route('admin.purchases.cancel-outstanding', $purchase) }}" onsubmit="return confirm('Batalkan sisa barang yang belum datang? Tagihan ikut disesuaikan.')">@csrf<button class="btn">Batalkan sisa</button></form>
+        <form method="POST" action="{{ route('admin.purchases.cancel-outstanding', $purchase) }}" data-confirm="Batalkan sisa barang yang belum datang? Tagihan ikut disesuaikan.">@csrf<button class="btn">Batalkan sisa</button></form>
         <a href="{{ route('admin.receipts.create', ['pembelian' => $purchase->id]) }}" class="btn btn-primary">Terima barang</a>
     @endif
     @if ($purchase->supplierRecord)

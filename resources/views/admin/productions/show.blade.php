@@ -2,7 +2,7 @@
 
 @section('actions')
     @if ($production->isPosted())
-        <form method="POST" action="{{ route('admin.productions.cancel', $production) }}" onsubmit="return confirm('Batalkan pembukuan? Stok bahan, potongan pipa, dan stok hasilnya akan dikembalikan.')">
+        <form method="POST" action="{{ route('admin.productions.cancel', $production) }}" data-confirm="Batalkan pembukuan? Stok bahan, potongan pipa, dan stok hasilnya akan dikembalikan.">
             @csrf<button class="btn btn-danger">Batalkan pembukuan</button>
         </form>
     @else
@@ -122,6 +122,31 @@
             </div>
         </section>
 
+        @if ($production->serviceBills->isNotEmpty())
+            <section class="card p-5 sm:p-6">
+                <div class="flex items-center gap-3">
+                    <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br from-[#dccafd] to-[#8b49dc] text-white">
+                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('truck') }}"/></svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <h2 class="card-title">Jasa vendor komponen</h2>
+                        <p class="text-[12px] text-muted">Total {{ rupiah($production->service_cost) }} · tercatat sebagai hutang di Pembelian</p>
+                    </div>
+                </div>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                    @foreach ($production->serviceBills as $bill)
+                        <a href="{{ route('admin.purchases.show', $bill) }}" class="flex items-center gap-3 rounded-[12px] bg-white/80 px-3.5 py-2.5 shadow-[0_4px_12px_-10px_rgb(60_66_110/0.5)] transition hover:-translate-y-px">
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-[13px] font-semibold text-ink">{{ $bill->supplier }} · {{ rupiah($bill->total) }}</p>
+                                <p class="truncate text-[11.5px] text-muted">{{ $bill->invoice_number }} · {{ $bill->notes }}</p>
+                            </div>
+                            <x-admin.status :value="$bill->paymentStatus()" />
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @php
             $leftPieces = $production->cuts->pluck('piece')->unique('id')->filter(fn ($piece) => (float) $piece->length_cm > 0 && in_array($piece->status, ['tersedia', 'afkir'], true));
         @endphp
@@ -196,6 +221,37 @@
             <x-admin.stat label="Sisa afkir" :value="rupiah($preview['waste_cost'])" />
             <x-admin.stat label="Ongkos" :value="rupiah($preview['other_cost'])" />
         </section>
+
+        @if ($preview['services']->isNotEmpty())
+            <section class="card p-5 sm:p-6">
+                <div class="flex items-center gap-3">
+                    <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br from-[#dccafd] to-[#8b49dc] text-white">
+                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('truck') }}"/></svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <h2 class="card-title">Komponen dijasakan</h2>
+                        <p class="text-[12px] text-muted">Total jasa {{ rupiah($preview['service_cost']) }} · jadi tagihan ke vendor saat dibukukan</p>
+                    </div>
+                </div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="table">
+                        <thead><tr><th>Komponen</th><th>Vendor</th><th>Proses</th><th class="num">Jumlah</th><th class="num">Tarif</th><th class="num">Jasa</th></tr></thead>
+                        <tbody>
+                        @foreach ($preview['services'] as $service)
+                            <tr>
+                                <td>{{ $service['part'] }} · {{ $service['component'] }}</td>
+                                <td>{{ $service['vendor'] }}</td>
+                                <td class="text-muted">{{ $service['process'] ?? '—' }}</td>
+                                <td class="num">{{ qty($service['qty']) }} buah</td>
+                                <td class="num">{{ rupiah($service['rate']) }}</td>
+                                <td class="num font-semibold">{{ rupiah($service['cost']) }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
 
         <section class="card overflow-hidden">
             <div class="card-header"><h2 class="card-title">Bahan per satuan yang akan dipakai</h2></div>

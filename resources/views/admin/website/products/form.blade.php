@@ -185,7 +185,7 @@
     </form>
 
     @if ($product->exists)
-        <form id="delete-product" method="POST" action="{{ route('admin.web-products.destroy', $product) }}" onsubmit="return confirm('Hapus produk ini beserta fotonya?')">
+        <form id="delete-product" method="POST" action="{{ route('admin.web-products.destroy', $product) }}" data-confirm="Hapus produk ini beserta fotonya?">
             @csrf
             @method('DELETE')
         </form>

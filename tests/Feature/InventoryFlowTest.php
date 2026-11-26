@@ -11,6 +11,7 @@ use App\Models\Production;
 use App\Models\ProductionPlan;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\VendorService;
 use App\Models\Wallet;
 use App\Models\Warehouse;
 use App\Services\ProductionPlanner;
@@ -201,6 +202,91 @@ class InventoryFlowTest extends TestCase
         $this->assertEquals(265_000, (float) $production->fresh()->waste_cost);
         $this->assertEqualsWithDelta(3, (float) $this->pipe->fresh()->stock, 0.001);
         $this->get(route('admin.productions.show', $production))->assertOk()->assertSee('Dibuang')->assertSee('Kembali ke stok');
+    }
+
+    public function test_any_component_can_be_outsourced_with_a_rate_that_flows_into_hpp_and_vendor_bills(): void
+    {
+        // P1 dibending vendor Rp 3.000/buah; komponen lain dikerjakan sendiri.
+        $this->post(route('admin.formulas.store'), [
+            'motor_category' => 'Matic', 'motor_type' => 'Mio', 'name' => 'Mio Bending', 'is_active' => 1,
+            'parts' => [['name' => 'Leheran', 'components' => [
+                ['name' => 'Pureng', 'qty' => 1, 'materials' => [['material_id' => $this->pureng->id, 'qty' => 1]]],
+                ['name' => 'P1', 'qty' => 1, 'work_mode' => 'vendor', 'vendor' => 'Bengkel Bending Jaya', 'process' => 'Bending', 'service_cost' => 3_000,
+                    'materials' => [['material_id' => $this->pipe->id, 'qty' => 30]]],
+                ['name' => 'P2', 'qty' => 1, 'materials' => [['material_id' => $this->pipe->id, 'qty' => 20]]],
+            ]]],
+        ])->assertSessionHasNoErrors();
+        $formula = Formula::where('name', 'Mio Bending')->firstOrFail();
+
+        // HPP perkiraan: pureng 10.000 + pipa 50 cm × 500 + jasa 3.000.
+        $this->assertEquals(3_000, $formula->serviceCostPerUnit());
+        $this->assertEquals(38_000, $formula->estimatedHpp());
+
+        // Komponen tanpa vendor ditolak.
+        $this->post(route('admin.formulas.store'), [
+            'motor_category' => 'Matic', 'motor_type' => 'Mio', 'name' => 'Salah', 'is_active' => 1,
+            'parts' => [['name' => 'Leheran', 'components' => [['name' => 'P1', 'qty' => 1, 'work_mode' => 'vendor', 'materials' => []]]]],
+        ])->assertSessionHasErrors('parts.0.components.0.vendor_service_id');
+
+        $this->buy([[$this->pipe, 1], [$this->pureng, 5]]);
+        $production = $this->draftProduction($formula, 2);
+        $this->get(route('admin.productions.show', $production))->assertOk()->assertSee('Komponen dijasakan')->assertSee('Bengkel Bending Jaya');
+
+        $this->post(route('admin.productions.post', $production))->assertSessionMissing('error');
+        $production->refresh();
+        $this->assertEquals(6_000, (float) $production->service_cost);
+        $this->assertEquals(76_000, (float) $production->total_cost);
+        $bill = MaterialPurchase::where('kind', 'jasa')->where('production_id', $production->id)->firstOrFail();
+        $this->assertEquals(6_000, (float) $bill->total);
+        $this->assertSame('Bengkel Bending Jaya', $bill->supplier);
+        $this->assertEquals(6_000, $bill->payable());
+
+        // Batal pembukuan → tagihan jasa ikut hilang.
+        $this->post(route('admin.productions.cancel', $production))->assertSessionMissing('error');
+        $this->assertModelMissing($bill);
+
+        // Jasa tercatat di master; tarif diubah di master → HPP formula ikut.
+        $service = VendorService::firstOrFail();
+        $this->assertSame('Bending', $service->process);
+        $this->get(route('admin.vendor-services.index'))->assertOk()->assertSee('Bengkel Bending Jaya');
+        $this->put(route('admin.vendor-services.update', $service), ['vendor' => 'Bengkel Bending Jaya', 'process' => 'Bending', 'rate' => 4_000, 'unit' => 'buah', 'is_active' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertEquals(39_000, $formula->fresh()->estimatedHpp());
+        $this->delete(route('admin.vendor-services.destroy', $service))->assertSessionHas('error');
+
+        // Tambah cepat dari form formula, lalu dipilih lewat id.
+        $quick = $this->postJson(route('admin.vendor-services.store'), ['vendor' => 'Chrome Makmur', 'process' => 'Chrome', 'rate' => 25_000])
+            ->assertOk()->assertJson(['vendor' => 'Chrome Makmur', 'process' => 'Chrome', 'rate' => 25_000])->json('id');
+        $this->postJson(route('admin.vendor-services.store'), ['vendor' => 'chrome makmur', 'process' => 'chrome', 'rate' => 1])->assertUnprocessable();
+        $this->post(route('admin.formulas.store'), [
+            'motor_category' => 'Matic', 'motor_type' => 'Mio', 'name' => 'Mio Chrome', 'is_active' => 1,
+            'parts' => [['name' => 'Silincer', 'components' => [['name' => 'Tabung', 'qty' => 1, 'work_mode' => 'vendor', 'vendor_service_id' => $quick, 'materials' => []]]]],
+        ])->assertSessionHasNoErrors();
+        $this->assertEquals(25_000, Formula::where('name', 'Mio Chrome')->firstOrFail()->serviceCostPerUnit());
+    }
+
+    public function test_semi_finished_formula_done_by_a_vendor_prices_its_output_with_the_rate(): void
+    {
+        $this->post(route('admin.formulas.store'), [
+            'output_type' => Formula::SEMI_FINISHED, 'motor_category' => 'Matic', 'name' => 'P1 Mio bending', 'is_active' => 1,
+            'work_mode' => 'vendor', 'vendor' => 'Bengkel Bending Jaya', 'process' => 'Bending', 'service_cost' => 3_000,
+            'parts' => [['name' => 'Bahan', 'components' => [['name' => 'P1', 'qty' => 1, 'materials' => [['material_id' => $this->pipe->id, 'qty' => 30]]]]]],
+        ])->assertSessionHasNoErrors();
+        $semi = Formula::where('name', 'P1 Mio bending')->firstOrFail();
+        $this->assertTrue($semi->isVendorWork());
+        $this->assertEquals(15_000 + 3_000, $semi->estimatedHpp());
+
+        // Belum ada stok: formula knalpot yang memakai P1 bending ikut menghitung tarifnya.
+        $this->assertEquals(18_000, $semi->outputMaterial->unitCost());
+
+        // Draf dari rencana langsung jadi produksi vendor dengan tarifnya.
+        $plan = ProductionPlan::create(['plan_number' => 'RP-T1', 'planned_for' => '2026-12-01']);
+        $plan->lines()->create(['formula_id' => $semi->id, 'qty' => 10]);
+        $this->post(route('admin.plans.productions', $plan))->assertSessionMissing('error');
+        $draft = Production::where('formula_id', $semi->id)->firstOrFail();
+        $this->assertTrue($draft->isVendor());
+        $this->assertSame('Bengkel Bending Jaya', $draft->vendor);
+        $this->assertEquals(3_000, (float) $draft->service_cost_per_unit);
     }
 
     public function test_production_cannot_be_posted_without_enough_stock(): void

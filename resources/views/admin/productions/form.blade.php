@@ -15,7 +15,7 @@
                     @foreach ($formulas->groupBy('output_type') as $type => $group)
                         <optgroup label="{{ $type === 'setengah_jadi' ? 'Barang setengah jadi' : 'Knalpot jadi' }}">
                             @foreach ($group as $formula)
-                                <option value="{{ $formula->id }}" data-semi="{{ $type === 'setengah_jadi' ? 1 : 0 }}" @selected((string) old('formula_id', $production->formula_id) === (string) $formula->id)>{{ $formula->name }}</option>
+                                <option value="{{ $formula->id }}" data-semi="{{ $type === 'setengah_jadi' ? 1 : 0 }}" data-vendor-work="{{ $formula->isVendorWork() ? 1 : 0 }}" data-vendor="{{ $formula->vendor }}" data-process="{{ $formula->process }}" data-service="{{ (float) $formula->service_cost }}" @selected((string) old('formula_id', $production->formula_id) === (string) $formula->id)>{{ $formula->name }}</option>
                             @endforeach
                         </optgroup>
                     @endforeach
@@ -76,6 +76,16 @@
             fields.classList.toggle('hidden', !toggle.checked);
         }
 
+        // Formula yang dikerjakan vendor langsung mengisi vendor, proses, dan tarif jasanya.
+        formula.addEventListener('change', function () {
+            var opt = formula.selectedOptions[0];
+            if (opt && opt.dataset.vendorWork === '1') {
+                toggle.checked = true;
+                form.querySelector('#vendor').value = opt.dataset.vendor || '';
+                form.querySelector('#process').value = opt.dataset.process || '';
+                form.querySelector('#service_cost_per_unit').value = opt.dataset.service || 0;
+            }
+        });
         formula.addEventListener('change', sync);
         toggle.addEventListener('change', sync);
         sync();

@@ -31,7 +31,8 @@ class Formula extends Model
     public const MOTOR_TYPES = ['Mio', 'Beat', 'Vario', 'Scoopy', 'NMAX', 'PCX', 'Aerox', 'Lexi', 'Fino'];
 
     /** Bagian yang otomatis ada di formula knalpot baru. */
-    public const DEFAULT_PARTS = ['Leheran', 'Silincer', 'Aksesoris'];
+    /** Bagian knalpot; aksesoris adalah gudang bahan yang dipakai di dalam bagian ini. */
+    public const DEFAULT_PARTS = ['Leheran', 'Silincer'];
 
     public const KNALPOT = 'knalpot';
 
@@ -43,12 +44,12 @@ class Formula extends Model
     ];
 
     protected $fillable = [
-        'code', 'name', 'motor_category', 'motor_brand', 'motor_type', 'variant', 'output_type', 'item_id', 'output_material_id', 'notes', 'is_active',
+        'code', 'name', 'motor_category', 'motor_brand', 'motor_type', 'variant', 'output_type', 'item_id', 'output_material_id', 'work_mode', 'vendor_service_id', 'vendor', 'process', 'service_cost', 'notes', 'is_active',
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'service_cost' => 'decimal:2'];
     }
 
     /** Produk jadi (Finish Good) hasil formula ini. */
@@ -164,10 +165,47 @@ class Formula extends Model
         return (float) $this->loadStructure()->costs->sum('amount');
     }
 
-    /** HPP perkiraan per knalpot (bahan + ongkos, belum termasuk sisa yang terbuang). */
+    /** Barang setengah jadi ini dikerjakan vendor (mis. bending), bukan di bengkel sendiri. */
+    public function isVendorWork(): bool
+    {
+        return $this->isSemiFinished() && $this->work_mode === 'vendor';
+    }
+
+    /** Jasa vendor per unit: seluruh barang (formula setengah jadi) + komponen yang dijasakan. */
+    public function serviceCostPerUnit(): float
+    {
+        return ($this->isVendorWork() ? (float) $this->service_cost : 0.0) + $this->componentServiceCostPerUnit();
+    }
+
+    public function componentServiceCostPerUnit(): float
+    {
+        return (float) $this->loadStructure()->parts->flatMap->components->sum(fn (FormulaComponent $component) => $component->serviceCostPerUnit());
+    }
+
+    /**
+     * Komponen yang dijasakan untuk sejumlah unit.
+     *
+     * @return Collection<int, array{part: string, component: string, vendor: string, process: ?string, qty: float, rate: float, cost: float}>
+     */
+    public function componentServices(float $units = 1): Collection
+    {
+        return $this->loadStructure()->parts->flatMap(fn (FormulaPart $part) => $part->components
+            ->filter(fn (FormulaComponent $component) => $component->isVendorWork())
+            ->map(fn (FormulaComponent $component) => [
+                'part' => $part->name,
+                'component' => $component->name,
+                'vendor' => $component->vendor,
+                'process' => $component->process,
+                'qty' => (float) $component->qty * $units,
+                'rate' => (float) $component->service_cost,
+                'cost' => (float) $component->qty * $units * (float) $component->service_cost,
+            ]))->values();
+    }
+
+    /** HPP perkiraan per unit (bahan + ongkos + jasa vendor, belum termasuk sisa yang terbuang). */
     public function estimatedHpp(): float
     {
-        return $this->materialCostPerUnit() + $this->otherCostPerUnit();
+        return $this->materialCostPerUnit() + $this->otherCostPerUnit() + $this->serviceCostPerUnit();
     }
 
     /** Biaya bahan per bagian, untuk ringkasan formula. */

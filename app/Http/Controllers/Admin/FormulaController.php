@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ComponentOption;
+use App\Models\CostOption;
 use App\Models\Formula;
 use App\Models\FormulaComponent;
-use App\Models\FormulaCost;
 use App\Models\Item;
 use App\Models\Material;
 use App\Models\MotorOption;
+use App\Models\Supplier;
+use App\Models\VendorService;
 use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -125,7 +127,7 @@ class FormulaController extends Controller
                 $newPart = $copy->parts()->create($part->only('name', 'sort_order'));
 
                 foreach ($part->components as $component) {
-                    $newComponent = $newPart->components()->create($component->only('name', 'qty', 'sort_order'));
+                    $newComponent = $newPart->components()->create($component->only('name', 'qty', 'work_mode', 'vendor_service_id', 'vendor', 'process', 'service_cost', 'sort_order'));
                     $newComponent->materials()->createMany($component->materials->map->only('material_id', 'qty', 'sort_order')->all());
                 }
             }
@@ -149,6 +151,11 @@ class FormulaController extends Controller
             'components' => $part->components->map(fn (FormulaComponent $component) => [
                 'name' => $component->name,
                 'qty' => (float) $component->qty,
+                'work_mode' => $component->work_mode,
+                'vendor_service_id' => $component->vendor_service_id,
+                'vendor' => $component->vendor,
+                'process' => $component->process,
+                'service_cost' => (float) $component->service_cost,
                 'materials' => $component->materials->map(fn ($line) => [
                     'material_id' => $line->material_id,
                     'qty' => (float) $line->qty,
@@ -185,10 +192,14 @@ class FormulaController extends Controller
                 'stock' => (float) $material->stock,
             ])->values(),
             'warehouses' => collect([Warehouse::RAW, Warehouse::SEMI, Warehouse::ACCESSORY])->mapWithKeys(fn (string $type) => [$type => Warehouse::forType($type)->name]),
-            'costSuggestions' => collect(['Ongkos las', 'Ongkos bending', 'Finishing / poles', 'Packing'])
-                ->merge(FormulaCost::query()->distinct()->pluck('name'))->unique()->values(),
+            'costOptions' => CostOption::query()->ordered()->get(['name', 'amount'])->map(fn (CostOption $option) => ['name' => $option->name, 'amount' => (float) $option->amount])->values(),
             'suggestions' => ComponentOption::suggestions(),
             'partNames' => ComponentOption::query()->parts()->pluck('name'),
+            'vendors' => Supplier::query()->active()->orderBy('name')->pluck('name'),
+            'vendorServices' => VendorService::query()->with('supplier')
+                ->where(fn ($query) => $query->where('is_active', true)->orWhereIn('id', $formula->parts->flatMap->components->pluck('vendor_service_id')->push($formula->vendor_service_id)->filter()))
+                ->get()->sortBy(fn (VendorService $service) => [$service->process, $service->supplier->name])->map->toOption()->values(),
+            'processes' => VendorService::query()->distinct()->orderBy('process')->pluck('process'),
             'semiMaterials' => Material::query()->where('measure', Material::UNIT)->where('is_producible', true)
                 ->where('warehouse_id', Warehouse::forType(Warehouse::SEMI)->id)
                 ->whereNotIn('id', Formula::query()->whereNotNull('output_material_id')->whereKeyNot($formula->id ?? 0)->pluck('output_material_id'))
@@ -217,6 +228,11 @@ class FormulaController extends Controller
             'output_material_id' => ['nullable', Rule::exists('materials', 'id')->where('measure', Material::UNIT)->where('is_producible', true)],
             'motor_type' => [$request->input('output_type') === Formula::SEMI_FINISHED ? 'nullable' : 'required', 'string', 'max:100'],
             'variant' => ['nullable', 'string', 'max:150'],
+            'work_mode' => ['nullable', Rule::in(['internal', 'vendor'])],
+            'vendor_service_id' => ['nullable', 'exists:vendor_services,id'],
+            'vendor' => ['nullable', 'string', 'max:255'],
+            'process' => ['nullable', 'string', 'max:100'],
+            'service_cost' => ['nullable', 'numeric', 'min:0'],
             'item_id' => ['nullable', 'exists:items,id'],
             'notes' => ['nullable', 'string'],
             'parts' => ['required', 'array', 'min:1'],
@@ -224,6 +240,11 @@ class FormulaController extends Controller
             'parts.*.components' => ['array'],
             'parts.*.components.*.name' => ['required', 'string', 'max:100'],
             'parts.*.components.*.qty' => ['required', 'numeric', 'gt:0'],
+            'parts.*.components.*.work_mode' => ['nullable', Rule::in(['internal', 'vendor'])],
+            'parts.*.components.*.vendor_service_id' => ['nullable', 'exists:vendor_services,id'],
+            'parts.*.components.*.vendor' => ['nullable', 'string', 'max:255'],
+            'parts.*.components.*.process' => ['nullable', 'string', 'max:100'],
+            'parts.*.components.*.service_cost' => ['nullable', 'numeric', 'min:0'],
             'parts.*.components.*.materials' => ['array'],
             'parts.*.components.*.materials.*.material_id' => ['required', 'exists:materials,id'],
             'parts.*.components.*.materials.*.qty' => ['required', 'numeric', 'gt:0'],
@@ -243,6 +264,11 @@ class FormulaController extends Controller
             ->filter(fn (array $cost) => filled($cost['name'] ?? null))
             ->map(fn (array $cost) => ['name' => trim($cost['name']), 'amount' => (float) ($cost['amount'] ?? 0)])
             ->values()->all();
+
+        // Ongkos baru yang diketik ikut tercatat di Data Ongkos.
+        foreach ($costs as $cost) {
+            CostOption::remember($cost['name'], $cost['amount']);
+        }
 
         $parts = array_values($data['parts']);
 
@@ -277,6 +303,29 @@ class FormulaController extends Controller
         $data['variant'] = MotorOption::remember('varian', $data['variant'] ?? null);
 
         $data['output_type'] = ($data['output_type'] ?? null) ?: Formula::KNALPOT;
+
+        // Jasa vendor wajib dipilih untuk komponen yang dijasakan.
+        foreach ($parts as $p => $part) {
+            foreach (array_values($part['components'] ?? []) as $k => $component) {
+                if (($component['work_mode'] ?? null) === 'vendor' && blank($component['vendor_service_id'] ?? null) && blank($component['vendor'] ?? null)) {
+                    throw ValidationException::withMessages(["parts.{$p}.components.{$k}.vendor_service_id" => 'Pilih jasa vendor untuk komponen '.($component['name'] ?? '').'.']);
+                }
+            }
+        }
+
+        // Hanya barang setengah jadi yang bisa dikerjakan vendor seluruhnya.
+        $vendorWork = $data['output_type'] === Formula::SEMI_FINISHED && ($data['work_mode'] ?? null) === 'vendor';
+        $service = $vendorWork ? $this->vendorService($data) : null;
+
+        if ($vendorWork && ! $service) {
+            throw ValidationException::withMessages(['vendor_service_id' => 'Pilih jasa vendor yang mengerjakan barang ini.']);
+        }
+
+        $data['work_mode'] = $service ? 'vendor' : 'internal';
+        $data['vendor_service_id'] = $service?->id;
+        $data['vendor'] = $service?->supplier->name;
+        $data['process'] = $service?->process;
+        $data['service_cost'] = $service ? (float) $service->rate : 0;
         $data['code'] = ($data['code'] ?? null) ?: $this->nextCode();
         $data['is_active'] = $request->boolean('is_active', true);
 
@@ -309,14 +358,34 @@ class FormulaController extends Controller
      * @param  list<array<string, mixed>>  $parts
      * @param  list<array<string, mixed>>  $costs
      */
+    /**
+     * Jasa vendor yang dipilih, atau dicatat dari vendor + proses + tarif yang diketik.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function vendorService(array $row): ?VendorService
+    {
+        $service = filled($row['vendor_service_id'] ?? null)
+            ? VendorService::find($row['vendor_service_id'])
+            : VendorService::remember($row['vendor'] ?? null, $row['process'] ?? null, (float) ($row['service_cost'] ?? 0));
+
+        return $service?->load('supplier');
+    }
+
     private function saveStructure(Formula $formula, array $parts, array $costs): void
     {
         foreach ($parts as $partOrder => $part) {
             $newPart = $formula->parts()->create(['name' => trim($part['name']), 'sort_order' => $partOrder]);
 
             foreach (array_values($part['components'] ?? []) as $componentOrder => $component) {
+                $service = ($component['work_mode'] ?? null) === 'vendor' ? $this->vendorService($component) : null;
                 $newComponent = $newPart->components()->create([
                     'name' => trim($component['name']), 'qty' => (float) $component['qty'], 'sort_order' => $componentOrder,
+                    'work_mode' => $service ? 'vendor' : 'internal',
+                    'vendor_service_id' => $service?->id,
+                    'vendor' => $service?->supplier->name,
+                    'process' => $service?->process,
+                    'service_cost' => $service ? (float) $service->rate : 0,
                 ]);
 
                 foreach (array_values($component['materials'] ?? []) as $lineOrder => $line) {

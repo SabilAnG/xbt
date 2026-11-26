@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Barang persediaan untuk produksi.
@@ -173,6 +174,12 @@ class Material extends Model
     }
 
     /** Harga per satuan pakai (per cm untuk pipa) yang dibawa ke formula. */
+    /** Formula yang menghasilkan barang ini (barang setengah jadi buatan sendiri / vendor). */
+    public function producedBy(): HasOne
+    {
+        return $this->hasOne(Formula::class, 'output_material_id');
+    }
+
     public function unitCost(): float
     {
         if ((float) $this->avg_cost > 0) {
@@ -181,7 +188,25 @@ class Material extends Model
 
         $factor = $this->conversionFactor();
 
-        return $factor > 0 ? (float) $this->last_price / $factor : 0.0;
+        if ((float) $this->last_price > 0) {
+            return $factor > 0 ? (float) $this->last_price / $factor : 0.0;
+        }
+
+        // Belum pernah ada stok/harga: pakai HPP perkiraan formula pembuatnya
+        // (sudah termasuk tarif jasa vendor), dijaga dari formula yang saling memakai.
+        static $resolving = [];
+
+        if (! $this->exists || isset($resolving[$this->id])) {
+            return 0.0;
+        }
+
+        $resolving[$this->id] = true;
+
+        try {
+            return (float) ($this->producedBy?->estimatedHpp() ?? 0);
+        } finally {
+            unset($resolving[$this->id]);
+        }
     }
 
     /** Harga per satuan beli (per batang untuk pipa), acuan saat belanja. */

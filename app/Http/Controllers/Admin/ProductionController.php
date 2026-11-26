@@ -36,7 +36,7 @@ class ProductionController extends Controller
 
     public function show(Production $production, ProductionService $service): View
     {
-        $production->load('formula.item', 'formula.outputMaterial', 'item', 'planLine.plan', 'usages.material', 'cuts.piece.material', 'receipts.bill');
+        $production->load('formula.item', 'formula.outputMaterial', 'item', 'planLine.plan', 'usages.material', 'cuts.piece.material', 'receipts.bill', 'serviceBills');
 
         return view('admin.productions.show', [
             'production' => $production,
@@ -169,7 +169,7 @@ class ProductionController extends Controller
     {
         return view('admin.productions.form', [
             'production' => $production,
-            'formulas' => Formula::query()->active()->orderBy('name')->get(['id', 'name', 'output_type']),
+            'formulas' => Formula::query()->active()->orderBy('name')->get(['id', 'name', 'output_type', 'work_mode', 'vendor', 'process', 'service_cost']),
             'vendors' => Production::query()->whereNotNull('vendor')->distinct()->orderBy('vendor')->pluck('vendor')
                 ->merge(Supplier::query()->active()->orderBy('name')->pluck('name'))->unique()->values(),
             'workers' => Production::query()->whereNotNull('worker')->distinct()->orderBy('worker')->pluck('worker'),

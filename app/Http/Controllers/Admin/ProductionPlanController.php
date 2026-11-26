@@ -161,6 +161,10 @@ class ProductionPlanController extends Controller
                     'production_plan_line_id' => $line->id,
                     'qty' => $line->qty,
                     'status' => Production::DRAFT,
+                    'mode' => $line->formula->isVendorWork() ? Production::VENDOR : Production::INTERNAL,
+                    'vendor' => $line->formula->isVendorWork() ? $line->formula->vendor : null,
+                    'process' => $line->formula->isVendorWork() ? $line->formula->process : null,
+                    'service_cost_per_unit' => $line->formula->serviceCostPerUnit(),
                 ]);
                 $created++;
             }

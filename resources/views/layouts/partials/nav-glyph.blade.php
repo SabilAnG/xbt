@@ -46,6 +46,12 @@
             <circle cx="12" cy="12" r="3.4" fill="#fff"/>
             <circle cx="12" cy="12" r="1.9" fill="{{ $b }}"/>
             @break
+        @case('Pekerja')
+            <circle cx="16.5" cy="7.5" r="3.2" fill="{{ $b }}"/>
+            <path d="M11.5 20.5c0-3.3 2.2-6 5-6s5 2.7 5 6v.5h-10v-.5Z" fill="{{ $b }}"/>
+            <circle cx="9" cy="7" r="3.8" fill="{{ $a }}"/>
+            <path d="M2 20.5c0-4 3.1-7.2 7-7.2s7 3.2 7 7.2v.5H2v-.5Z" fill="{{ $a }}"/>
+            @break
         @default
             <path d="M11 3.1A9 9 0 1 0 20.9 13H11V3.1Z" fill="{{ $a }}"/>
             <path d="M13 1.8a9.2 9.2 0 0 1 9.2 9.2H13V1.8Z" fill="{{ $b }}"/>

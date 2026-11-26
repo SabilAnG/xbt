@@ -316,5 +316,6 @@
 </script>
 @stack('scripts')
 @include('layouts.partials.custom-select')
+@include('layouts.partials.confirm-modal')
 </body>
 </html>

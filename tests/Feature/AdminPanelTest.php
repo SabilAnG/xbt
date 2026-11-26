@@ -43,7 +43,7 @@ class AdminPanelTest extends TestCase
         $groups = collect(AdminNavigation::groups())->pluck('label')->all();
         $purchasing = collect(AdminNavigation::groups())->firstWhere('label', 'Pembelian')['items'];
         $this->assertSame(['Pembelian', 'Penerimaan', 'Supplier'], array_column($purchasing, 'label'));
-        $this->assertSame(['Ringkasan', 'Pembelian', 'Penjualan', 'Katalog', 'Keuangan', 'Gudang', 'Produksi', 'Website'], $groups);
+        $this->assertSame(['Ringkasan', 'Pembelian', 'Penjualan', 'Katalog', 'Keuangan', 'Gudang', 'Produksi', 'Pekerja', 'Website'], $groups);
 
         $this->actingAs(User::factory()->create());
         $this->get(route('admin.warehouses.show', 'finish-good'));
@@ -70,7 +70,7 @@ class AdminPanelTest extends TestCase
             'admin.purchases.index', 'admin.purchases.create', 'admin.adjustments.index', 'admin.adjustments.create',
             'admin.warehouses.index', 'admin.finance.index', 'admin.expenses.index', 'admin.expenses.create',
             'admin.wallets.index', 'admin.brands.index', 'admin.production-settings.edit', 'admin.master-items.index', 'admin.units.index',
-            'admin.receipts.index', 'admin.suppliers.index', 'admin.transfers.index', 'admin.transfers.create', 'admin.motor-options.index', 'admin.component-options.index',
+            'admin.receipts.index', 'admin.suppliers.index', 'admin.transfers.index', 'admin.transfers.create', 'admin.motor-options.index', 'admin.component-options.index', 'admin.vendor-services.index', 'admin.cost-options.index', 'admin.workers.index', 'admin.workers.create', 'admin.attendances.index', 'admin.payrolls.index',
         ] as $route) {
             $this->get(route($route))->assertOk();
         }

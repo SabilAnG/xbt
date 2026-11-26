@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class MaterialPurchase extends Model
 {
     protected $fillable = [
-        'invoice_number', 'kind', 'purchased_at', 'supplier_id', 'supplier', 'supplier_location', 'supplier_invoice', 'buyer', 'production_plan_id', 'total', 'paid_amount', 'notes',
+        'invoice_number', 'kind', 'purchased_at', 'supplier_id', 'supplier', 'supplier_location', 'supplier_invoice', 'buyer', 'production_plan_id', 'production_id', 'total', 'paid_amount', 'notes',
     ];
 
     protected function casts(): array

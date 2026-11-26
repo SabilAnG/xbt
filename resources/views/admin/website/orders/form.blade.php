@@ -27,7 +27,7 @@
     </form>
 
     @if ($order->exists)
-        <form id="delete-order" method="POST" action="{{ route('admin.orders.destroy', $order) }}" onsubmit="return confirm('Hapus pesanan beserta semua pengirimannya?')">
+        <form id="delete-order" method="POST" action="{{ route('admin.orders.destroy', $order) }}" data-confirm="Hapus pesanan beserta semua pengirimannya?">
             @csrf
             @method('DELETE')
         </form>

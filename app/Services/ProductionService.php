@@ -101,7 +101,9 @@ class ProductionService
         $materialCost = (float) $units->sum('cost') + (float) $pipes->sum('cost');
         $wasteCost = (float) $pipes->sum('waste');
         $otherCost = $production->formula->otherCostPerUnit() * $qty;
-        $total = $materialCost + $wasteCost + $otherCost;
+        $services = $production->formula->componentServices($qty);
+        $serviceCost = (float) $services->sum('cost');
+        $total = $materialCost + $wasteCost + $otherCost + $serviceCost;
 
         if ($requirements->isEmpty()) {
             $problems[] = 'Formula ini belum punya bahan.';
@@ -115,6 +117,8 @@ class ProductionService
             'material_cost' => $materialCost,
             'waste_cost' => $wasteCost,
             'other_cost' => $otherCost,
+            'services' => $services,
+            'service_cost' => $serviceCost,
             'total_cost' => $total,
             'hpp' => $qty > 0 ? $total / $qty : 0,
         ];
@@ -217,11 +221,36 @@ class ProductionService
             }
 
             $otherCost = $production->formula->otherCostPerUnit() * (float) $production->qty;
-            $total = $materialCost + $wasteCost + $otherCost;
+
+            // Komponen yang dijasakan: jadi biaya produksi dan tagihan ke tiap vendor.
+            $serviceCost = 0.0;
+            foreach ($preview['services']->groupBy('vendor') as $vendor => $lines) {
+                $amount = (float) $lines->sum('cost');
+                $serviceCost += $amount;
+
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                MaterialPurchase::create([
+                    'invoice_number' => DocumentNumber::next('material_purchases', Carbon::parse($date)),
+                    'kind' => 'jasa',
+                    'purchased_at' => $date,
+                    'supplier_id' => Supplier::resolve($vendor)?->id,
+                    'supplier' => $vendor,
+                    'production_id' => $production->id,
+                    'total' => $amount,
+                    'notes' => 'Jasa '.$lines->map(fn ($line) => trim(($line['process'] ? $line['process'].' ' : '').$line['component']).' '.qty($line['qty']).' × '.rupiah($line['rate']))->implode(', ')
+                        .' · '.$production->production_number,
+                ]);
+            }
+
+            $total = $materialCost + $wasteCost + $otherCost + $serviceCost;
             $hpp = $total / (float) $production->qty;
 
             $production->forceFill([
                 'status' => Production::POSTED, 'posted_at' => now(),
+                'service_cost' => $serviceCost,
                 'material_cost' => $materialCost, 'waste_cost' => $wasteCost, 'other_cost' => $otherCost,
                 'total_cost' => $total, 'hpp_per_unit' => $hpp,
             ])->save();
@@ -357,12 +386,19 @@ class ProductionService
                 ])->save();
             }
 
+            // Tagihan jasa komponen ikut dibatalkan, asal belum dibayar.
+            $bills = $production->serviceBills()->get();
+            if ($bills->contains(fn (MaterialPurchase $bill) => (float) $bill->paid_amount > 0)) {
+                throw new RuntimeException('Tagihan jasa vendor dari produksi ini sudah dibayar sebagian. Hapus pembayarannya dulu.');
+            }
+            $bills->each->delete();
+
             $production->cuts()->delete();
             $production->usages()->delete();
             $this->stock->forget($production);
 
             $production->forceFill([
-                'status' => Production::DRAFT, 'posted_at' => null,
+                'status' => Production::DRAFT, 'posted_at' => null, 'service_cost' => 0,
                 'material_cost' => 0, 'waste_cost' => 0, 'other_cost' => 0, 'total_cost' => 0, 'hpp_per_unit' => 0,
             ])->save();
 

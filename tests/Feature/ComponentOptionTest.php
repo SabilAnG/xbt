@@ -23,7 +23,9 @@ class ComponentOptionTest extends TestCase
 
     public function test_new_formula_uses_parts_and_suggestions_from_the_master(): void
     {
-        $this->assertSame(['Leheran', 'Silincer', 'Aksesoris'], ComponentOption::defaultParts(Formula::KNALPOT));
+        $this->assertSame(['Leheran', 'Silincer'], ComponentOption::defaultParts(Formula::KNALPOT));
+        $this->assertNull(ComponentOption::findPart('Aksesoris'), 'Aksesoris bukan bagian formula.');
+        $this->assertContains('Baut', ComponentOption::suggestions()['Silincer']);
         $this->assertContains('Pureng', ComponentOption::suggestions()['Leheran']);
 
         // Bagian baru yang dijadikan bawaan ikut muncul di formula baru.
@@ -32,7 +34,7 @@ class ComponentOptionTest extends TestCase
         $this->put(route('admin.component-options.update', $mount), ['name' => 'Dudukan', 'sort_order' => 4, 'default_for' => 'knalpot'])->assertSessionHasNoErrors();
 
         $this->get(route('admin.formulas.create'))->assertOk()
-            ->assertViewHas('parts', fn (array $parts) => collect($parts)->pluck('name')->all() === ['Leheran', 'Silincer', 'Aksesoris', 'Dudukan']);
+            ->assertViewHas('parts', fn (array $parts) => collect($parts)->pluck('name')->all() === ['Leheran', 'Silincer', 'Dudukan']);
         $this->get(route('admin.component-options.index'))->assertOk()->assertSee('Dudukan')->assertSee('Sok sambungan');
     }
 
