@@ -10,8 +10,12 @@ use App\Models\MaterialStock;
 use App\Models\Production;
 use App\Models\PurchasePayment;
 use App\Models\Sale;
+use App\Models\SalePayment;
+use App\Models\SupplierDeposit;
 use App\Models\Wallet;
 use App\Models\Warehouse;
+use App\Models\WorkerAdvance;
+use App\Services\DashboardSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -34,7 +38,12 @@ class FinanceReportController extends Controller
         $expenses = Expense::query()->posted()->with('category')->whereBetween('spent_at', [$from->toDateString(), $to->toDateString()])->get();
         $productions = Production::query()->posted()->whereBetween('produced_at', [$from->toDateString(), $to->toDateString()])->get();
         $purchases = MaterialPurchase::query()->whereBetween('purchased_at', [$from->toDateString(), $to->toDateString()])->get();
-        $payments = PurchasePayment::query()->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->sum('amount');
+        $payments = (float) PurchasePayment::query()->whereNull('supplier_deposit_id')->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->sum('amount')
+            + (float) SupplierDeposit::query()->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->sum('amount');
+        $received = SalePayment::query()->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->sum('amount');
+        // Uang keluar untuk biaya: kasbon dihitung saat diberikan, bukan saat dipotong di gaji.
+        $expenseCash = (float) DashboardSummary::cashExpenses()->whereBetween('spent_at', [$from->toDateString(), $to->toDateString()])->sum('amount')
+            + (float) WorkerAdvance::query()->whereBetween('given_at', [$from->toDateString(), $to->toDateString()])->sum('amount');
 
         $revenue = (float) $sales->sum('total');
         $cogs = (float) $sales->sum('total_cost');
@@ -64,9 +73,9 @@ class FinanceReportController extends Controller
                     ->map(fn ($rows) => (float) $rows->sum('amount'))->sortDesc(),
             ],
             'cash' => [
-                'sales_in' => (float) $sales->sum('paid_amount'),
+                'sales_in' => (float) $received,
                 'purchase_out' => (float) $payments,
-                'expense_out' => $operating,
+                'expense_out' => $expenseCash,
             ],
             'production' => [
                 'count' => $productions->count(),

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Middleware\EnsureRoleCanAccess;
 use App\Models\Product;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\Route;
@@ -70,9 +71,14 @@ Route::prefix('admin')->group(function () {
         Route::post('login', [Admin\AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
     });
 
-    Route::middleware('auth')->name('admin.')->group(function () {
+    Route::middleware(['auth', EnsureRoleCanAccess::class])->name('admin.')->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('logout');
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
+        Route::get('stok-opname', [Admin\StockOpnameController::class, 'index'])->name('stock-opname.index');
+        Route::post('stok-opname/produk', [Admin\StockOpnameController::class, 'storeItems'])->name('stock-opname.items');
+        Route::post('stok-opname/bahan', [Admin\StockOpnameController::class, 'storeMaterials'])->name('stock-opname.materials');
+        Route::get('laporan-produksi', Admin\ProductionReportController::class)->name('reports.production');
+        Route::resource('pengguna', Admin\UserController::class)->only(['index', 'store', 'update', 'destroy'])->names('users')->parameters(['pengguna' => 'user']);
 
         // Inventori: formula → rencana → pembelian → gudang → produksi
         Route::post('formula/{formula}/salin', [Admin\FormulaController::class, 'duplicate'])->name('formulas.duplicate');
@@ -91,8 +97,13 @@ Route::prefix('admin')->group(function () {
         Route::post('pembelian-bahan/{purchase}/batalkan-sisa', [Admin\MaterialPurchaseController::class, 'cancelOutstanding'])->name('purchases.cancel-outstanding');
         Route::resource('penerimaan', Admin\PurchaseReceiptController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
             ->names('receipts')->parameters(['penerimaan' => 'receipt']);
+        Route::post('supplier/{supplier}/bayar', [Admin\SupplierController::class, 'payMany'])->name('suppliers.pay');
+        Route::post('supplier/{supplier}/uang-muka', [Admin\SupplierController::class, 'storeDeposit'])->name('suppliers.deposits.store');
+        Route::delete('supplier/uang-muka/{deposit}', [Admin\SupplierController::class, 'destroyDeposit'])->name('suppliers.deposits.destroy');
         Route::resource('supplier', Admin\SupplierController::class)->only(['index', 'store', 'show', 'update', 'destroy'])
             ->names('suppliers')->parameters(['supplier' => 'supplier']);
+        Route::post('pembelian-bahan/{purchase}/retur', [Admin\MaterialPurchaseController::class, 'storeReturn'])->name('purchases.returns.store');
+        Route::delete('pembelian-bahan/retur/{return}', [Admin\MaterialPurchaseController::class, 'destroyReturn'])->name('purchases.returns.destroy');
         Route::post('pembelian-bahan/{purchase}/bayar', [Admin\MaterialPurchaseController::class, 'storePayment'])->name('purchases.payments.store');
         Route::delete('pembelian-bahan/pembayaran/{payment}', [Admin\MaterialPurchaseController::class, 'destroyPayment'])->name('purchases.payments.destroy');
         Route::resource('pembelian-bahan', Admin\MaterialPurchaseController::class)->only(['index', 'create', 'store', 'show', 'destroy'])
@@ -137,9 +148,13 @@ Route::prefix('admin')->group(function () {
         Route::resource('penyesuaian-stok', Admin\AdjustmentController::class)->only(['index', 'create', 'store', 'destroy'])
             ->names('adjustments')->parameters(['penyesuaian-stok' => 'adjustment']);
 
+        Route::post('produk/{item}/penyesuaian', [Admin\ItemController::class, 'adjust'])->name('items.adjust');
+        Route::delete('produk/penyesuaian/{adjustment}', [Admin\ItemController::class, 'destroyAdjustment'])->name('items.adjustments.destroy');
         Route::resource('produk', Admin\ItemController::class)->names('items')->parameters(['produk' => 'item']);
         Route::resource('merek', Admin\BrandController::class)->except('show')->names('brands')->parameters(['merek' => 'brand']);
-        Route::resource('penjualan', Admin\SaleController::class)->except('show')->names('sales')->parameters(['penjualan' => 'sale']);
+        Route::post('penjualan/{sale}/bayar', [Admin\SaleController::class, 'storePayment'])->name('sales.payments.store');
+        Route::delete('penjualan/pembayaran/{payment}', [Admin\SaleController::class, 'destroyPayment'])->name('sales.payments.destroy');
+        Route::resource('penjualan', Admin\SaleController::class)->names('sales')->parameters(['penjualan' => 'sale']);
         Route::get('laporan-keuangan', Admin\FinanceReportController::class)->name('finance.index');
         Route::get('dompet/transfer', [Admin\WalletController::class, 'createTransfer'])->name('wallets.transfer');
         Route::post('dompet/transfer', [Admin\WalletController::class, 'storeTransfer'])->name('wallets.transfer.store');

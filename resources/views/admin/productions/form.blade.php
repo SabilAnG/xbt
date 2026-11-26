@@ -25,9 +25,8 @@
             <x-admin.field name="qty" label="Jumlah" type="number" min="1" step="1" :value="(int) $production->qty" required />
             <x-admin.field name="produced_at" label="Tanggal" type="date" :value="optional($production->produced_at)->toDateString()" required />
             <div class="sm:col-span-2">
-                <label for="worker" class="label">Tukang / penanggung jawab</label>
-                <input id="worker" name="worker" value="{{ old('worker', $production->worker) }}" class="input" list="workers">
-                <datalist id="workers">@foreach ($workers as $worker)<option value="{{ $worker }}">@endforeach</datalist>
+                <x-admin.select name="worker_id" label="Tukang / penanggung jawab" :options="$workers" :value="$production->worker_id" placeholder="— pilih pekerja —"
+                    :hint="$workers->isEmpty() ? 'Belum ada pekerja. Tambahkan di menu Pekerja.' : 'Dari daftar Pekerja.'" />
             </div>
         </div>
 

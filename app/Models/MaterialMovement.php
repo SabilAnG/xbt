@@ -14,6 +14,7 @@ class MaterialMovement extends Model
         'pemakaian' => 'Pemakaian produksi',
         'sisa' => 'Sisa potong',
         'afkir' => 'Afkir',
+        'retur' => 'Retur ke supplier',
         'penyesuaian' => 'Penyesuaian',
         'hasil' => 'Hasil produksi',
         'terima_vendor' => 'Terima dari vendor',

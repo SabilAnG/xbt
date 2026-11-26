@@ -40,6 +40,32 @@
             </section>
 
             <section class="card overflow-hidden">
+                <div class="card-header">
+                    <h2 class="card-title">Produksi yang ditangani</h2>
+                    <span class="text-[12px] text-muted">bulan ini {{ qty($producedThisMonth) }} unit</span>
+                    <a href="{{ route('admin.productions.index', ['pekerja' => $worker->id]) }}" class="btn btn-sm">Semua</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead><tr><th>Nomor</th><th>Tanggal</th><th>Formula</th><th class="num">Qty</th><th>Status</th></tr></thead>
+                        <tbody>
+                        @forelse ($productions as $production)
+                            <tr>
+                                <td class="font-mono text-xs"><a href="{{ route('admin.productions.show', $production) }}" class="link">{{ $production->production_number }}</a></td>
+                                <td class="whitespace-nowrap">{{ $production->produced_at->translatedFormat('d M Y') }}</td>
+                                <td>{{ $production->formula?->name }}</td>
+                                <td class="num">{{ qty($production->qty) }}</td>
+                                <td><x-admin.status :value="$production->isPosted() ? 'DIBUKUKAN' : 'DRAF'" /></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="py-8 text-center text-muted">Belum ada produksi atas nama pekerja ini.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card overflow-hidden">
                 <div class="card-header"><h2 class="card-title">Slip gaji</h2><a href="{{ route('admin.payrolls.index') }}" class="btn btn-sm">Penggajian</a></div>
                 <div class="overflow-x-auto">
                     <table class="table">

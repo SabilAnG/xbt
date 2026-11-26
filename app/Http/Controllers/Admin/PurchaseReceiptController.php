@@ -36,6 +36,10 @@ class PurchaseReceiptController extends Controller
 
     public function create(Request $request): View|RedirectResponse
     {
+        if (! $request->filled('pembelian')) {
+            return redirect()->route('admin.receipts.index')->with('error', 'Pilih pembelian yang barangnya mau diterima dari daftar "Menunggu diterima".');
+        }
+
         $purchase = MaterialPurchase::query()->with('items.material.warehouse', 'items.warehouse')->findOrFail($request->integer('pembelian'));
 
         if ($purchase->isService() || $purchase->outstandingQty() <= 0) {

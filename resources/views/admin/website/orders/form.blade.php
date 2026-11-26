@@ -8,6 +8,11 @@
     <form method="POST" action="{{ $order->exists ? route('admin.orders.update', $order) : route('admin.orders.store') }}" class="card max-w-4xl space-y-6 p-6">
         @csrf
         @if ($order->exists) @method('PUT') @endif
+        <x-admin.select name="sale_id" label="Nota penjualan" :options="$sales" :value="$order->sale_id" placeholder="— tanpa nota (hanya tracking) —"
+            hint="Stok & uang tercatat di nota penjualan. Pilih notanya supaya pesanan ini tidak diinput dua kali." />
+        @if ($order->sale)
+            <p class="-mt-3 text-[12.5px]"><a href="{{ route('admin.sales.show', $order->sale) }}" class="link">Buka nota {{ $order->sale->invoice_number }}</a> · {{ rupiah($order->sale->total) }} · {{ $order->sale->isPaidOff() ? 'lunas' : 'piutang '.rupiah($order->sale->receivable()) }}</p>
+        @endif
         <div class="grid gap-4 sm:grid-cols-3">
             <x-admin.field name="order_number" label="No. pesanan" :value="$order->order_number" required hint="Yang diketik pelanggan di form tracking." />
             <x-admin.select name="status" label="Status" :options="$statuses" :value="$order->status" :placeholder="false" required />

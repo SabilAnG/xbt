@@ -52,6 +52,10 @@
             <circle cx="9" cy="7" r="3.8" fill="{{ $a }}"/>
             <path d="M2 20.5c0-4 3.1-7.2 7-7.2s7 3.2 7 7.2v.5H2v-.5Z" fill="{{ $a }}"/>
             @break
+        @case('Pengguna')
+            <rect x="3" y="10" width="18" height="12" rx="3" fill="{{ $a }}"/>
+            <path d="M7 10V7a5 5 0 0 1 10 0v3h-2.4V7a2.6 2.6 0 0 0-5.2 0v3H7Z" fill="{{ $b }}"/>
+            @break
         @default
             <path d="M11 3.1A9 9 0 1 0 20.9 13H11V3.1Z" fill="{{ $a }}"/>
             <path d="M13 1.8a9.2 9.2 0 0 1 9.2 9.2H13V1.8Z" fill="{{ $b }}"/>

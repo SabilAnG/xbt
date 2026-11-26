@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Pembayaran nota pembelian bahan dari satu dompet. */
 class PurchasePayment extends Model
 {
-    protected $fillable = ['material_purchase_id', 'wallet_id', 'paid_at', 'amount', 'notes'];
+    protected $fillable = ['material_purchase_id', 'wallet_id', 'supplier_deposit_id', 'paid_at', 'amount', 'notes'];
 
     protected function casts(): array
     {
@@ -18,6 +18,12 @@ class PurchasePayment extends Model
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(MaterialPurchase::class, 'material_purchase_id');
+    }
+
+    /** Diisi bila dibayar dari uang muka (bukan dari dompet). */
+    public function deposit(): BelongsTo
+    {
+        return $this->belongsTo(SupplierDeposit::class, 'supplier_deposit_id');
     }
 
     public function wallet(): BelongsTo

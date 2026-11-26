@@ -8,9 +8,13 @@ use App\Models\MaterialPurchaseItem;
 use App\Models\PipePiece;
 use App\Models\PurchasePayment;
 use App\Models\PurchaseReceipt;
+use App\Models\PurchaseReceiptItem;
+use App\Models\PurchaseReturn;
 use App\Models\Supplier;
+use App\Models\SupplierDeposit;
 use App\Models\Warehouse;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -229,6 +233,204 @@ class PurchaseService
         });
     }
 
+    /**
+     * Bayar beberapa tagihan satu supplier sekaligus. Saldo uang muka dipakai
+     * dulu (bila dipilih), lalu uang dari dompet; tagihan terlama dilunasi dulu.
+     *
+     * @param  array<int, int>  $purchaseIds
+     * @return Collection<int, PurchasePayment>
+     */
+    public function payMany(Supplier $supplier, array $purchaseIds, float $cash, ?int $walletId, bool $useDeposit, string $date, ?string $notes = null): Collection
+    {
+        return DB::transaction(function () use ($supplier, $purchaseIds, $cash, $walletId, $useDeposit, $date, $notes) {
+            $bills = $supplier->purchases()->whereIn('id', $purchaseIds)->unpaid()->lockForUpdate()
+                ->orderBy('purchased_at')->orderBy('id')->get();
+            $owed = (float) $bills->sum(fn (MaterialPurchase $bill) => $bill->payable());
+
+            if ($bills->isEmpty()) {
+                throw new RuntimeException('Pilih minimal satu tagihan yang belum lunas.');
+            }
+
+            $deposits = $useDeposit
+                ? $supplier->deposits()->get()->map(fn (SupplierDeposit $deposit) => ['deposit' => $deposit, 'left' => $deposit->remaining()])->filter(fn (array $row) => $row['left'] > 0.004)->values()
+                : collect();
+            $fromDeposit = min((float) $deposits->sum('left'), $owed);
+
+            if ($cash < 0 || $cash > $owed - $fromDeposit + 0.01) {
+                throw new RuntimeException('Nominal dari dompet maksimal '.rupiah(max($owed - $fromDeposit, 0)).' (sisa tagihan yang dipilih'.($fromDeposit > 0 ? ' setelah dipotong uang muka' : '').').');
+            }
+
+            if ($cash > 0 && ! $walletId) {
+                throw new RuntimeException('Pilih dompet sumber uangnya.');
+            }
+
+            if ($cash + $fromDeposit <= 0) {
+                throw new RuntimeException('Isi nominal yang dibayar atau pakai saldo uang muka.');
+            }
+
+            $payments = collect();
+            $cashLeft = $cash;
+
+            foreach ($bills as $bill) {
+                $due = $bill->payable();
+
+                // 1. Dari uang muka (bisa beberapa DP).
+                foreach ($deposits as $i => $row) {
+                    if ($due <= 0.004 || $row['left'] <= 0.004) {
+                        continue;
+                    }
+                    $amount = round(min($due, $row['left']), 2);
+                    $payments->push($bill->payments()->create([
+                        'supplier_deposit_id' => $row['deposit']->id, 'paid_at' => $date, 'amount' => $amount,
+                        'notes' => trim('Dari uang muka '.$row['deposit']->paid_at->format('d/m/Y').' '.($notes ?? '')),
+                    ]));
+                    $deposits[$i] = ['deposit' => $row['deposit'], 'left' => $row['left'] - $amount];
+                    $due -= $amount;
+                }
+
+                // 2. Dari dompet.
+                if ($due > 0.004 && $cashLeft > 0.004) {
+                    $amount = round(min($due, $cashLeft), 2);
+                    $payment = $bill->payments()->create(['wallet_id' => $walletId, 'paid_at' => $date, 'amount' => $amount, 'notes' => $notes]);
+                    $this->wallets->sync($payment, $walletId, 'out', $amount, $date, 'Bayar '.$bill->invoice_number.' · '.$supplier->name);
+                    $payments->push($payment);
+                    $cashLeft -= $amount;
+                }
+
+                $bill->refreshPaidAmount();
+            }
+
+            return $payments;
+        });
+    }
+
+    /** Uang muka ke supplier: keluar dari dompet sekarang, dipakai membayar tagihan nanti. */
+    public function giveDeposit(Supplier $supplier, float $amount, int $walletId, string $date, ?string $notes = null): SupplierDeposit
+    {
+        if ($amount <= 0) {
+            throw new RuntimeException('Nominal uang muka harus lebih dari 0.');
+        }
+
+        return DB::transaction(function () use ($supplier, $amount, $walletId, $date, $notes) {
+            $deposit = $supplier->deposits()->create(['wallet_id' => $walletId, 'paid_at' => $date, 'amount' => $amount, 'notes' => $notes]);
+            $this->wallets->sync($deposit, $walletId, 'out', $amount, $date, 'Uang muka ke '.$supplier->name.($notes ? ' · '.$notes : ''));
+
+            return $deposit;
+        });
+    }
+
+    public function deleteDeposit(SupplierDeposit $deposit): void
+    {
+        if ($deposit->payments()->exists()) {
+            throw new RuntimeException('Uang muka ini sudah dipakai membayar tagihan. Hapus pembayaran tagihannya dulu.');
+        }
+
+        DB::transaction(function () use ($deposit) {
+            $this->wallets->forget($deposit);
+            $deposit->delete();
+        });
+    }
+
+    /**
+     * Retur ke supplier: barang keluar dari gudang tempat diterima, tagihan
+     * turun senilai harga beli. Uang yang sudah terlanjur dibayar bisa
+     * dikembalikan supplier ke dompet.
+     *
+     * @param  array{returned_at: string, notes?: ?string, refund_amount?: float|int|string|null, wallet_id?: ?int, items: array<int, array{material_purchase_item_id: int, qty: float|int|string}>}  $data
+     */
+    public function returnGoods(MaterialPurchase $purchase, array $data): PurchaseReturn
+    {
+        return DB::transaction(function () use ($purchase, $data) {
+            $purchase = MaterialPurchase::lockForUpdate()->findOrFail($purchase->id);
+            $lines = $purchase->items()->with('material.stocks', 'material.warehouse')->get()->keyBy('id');
+            $rows = collect($data['items'])->filter(fn (array $row) => (float) $row['qty'] > 0);
+
+            if ($rows->isEmpty()) {
+                throw new RuntimeException('Isi qty barang yang diretur.');
+            }
+
+            $return = $purchase->returns()->create([
+                'return_number' => DocumentNumber::next('purchase_returns', Carbon::parse($data['returned_at'])),
+                'returned_at' => $data['returned_at'],
+                'notes' => $data['notes'] ?? null,
+            ]);
+            $note = $return->return_number.' · retur ke '.($purchase->supplier ?? 'supplier');
+
+            foreach ($rows as $row) {
+                $line = $lines->get($row['material_purchase_item_id']) ?? throw new RuntimeException('Barang tidak ada di pembelian ini.');
+                $qty = (float) $row['qty'];
+
+                if ($line->material->isPipe()) {
+                    throw new RuntimeException('Retur pipa per batang belum didukung; pakai Penyesuaian Stok untuk batang yang dikembalikan.');
+                }
+
+                if ($qty > $line->returnableQty() + 0.0001) {
+                    throw new RuntimeException("{$line->material->name}: yang bisa diretur maksimal ".qty($line->returnableQty()).' (sudah diterima, belum diretur).');
+                }
+
+                $warehouseId = PurchaseReceiptItem::query()->where('material_purchase_item_id', $line->id)->latest('id')->value('warehouse_id')
+                    ?? $line->warehouse_id ?? $line->material->warehouse_id;
+                $this->stock->issueUnits($line->material, Warehouse::findOrFail($warehouseId), $line->material->toStockQty($qty), 'retur', $return, $data['returned_at'], $note);
+
+                $return->items()->create([
+                    'material_purchase_item_id' => $line->id, 'warehouse_id' => $warehouseId,
+                    'qty' => $qty, 'unit_price' => (float) $line->unit_price, 'subtotal' => $qty * (float) $line->unit_price,
+                ]);
+                $line->forceFill(['returned_qty' => (float) $line->returned_qty + $qty])->save();
+            }
+
+            $purchase->refreshTotal();
+            $total = (float) $return->items()->sum('subtotal');
+            $refund = round((float) ($data['refund_amount'] ?? 0), 2);
+            $overpaid = (float) $purchase->paid_amount - (float) $purchase->total;
+
+            if ($refund > $total + 0.01 || $refund > (float) $purchase->paid_amount + 0.01) {
+                throw new RuntimeException('Uang kembali maksimal '.rupiah(min($total, (float) $purchase->paid_amount)).'.');
+            }
+
+            if ($overpaid - $refund > 0.01) {
+                throw new RuntimeException('Pembelian ini sudah dibayar '.rupiah($purchase->paid_amount).', lebih dari tagihan setelah retur ('.rupiah($purchase->total).'). Isi uang kembali dari supplier minimal '.rupiah($overpaid).'.');
+            }
+
+            $payment = null;
+            if ($refund > 0) {
+                if (empty($data['wallet_id'])) {
+                    throw new RuntimeException('Pilih dompet tempat uang kembali dari supplier masuk.');
+                }
+                $payment = $purchase->payments()->create(['wallet_id' => $data['wallet_id'], 'paid_at' => $data['returned_at'], 'amount' => -$refund, 'notes' => 'Uang kembali '.$return->return_number]);
+                $this->wallets->sync($payment, (int) $data['wallet_id'], 'in', $refund, $data['returned_at'], 'Uang kembali retur '.$return->return_number.' · '.($purchase->supplier ?? ''));
+                $purchase->refreshPaidAmount();
+            }
+
+            $return->forceFill(['total' => $total, 'refund_amount' => $refund, 'wallet_id' => $payment ? $data['wallet_id'] : null, 'purchase_payment_id' => $payment?->id])->save();
+
+            return $return;
+        });
+    }
+
+    /** Batalkan retur: barang masuk gudang lagi, tagihan & uang kembali dipulihkan. */
+    public function deleteReturn(PurchaseReturn $return): void
+    {
+        DB::transaction(function () use ($return) {
+            $purchase = $return->purchase;
+
+            foreach ($return->items()->with('purchaseItem')->get() as $row) {
+                $row->purchaseItem->forceFill(['returned_qty' => max((float) $row->purchaseItem->returned_qty - (float) $row->qty, 0)])->save();
+            }
+
+            if ($return->purchase_payment_id && ($payment = PurchasePayment::find($return->purchase_payment_id))) {
+                $this->wallets->forget($payment);
+                $payment->delete();
+            }
+
+            $this->stock->forget($return);
+            $return->items()->delete();
+            $return->delete();
+            $purchase->refreshTotal();
+            $purchase->refreshPaidAmount();
+        });
+    }
+
     public function deletePayment(PurchasePayment $payment): void
     {
         DB::transaction(function () use ($payment) {
@@ -245,6 +447,10 @@ class PurchaseService
         DB::transaction(function () use ($purchase) {
             if ($purchase->isService()) {
                 throw new RuntimeException('Ini tagihan jasa vendor. Hapus lewat penerimaan di nota produksinya.');
+            }
+
+            foreach ($purchase->returns()->get() as $return) {
+                $this->deleteReturn($return);
             }
 
             foreach ($purchase->receipts()->get() as $receipt) {

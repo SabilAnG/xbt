@@ -43,7 +43,7 @@ class AdminPanelTest extends TestCase
         $groups = collect(AdminNavigation::groups())->pluck('label')->all();
         $purchasing = collect(AdminNavigation::groups())->firstWhere('label', 'Pembelian')['items'];
         $this->assertSame(['Pembelian', 'Penerimaan', 'Supplier'], array_column($purchasing, 'label'));
-        $this->assertSame(['Ringkasan', 'Pembelian', 'Penjualan', 'Katalog', 'Keuangan', 'Gudang', 'Produksi', 'Pekerja', 'Website'], $groups);
+        $this->assertSame(['Ringkasan', 'Pembelian', 'Penjualan', 'Katalog', 'Keuangan', 'Gudang', 'Produksi', 'Pekerja', 'Website', 'Pengguna'], $groups);
 
         $this->actingAs(User::factory()->create());
         $this->get(route('admin.warehouses.show', 'finish-good'));

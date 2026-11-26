@@ -38,14 +38,17 @@ class WalletTest extends TestCase
         $this->post(route('admin.sales.store'), [
             'sold_at' => '2026-11-20', 'item_id' => $item->id, 'qty' => 1, 'unit_price' => 750_000,
             'paid_amount' => 500_000, 'wallet_id' => $bca->id,
-        ])->assertRedirect(route('admin.sales.index'));
+        ])->assertRedirect();
 
         $this->assertSame(1_500_000.0, (float) $bca->refresh()->current_balance);
 
-        // Pelunasan: ubah uang masuk, saldo ikut menyesuaikan tanpa dobel.
+        // Pelunasan dicicil: tiap pembayaran masuk dompet, tidak boleh melebihi piutang.
         $sale = Sale::latest('id')->firstOrFail();
-        $this->put(route('admin.sales.update', $sale), ['paid_amount' => 750_000, 'wallet_id' => $bca->id])->assertRedirect();
+        $this->post(route('admin.sales.payments.store', $sale), ['paid_at' => '2026-11-22', 'amount' => 300_000, 'wallet_id' => $bca->id])->assertSessionHas('error');
+        $this->post(route('admin.sales.payments.store', $sale), ['paid_at' => '2026-11-22', 'amount' => 250_000, 'wallet_id' => $bca->id])->assertSessionHasNoErrors();
         $this->assertSame(1_750_000.0, (float) $bca->refresh()->current_balance);
+        $this->assertTrue($sale->fresh()->isPaidOff());
+        $this->assertSame(2, $sale->payments()->count());
 
         $this->post(route('admin.expenses.store'), [
             'spent_at' => '2026-11-21', 'category' => 'Operasional',

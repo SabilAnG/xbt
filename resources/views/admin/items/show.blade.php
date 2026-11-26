@@ -45,6 +45,48 @@
         </div>
     </section>
 
+    <section class="grid gap-6 xl:grid-cols-3">
+        <form method="POST" action="{{ route('admin.items.adjust', $item) }}" class="card space-y-4 p-5">
+            @csrf
+            <div>
+                <h2 class="card-title">Stok opname / penyesuaian</h2>
+                <p class="text-[12px] text-muted">Isi jumlah hasil hitung fisik. Stok sistem sekarang {{ qty($item->stock) }} {{ $item->unit }}.</p>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <x-admin.field name="actual_qty" label="Stok fisik" type="number" step="any" min="0" :value="(float) $item->stock" required />
+                <x-admin.field name="adjusted_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
+            </div>
+            <x-admin.select name="reason" label="Alasan" :options="$reasons" value="opname" :placeholder="false" required />
+            <x-admin.field name="notes" label="Catatan" placeholder="mis. 1 unit penyok saat kirim" />
+            <button class="btn btn-primary w-full">Simpan penyesuaian</button>
+        </form>
+
+        <div class="card overflow-hidden xl:col-span-2">
+            <div class="card-header"><h2 class="card-title">Riwayat penyesuaian</h2></div>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead><tr><th>Nomor</th><th>Tanggal</th><th>Alasan</th><th class="num">Sistem</th><th class="num">Fisik</th><th class="num">Selisih</th><th class="num">Nilai</th><th></th></tr></thead>
+                    <tbody>
+                    @forelse ($adjustments as $adjustment)
+                        <tr>
+                            <td class="font-mono text-xs">{{ $adjustment->adjustment_number }}</td>
+                            <td class="whitespace-nowrap">{{ $adjustment->adjusted_at->translatedFormat('d M Y') }}</td>
+                            <td>{{ $adjustment->reasonLabel() }}@if ($adjustment->notes)<p class="text-[11px] text-muted">{{ $adjustment->notes }}</p>@endif</td>
+                            <td class="num">{{ qty($adjustment->system_qty) }}</td>
+                            <td class="num">{{ qty($adjustment->actual_qty) }}</td>
+                            <td class="num font-semibold {{ $adjustment->difference < 0 ? 'text-rose-600' : 'text-emerald-700' }}">{{ ($adjustment->difference > 0 ? '+' : '').qty($adjustment->difference) }}</td>
+                            <td class="num {{ $adjustment->value() < 0 ? 'text-rose-600' : '' }}">{{ rupiah($adjustment->value()) }}</td>
+                            <td class="text-right"><x-admin.delete-button :action="route('admin.items.adjustments.destroy', $adjustment)" confirm="Hapus penyesuaian ini? Stok dikembalikan seperti sebelumnya." /></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="py-8 text-center text-muted">Belum pernah disesuaikan.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <section class="card">
         <div class="card-header"><h2 class="card-title">Kartu stok</h2></div>
         <div class="overflow-x-auto">

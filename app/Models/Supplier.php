@@ -21,6 +21,23 @@ class Supplier extends Model
         return $this->hasMany(MaterialPurchase::class);
     }
 
+    public function deposits(): HasMany
+    {
+        return $this->hasMany(SupplierDeposit::class)->orderBy('paid_at')->orderBy('id');
+    }
+
+    /** Sisa uang muka yang belum dipakai membayar tagihan. */
+    public function depositBalance(): float
+    {
+        return (float) $this->deposits()->sum('amount')
+            - (float) PurchasePayment::query()->whereIn('supplier_deposit_id', $this->deposits()->select('id'))->sum('amount');
+    }
+
+    public function vendorServices(): HasMany
+    {
+        return $this->hasMany(VendorService::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

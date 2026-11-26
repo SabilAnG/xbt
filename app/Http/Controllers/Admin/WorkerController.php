@@ -51,6 +51,8 @@ class WorkerController extends Controller
             'attendances' => $worker->attendances()->limit(31)->get(),
             'advances' => $worker->advances()->with('wallet')->get(),
             'payrolls' => $worker->payrolls()->limit(12)->get(),
+            'productions' => $worker->productions()->with('formula')->limit(10)->get(),
+            'producedThisMonth' => (float) $worker->productions()->posted()->whereBetween('produced_at', [today()->startOfMonth(), today()->endOfMonth()])->sum('qty'),
             'balance' => $worker->advanceBalance(),
             'month' => $worker->attendances()->whereBetween('worked_on', [today()->startOfMonth(), today()->endOfMonth()])->get()->countBy('status'),
         ]);

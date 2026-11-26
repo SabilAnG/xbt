@@ -22,6 +22,11 @@ class Worker extends Model
         ];
     }
 
+    public function productions(): HasMany
+    {
+        return $this->hasMany(Production::class)->latest('produced_at')->latest('id');
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class)->orderByDesc('worked_on');

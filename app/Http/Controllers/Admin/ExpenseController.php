@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseType;
+use App\Models\WorkerPayroll;
 use App\Services\DocumentNumber;
 use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
@@ -62,13 +63,21 @@ class ExpenseController extends Controller
         return redirect()->route('admin.expenses.index')->with('status', 'Pengeluaran dicatat.');
     }
 
-    public function edit(Expense $expense): View
+    public function edit(Expense $expense): View|RedirectResponse
     {
+        if ($slip = $this->payrollOf($expense)) {
+            return redirect()->route('admin.payrolls.show', $slip)->with('error', 'Pengeluaran ini dari pembayaran gaji. Ubah atau batalkan lewat slip gajinya.');
+        }
+
         return $this->form($expense);
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse
     {
+        if ($slip = $this->payrollOf($expense)) {
+            return redirect()->route('admin.payrolls.show', $slip)->with('error', 'Pengeluaran ini dari pembayaran gaji. Ubah atau batalkan lewat slip gajinya.');
+        }
+
         $expense->update($this->validated($request));
         $this->syncWallet($expense->refresh());
 
@@ -77,6 +86,10 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense): RedirectResponse
     {
+        if ($this->payrollOf($expense)) {
+            return back()->with('error', 'Pengeluaran ini dari pembayaran gaji. Batalkan pembayarannya lewat slip gaji, bukan dari sini.');
+        }
+
         app(WalletService::class)->forget($expense);
         $expense->delete();
 
@@ -131,6 +144,12 @@ class ExpenseController extends Controller
     }
 
     /** Uang keluar dari dompet yang dipilih. */
+    /** Slip gaji yang membuat pengeluaran ini (bila ada). */
+    private function payrollOf(Expense $expense): ?WorkerPayroll
+    {
+        return WorkerPayroll::query()->where('expense_id', $expense->id)->orWhere('deduction_expense_id', $expense->id)->first();
+    }
+
     private function syncWallet(Expense $expense): void
     {
         app(WalletService::class)->sync(

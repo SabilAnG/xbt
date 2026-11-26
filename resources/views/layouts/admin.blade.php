@@ -1,7 +1,7 @@
 @php
     use App\Support\AdminNavigation;
 
-    $groups = AdminNavigation::groups();
+    $groups = AdminNavigation::groupsFor(auth()->user());
     $current = AdminNavigation::current(request());
     $user = auth()->user();
     $initials = collect(explode(' ', (string) $user?->name))->filter()->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('') ?: 'A';
@@ -11,13 +11,15 @@
     $awaitingGoods = \App\Models\MaterialPurchase::query()->awaitingGoods()->count();
     $draftProductions = \App\Models\Production::query()->where('status', \App\Models\Production::DRAFT)->count();
     $groupDots = ['Pembelian' => $awaitingGoods > 0, 'Produksi' => $draftProductions > 0];
-    $lowMaterials = \App\Models\Material::query()->where('is_active', true)->get(['stock', 'min_stock'])
-        ->filter(fn ($material) => $material->stockStatus() !== 'AMAN')->count();
+    // Hanya bahan yang diberi stok minimum (bahan yang memang harus selalu ada).
+    $lowMaterials = \App\Models\Material::query()->needsRestock()->count();
+    $unpaidSales = \App\Models\Sale::query()->posted()->whereColumn('paid_amount', '<', 'total')->count();
     $notifications = collect([
-        ['Pembelian menunggu barang', $awaitingGoods.' pembelian belum diterima semua', route('admin.receipts.index'), 'inbox', 'from-[#9fe3f5] to-[#2fa9d6]', $awaitingGoods],
-        ['Produksi masih draf', $draftProductions.' nota produksi belum dibukukan', route('admin.productions.index', ['status' => 'draft']), 'factory', 'from-[#fde39a] to-[#eba50f]', $draftProductions],
-        ['Bahan habis / menipis', $lowMaterials.' bahan di bawah stok minimum', route('admin.materials.index'), 'box', 'from-[#fdbac4] to-[#df3f58]', $lowMaterials],
-    ])->filter(fn ($row) => $row[5] > 0)->values();
+        ['Pembelian menunggu barang', $awaitingGoods.' pembelian belum diterima semua', route('admin.receipts.index'), 'inbox', 'from-[#9fe3f5] to-[#2fa9d6]', $awaitingGoods, 'admin.receipts.index'],
+        ['Produksi masih draf', $draftProductions.' nota produksi belum dibukukan', route('admin.productions.index', ['status' => 'draft']), 'factory', 'from-[#fde39a] to-[#eba50f]', $draftProductions, 'admin.productions.index'],
+        ['Bahan habis / menipis', $lowMaterials.' bahan di bawah stok minimum', route('admin.master-items.index'), 'box', 'from-[#fdbac4] to-[#df3f58]', $lowMaterials, 'admin.master-items.index'],
+        ['Piutang penjualan', $unpaidSales.' nota belum lunas', route('admin.sales.index', ['payment' => 'unpaid']), 'cart', 'from-[#c4eaa9] to-[#46ad37]', $unpaidSales, 'admin.sales.index'],
+    ])->filter(fn ($row) => $row[5] > 0 && AdminNavigation::allows($user, $row[6]))->values();
 @endphp
 <!DOCTYPE html>
 <html lang="id">

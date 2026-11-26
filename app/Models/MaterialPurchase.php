@@ -39,6 +39,11 @@ class MaterialPurchase extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class)->orderBy('returned_at')->orderBy('id');
+    }
+
     public function receipts(): HasMany
     {
         return $this->hasMany(PurchaseReceipt::class)->orderBy('received_at')->orderBy('id');
@@ -74,7 +79,7 @@ class MaterialPurchase extends Model
     /** Total tagihan = (dipesan − dibatalkan) × harga. */
     public function refreshTotal(): void
     {
-        $this->forceFill(['total' => (float) $this->items()->get()->sum(fn (MaterialPurchaseItem $line) => ((float) $line->qty - (float) $line->cancelled_qty) * (float) $line->unit_price)])->save();
+        $this->forceFill(['total' => (float) $this->items()->get()->sum(fn (MaterialPurchaseItem $line) => ((float) $line->qty - (float) $line->cancelled_qty - (float) $line->returned_qty) * (float) $line->unit_price)])->save();
     }
 
     public function payments(): HasMany

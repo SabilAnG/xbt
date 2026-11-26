@@ -24,7 +24,7 @@ class Production extends Model
 
     protected $fillable = [
         'production_number', 'produced_at', 'formula_id', 'item_id', 'production_plan_line_id', 'qty', 'mode', 'vendor', 'process',
-        'service_cost_per_unit', 'received_qty', 'worker',
+        'service_cost_per_unit', 'received_qty', 'worker', 'worker_id',
         'status', 'material_cost', 'waste_cost', 'other_cost', 'service_cost', 'total_cost', 'hpp_per_unit', 'posted_at', 'notes',
     ];
 
@@ -43,6 +43,11 @@ class Production extends Model
             'hpp_per_unit' => 'decimal:2',
             'posted_at' => 'datetime',
         ];
+    }
+
+    public function workerRecord(): BelongsTo
+    {
+        return $this->belongsTo(Worker::class, 'worker_id');
     }
 
     public function formula(): BelongsTo

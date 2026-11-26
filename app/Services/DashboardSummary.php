@@ -11,6 +11,11 @@ use App\Models\MaterialPurchase;
 use App\Models\Production;
 use App\Models\PurchasePayment;
 use App\Models\Sale;
+use App\Models\SalePayment;
+use App\Models\SupplierDeposit;
+use App\Models\WorkerAdvance;
+use App\Models\WorkerPayroll;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +41,6 @@ class DashboardSummary
     public function headline(): array
     {
         $items = Item::query()->where('is_active', true)->get(['stock', 'min_stock', 'cost_price']);
-        $materials = Material::query()->where('is_active', true)->get(['stock', 'min_stock']);
         $sales = Sale::query()->posted()->get(['total', 'total_cost', 'paid_amount']);
 
         return [
@@ -44,12 +48,13 @@ class DashboardSummary
             'stock_value' => (float) $items->sum(fn (Item $item) => $item->stockValue()),
             'products_out' => $items->filter(fn (Item $item) => $item->stockStatus() === 'HABIS')->count(),
             'products_low' => $items->filter(fn (Item $item) => $item->stockStatus() === 'MENIPIS')->count(),
-            'materials_alert' => $materials->filter(fn (Material $material) => $material->stockStatus() !== 'AMAN')->count(),
+            'materials_alert' => Material::query()->needsRestock()->count(),
             'revenue' => (float) $sales->sum('total'),
             'gross_profit' => (float) $sales->sum(fn (Sale $sale) => (float) $sale->total - (float) $sale->total_cost),
             'cash_in' => (float) $sales->sum('paid_amount'),
             'receivable' => (float) $sales->sum(fn (Sale $sale) => $sale->receivable()),
-            'expenses' => (float) Expense::query()->posted()->sum('amount') + (float) PurchasePayment::query()->sum('amount'),
+            'expenses' => (float) self::cashExpenses()->sum('amount') + (float) PurchasePayment::query()->whereNull('supplier_deposit_id')->sum('amount')
+                + (float) SupplierDeposit::query()->sum('amount') + (float) WorkerAdvance::query()->sum('amount'),
             'purchase_payable' => (float) MaterialPurchase::query()->unpaid()->get()->sum(fn (MaterialPurchase $row) => $row->payable()),
             'draft_productions' => Production::query()->where('status', Production::DRAFT)->count(),
             'needs_detail' => Expense::query()->where('data_status', 'PERLU DIRINCI')->count(),
@@ -68,12 +73,17 @@ class DashboardSummary
             ->groupBy(fn (Production $row) => $row->produced_at->format('Y-m'));
         $sales = Sale::query()->posted()->with('items:id,sale_id,qty')->get()
             ->groupBy(fn (Sale $row) => $row->sold_at->format('Y-m'));
-        $expenses = Expense::query()->posted()->get(['spent_at', 'amount'])
-            ->groupBy(fn (Expense $row) => $row->spent_at->format('Y-m'));
-        $purchases = PurchasePayment::query()->get(['paid_at', 'amount'])
-            ->groupBy(fn (PurchasePayment $row) => $row->paid_at->format('Y-m'));
+        $expenses = self::cashExpenses()->get(['spent_at', 'amount'])
+            ->map(fn (Expense $row) => ['date' => $row->spent_at, 'amount' => (float) $row->amount])
+            ->concat(WorkerAdvance::query()->get(['given_at', 'amount'])->map(fn (WorkerAdvance $row) => ['date' => $row->given_at, 'amount' => (float) $row->amount]))
+            ->groupBy(fn (array $row) => $row['date']->format('Y-m'));
+        $cashIn = SalePayment::query()->whereHas('sale', fn ($query) => $query->posted())->get(['paid_at', 'amount'])
+            ->groupBy(fn (SalePayment $row) => $row->paid_at->format('Y-m'));
+        $purchases = PurchasePayment::query()->whereNull('supplier_deposit_id')->get(['paid_at', 'amount'])
+            ->concat(SupplierDeposit::query()->get(['paid_at', 'amount']))
+            ->groupBy(fn (PurchasePayment|SupplierDeposit $row) => $row->paid_at->format('Y-m'));
 
-        $months = collect([...$productions->keys(), ...$sales->keys(), ...$expenses->keys(), ...$purchases->keys()]);
+        $months = collect([...$productions->keys(), ...$sales->keys(), ...$expenses->keys(), ...$purchases->keys(), ...$cashIn->keys()]);
         $cursor = $months->isEmpty()
             ? now()->startOfMonth()
             : Carbon::createFromFormat('Y-m-d', $months->min().'-01')->startOfMonth();
@@ -88,7 +98,7 @@ class DashboardSummary
         while ($cursor <= $end) {
             $key = $cursor->format('Y-m');
             $monthSales = $sales->get($key, collect());
-            $cashIn = (float) $monthSales->sum('paid_amount');
+            $received = (float) $cashIn->get($key, collect())->sum('amount');
             $expense = (float) $expenses->get($key, collect())->sum('amount');
             $purchase = (float) $purchases->get($key, collect())->sum('amount');
             $revenue = (float) $monthSales->sum('total');
@@ -99,11 +109,11 @@ class DashboardSummary
                 'sold' => (float) $monthSales->sum(fn (Sale $sale) => $sale->items->sum('qty')),
                 'revenue' => $revenue,
                 'gross_profit' => $revenue - (float) $monthSales->sum('total_cost'),
-                'cash_in' => $cashIn,
+                'cash_in' => $received,
                 'expenses' => $expense,
                 'purchases' => $purchase,
                 'total_out' => $expense + $purchase,
-                'net_cash' => $cashIn - $expense - $purchase,
+                'net_cash' => $received - $expense - $purchase,
             ]);
 
             $cursor->addMonth();
@@ -162,5 +172,16 @@ class DashboardSummary
                 'name' => $category->name,
                 'total' => (float) ($totals[$category->id] ?? 0),
             ]);
+    }
+
+    /**
+     * Pengeluaran yang benar-benar mengeluarkan uang. Potongan kasbon di slip
+     * gaji tidak dihitung lagi, karena uangnya sudah keluar saat kasbon diberikan.
+     *
+     * @return Builder<Expense>
+     */
+    public static function cashExpenses(): Builder
+    {
+        return Expense::query()->posted()->whereNotIn('id', WorkerPayroll::query()->whereNotNull('deduction_expense_id')->select('deduction_expense_id'));
     }
 }

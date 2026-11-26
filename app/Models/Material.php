@@ -301,4 +301,10 @@ class Material extends Model
     {
         return trim($this->name.($this->spec ? ' · '.$this->spec : ''));
     }
+
+    /** Bahan aktif yang diberi stok minimum dan stoknya sudah di bawah/sama dengan batas itu. */
+    public function scopeNeedsRestock(Builder $query): Builder
+    {
+        return $query->where('is_active', true)->where('min_stock', '>', 0)->whereColumn('stock', '<=', 'min_stock');
+    }
 }

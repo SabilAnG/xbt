@@ -2,14 +2,24 @@
 
 namespace Tests\Feature;
 
+use App\Models\Brand;
+use App\Models\ContentBlock;
+use App\Models\Expense;
 use App\Models\Formula;
+use App\Models\Item;
 use App\Models\Material;
 use App\Models\MaterialMovement;
 use App\Models\MaterialPurchase;
 use App\Models\MaterialStock;
+use App\Models\Order;
 use App\Models\PipePiece;
+use App\Models\Product;
 use App\Models\Production;
 use App\Models\ProductionPlan;
+use App\Models\PurchaseReceipt;
+use App\Models\Sale;
+use App\Models\StockTransfer;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Models\VendorService;
 use App\Models\Wallet;
@@ -18,6 +28,8 @@ use App\Models\Worker;
 use App\Models\WorkerPayroll;
 use App\Services\ProductionPlanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -347,6 +359,58 @@ class EndToEndFlowTest extends TestCase
         ] as $url) {
             $this->get($url)->assertOk();
         }
+
+        // 10. Jelajahi SEMUA halaman admin (GET) dengan data ini: tidak boleh ada yang error.
+        $this->crawlAdminPages();
+    }
+
+    /** Buka setiap halaman GET admin; parameter diisi data pertama dari tabelnya. */
+    private function crawlAdminPages(): void
+    {
+        $models = [
+            'brand' => Brand::class, 'contentBlock' => ContentBlock::class, 'expense' => Expense::class,
+            'formula' => Formula::class, 'item' => Item::class, 'material' => Material::class, 'order' => Order::class,
+            'payroll' => WorkerPayroll::class, 'plan' => ProductionPlan::class, 'production' => Production::class, 'purchase' => MaterialPurchase::class,
+            'receipt' => PurchaseReceipt::class, 'sale' => Sale::class, 'supplier' => Supplier::class,
+            'transfer' => StockTransfer::class, 'wallet' => Wallet::class, 'webProduct' => Product::class, 'worker' => Worker::class,
+        ];
+        $types = ['bahan-baku', 'setengah-jadi', 'aksesoris', 'stok-sisa', 'di-vendor', 'finish-good'];
+        $failures = [];
+        $visited = 0;
+
+        foreach (Route::getRoutes() as $route) {
+            $name = (string) $route->getName();
+            if (! str_starts_with($name, 'admin.') || ! in_array('GET', $route->methods(), true) || $name === 'admin.logout') {
+                continue;
+            }
+
+            $sets = [[]];
+            foreach ($route->parameterNames() as $param) {
+                if ($param === 'type') {
+                    $sets = collect($sets)->flatMap(fn ($set) => collect($types)->map(fn ($type) => $set + ['type' => $type]))->all();
+
+                    continue;
+                }
+                $class = $models[$param] ?? null;
+                $record = $class && class_exists($class) ? $class::query()->first() : null;
+                if (! $record) {
+                    continue 2;
+                }
+                $sets = collect($sets)->map(fn ($set) => $set + [$param => $record->getRouteKey()])->all();
+            }
+
+            foreach ($sets as $params) {
+                $visited++;
+                $response = $this->get(route($name, $params));
+                if ($response->status() >= 400) {
+                    $failures[] = $name.' '.json_encode($params).' → '.$response->status()
+                        .($response->exception ? ' '.class_basename($response->exception).': '.Str::limit($response->exception->getMessage(), 160) : '');
+                }
+            }
+        }
+
+        $this->assertGreaterThan(60, $visited);
+        $this->assertSame([], $failures, "Halaman bermasalah:\n".implode("\n", $failures));
     }
 
     /** @param  array<string, mixed>  $data */

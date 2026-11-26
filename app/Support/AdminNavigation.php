@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
@@ -86,6 +87,7 @@ class AdminNavigation
             ['label' => 'Gudang', 'items' => [
                 $item('Gudang', 'admin.warehouses.index', 'admin.warehouses.index|admin.warehouses.show:bahan-baku|admin.warehouses.show:setengah-jadi|admin.warehouses.show:aksesoris', 'warehouse'),
                 $item('Pindah Barang', 'admin.transfers.index', 'admin.transfers.*', 'arrows'),
+                $item('Stok Opname', 'admin.stock-opname.index', 'admin.stock-opname.*', 'list'),
                 $item('Penyesuaian Stok', 'admin.adjustments.index', 'admin.adjustments.*', 'sliders'),
             ]],
             ['label' => 'Produksi', 'items' => [
@@ -95,6 +97,7 @@ class AdminNavigation
                 $item('Data Ongkos', 'admin.cost-options.index', 'admin.cost-options.*', 'coins'),
                 $item('Rencana Produksi', 'admin.plans.index', 'admin.plans.*', 'calendar'),
                 $item('Produksi', 'admin.productions.index', 'admin.productions.*', 'factory'),
+                $item('Laporan Produksi', 'admin.reports.production', 'admin.reports.production', 'coins'),
                 $item('Vendor Produksi', 'admin.warehouses.show', 'admin.warehouses.show:di-vendor', 'truck', ['type' => 'di-vendor']),
                 $item('Hasil Samping', 'admin.warehouses.show', 'admin.warehouses.show:stok-sisa', 'puzzle', ['type' => 'stok-sisa']),
                 $item('Pengaturan Produksi', 'admin.production-settings.edit', 'admin.production-settings.*', 'cog'),
@@ -110,7 +113,65 @@ class AdminNavigation
                 $item('Katalog Produk', 'admin.web-products.index', 'admin.web-products.*', 'image'),
                 $item('Pesanan & Tracking', 'admin.orders.index', 'admin.orders.*', 'truck'),
             ]],
+            ['label' => 'Pengguna', 'items' => [
+                $item('Pengguna & Akses', 'admin.users.index', 'admin.users.*', 'users'),
+            ]],
         ];
+    }
+
+    /**
+     * Awalan nama route → grup menu, untuk hak akses. Route yang tidak ada di
+     * sini (dashboard, logout) boleh dibuka semua peran.
+     */
+    private const ROUTE_GROUPS = [
+        'Pembelian' => ['purchases', 'receipts', 'suppliers'],
+        'Penjualan' => ['sales'],
+        'Katalog' => ['master-items', 'materials', 'items', 'units', 'brands', 'motor-options'],
+        'Keuangan' => ['wallets', 'expenses', 'finance'],
+        'Gudang' => ['warehouses', 'transfers', 'adjustments', 'stock-opname'],
+        'Produksi' => ['formulas', 'component-options', 'vendor-services', 'cost-options', 'plans', 'productions', 'production-settings', 'reports'],
+        'Pekerja' => ['workers', 'attendances', 'payrolls'],
+        'Pengguna' => ['users'],
+        'Website' => ['site-settings', 'content-blocks', 'web-products', 'orders', 'shipments', 'shipment-events'],
+    ];
+
+    /** Grup menu pemilik route ini (null = terbuka untuk semua yang login). */
+    public static function groupOfRoute(string $routeName): ?string
+    {
+        $segment = explode('.', $routeName)[1] ?? '';
+
+        foreach (self::ROUTE_GROUPS as $group => $prefixes) {
+            if (in_array($segment, $prefixes, true)) {
+                return $group;
+            }
+        }
+
+        return null;
+    }
+
+    /** Boleh membuka route ini? Stok siap jual juga terbuka untuk bagian penjualan. */
+    public static function allows(?User $user, string $routeName, array $parameters = []): bool
+    {
+        $group = self::groupOfRoute($routeName);
+
+        if (! $user || $group === null || $user->canOpenGroup($group)) {
+            return $user !== null || $group === null;
+        }
+
+        return $routeName === 'admin.warehouses.show' && ($parameters['type'] ?? null) === 'finish-good' && $user->canOpenGroup('Penjualan');
+    }
+
+    /**
+     * Menu yang terlihat untuk pengguna ini.
+     *
+     * @return array<int, array{label: string, items: array<int, array<string, mixed>>}>
+     */
+    public static function groupsFor(?User $user): array
+    {
+        return collect(static::groups())
+            ->map(fn (array $group) => ['items' => array_values(array_filter($group['items'], fn (array $item) => self::allows($user, $item['route'], $item['params'])))] + $group)
+            ->filter(fn (array $group) => $group['items'] !== [])
+            ->values()->all();
     }
 
     /**

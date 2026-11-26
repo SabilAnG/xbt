@@ -7,6 +7,7 @@ use App\Models\Formula;
 use App\Models\Production;
 use App\Models\ProductionReceipt;
 use App\Models\Supplier;
+use App\Models\Worker;
 use App\Services\DocumentNumber;
 use App\Services\ProductionService;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class ProductionController extends Controller
                 ->when($request->input('status'), fn ($query, $status) => $query->where('status', $status))
                 ->when($request->input('mode'), fn ($query, $mode) => $query->where('mode', $mode))
                 ->when($request->input('rencana'), fn ($query, $plan) => $query->whereHas('planLine', fn ($query) => $query->where('production_plan_id', $plan)))
+                ->when($request->input('pekerja'), fn ($query, $worker) => $query->where('worker_id', $worker))
                 ->latest('produced_at')->latest('id')->paginate(20)->withQueryString(),
         ]);
     }
@@ -172,7 +174,7 @@ class ProductionController extends Controller
             'formulas' => Formula::query()->active()->orderBy('name')->get(['id', 'name', 'output_type', 'work_mode', 'vendor', 'process', 'service_cost']),
             'vendors' => Production::query()->whereNotNull('vendor')->distinct()->orderBy('vendor')->pluck('vendor')
                 ->merge(Supplier::query()->active()->orderBy('name')->pluck('name'))->unique()->values(),
-            'workers' => Production::query()->whereNotNull('worker')->distinct()->orderBy('worker')->pluck('worker'),
+            'workers' => Worker::query()->where(fn ($query) => $query->where('is_active', true)->orWhere('id', $production->worker_id))->orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -192,7 +194,7 @@ class ProductionController extends Controller
             'vendor' => [$vendor ? 'required' : 'nullable', 'string', 'max:255'],
             'process' => ['nullable', 'string', 'max:100'],
             'service_cost_per_unit' => ['nullable', 'numeric', 'min:0'],
-            'worker' => ['nullable', 'string', 'max:100'],
+            'worker_id' => ['nullable', 'exists:workers,id'],
             'notes' => ['nullable', 'string'],
         ], [
             'qty.integer' => 'Jumlah produksi harus bilangan bulat.',
@@ -207,6 +209,8 @@ class ProductionController extends Controller
             throw ValidationException::withMessages(['formula_id' => 'Formula ini belum punya hasil (produk jadi / barang setengah jadi). Simpan ulang formulanya.']);
         }
 
+        // Nama tetap disalin supaya nota lama terbaca walau pekerjanya dihapus.
+        $data['worker'] = isset($data['worker_id']) ? Worker::find($data['worker_id'])?->name : null;
         $data['mode'] = $vendor ? Production::VENDOR : Production::INTERNAL;
         $data['service_cost_per_unit'] = $vendor ? (float) ($data['service_cost_per_unit'] ?? 0) : 0;
 

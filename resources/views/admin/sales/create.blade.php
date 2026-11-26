@@ -29,16 +29,44 @@
                 </div>
                 <div class="grid gap-4 sm:grid-cols-6">
                     <x-admin.field name="sold_at" label="Tanggal" type="date" :value="now()->toDateString()" required class="sm:col-span-2" />
-                    <x-admin.select name="item_id" label="Produk" required class="sm:col-span-4" placeholder="— pilih knalpot —" data-item
-                        :options="$items->mapWithKeys(fn ($item) => [$item->id => $item->name.' · stok '.qty($item->stock)])" />
-                    <x-admin.field name="qty" label="Qty" type="number" step="any" required class="sm:col-span-2" data-qty />
-                    <div class="sm:col-span-4">
-                        <x-admin.field name="unit_price" label="Harga satuan (deal)" type="number" step="any" min="0" required data-price />
-                        <div class="mt-2 flex flex-wrap gap-2" data-list-prices hidden>
-                            <button type="button" class="btn btn-sm" data-use-price="offline">Offline <span class="font-semibold text-ink" data-price-label="offline"></span></button>
-                            <button type="button" class="btn btn-sm" data-use-price="online">Online <span class="font-semibold text-ink" data-price-label="online"></span></button>
+                </div>
+                @error('lines')<p class="error mt-3">{{ $message }}</p>@enderror
+
+                <div class="mt-4 space-y-3" data-lines>
+                    @foreach (old('lines', [['item_id' => '', 'qty' => '', 'unit_price' => '']]) as $i => $line)
+                        <div class="sale-line grid gap-3 rounded-[14px] border border-line bg-white/60 p-3.5 sm:grid-cols-[minmax(0,1fr)_90px_150px_auto]" data-line>
+                            <div class="min-w-0">
+                                <label class="label">Produk</label>
+                                <select name="lines[{{ $i }}][item_id]" class="input" data-item required>
+                                    <option value="">— pilih knalpot —</option>
+                                    @foreach ($items as $item)
+                                        <option value="{{ $item->id }}" @selected((string) ($line['item_id'] ?? '') === (string) $item->id)>{{ $item->name }} · stok {{ qty($item->stock) }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-[11.5px] text-muted" data-line-meta></p>
+                                @error("lines.$i.item_id")<p class="error">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="label">Qty</label>
+                                <input name="lines[{{ $i }}][qty]" type="number" step="any" class="input" value="{{ $line['qty'] ?? '' }}" data-qty required>
+                            </div>
+                            <div>
+                                <label class="label">Harga satuan</label>
+                                <input name="lines[{{ $i }}][unit_price]" type="number" step="any" min="0" class="input" value="{{ $line['unit_price'] ?? '' }}" data-price required>
+                                <p class="mt-1 text-[11.5px] font-medium text-ink tabular-nums" data-line-total></p>
+                            </div>
+                            <div class="flex items-start sm:pt-6">
+                                <button type="button" class="btn btn-sm" title="Hapus baris" data-remove-line>✕</button>
+                            </div>
                         </div>
-                    </div>
+                    @endforeach
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <button type="button" class="btn btn-sm" data-add-line>+ Tambah produk</button>
+                    <p class="text-[12px] text-muted">Harga terisi dari harga daftar sesuai saluran; ubah bila deal berbeda.</p>
+                </div>
+                <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                    <x-admin.field name="discount" label="Diskon nota (Rp)" type="number" step="any" min="0" data-discount />
                 </div>
             </section>
 
@@ -62,7 +90,8 @@
                 @error('channel')<p class="error">{{ $message }}</p>@enderror
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">
                     <x-admin.field name="customer_name" label="Pembeli" placeholder="Nama pembeli / toko" />
-                    <x-admin.field name="notes" label="Keterangan" placeholder="mis. no. pesanan marketplace" />
+                    <x-admin.field name="customer_phone" label="Telepon" placeholder="untuk resi / tracking" />
+                    <x-admin.field name="notes" label="Keterangan" placeholder="mis. no. pesanan marketplace" class="sm:col-span-2" />
                 </div>
             </section>
 
@@ -74,7 +103,7 @@
                     </span>
                     <div>
                         <h2 class="card-title">Pembayaran</h2>
-                        <p class="text-[12px] text-muted">Kosongkan uang masuk bila belum dibayar.</p>
+                        <p class="text-[12px] text-muted">Kosongkan bila belum dibayar; cicilan berikutnya dicatat di halaman nota.</p>
                     </div>
                     <button type="button" class="btn btn-sm ml-auto" data-pay-full>Bayar lunas</button>
                 </div>
@@ -95,13 +124,14 @@
                         <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('tag') }}"/></svg>
                     </span>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-[13px] font-semibold text-ink" data-sum-name>Belum pilih produk</p>
+                        <p class="truncate text-[13px] font-semibold text-ink" data-sum-name>Belum ada produk</p>
                         <p class="truncate text-[11.5px] text-muted" data-sum-meta>—</p>
                     </div>
                 </div>
 
                 <dl class="mt-4 space-y-2.5 text-[13px]">
-                    <div class="flex justify-between gap-3"><dt class="text-ink-soft">Qty × harga</dt><dd class="font-medium text-ink tabular-nums" data-sum-line>—</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-ink-soft">Subtotal</dt><dd class="font-medium text-ink tabular-nums" data-sum-line>—</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-ink-soft">Diskon</dt><dd class="font-medium text-ink tabular-nums" data-sum-discount>Rp 0</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-ink-soft">Perkiraan laba kotor</dt><dd class="font-medium tabular-nums" data-sum-profit>—</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-ink-soft">Uang masuk</dt><dd class="font-medium text-ink tabular-nums" data-sum-paid>Rp 0</dd></div>
                 </dl>
@@ -137,33 +167,56 @@
         const catalog = @json($catalog);
         const rp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
         const $ = sel => form.querySelector(sel);
-        const item = $('[data-item]'), qty = $('[data-qty]'), price = $('[data-price]'), paid = $('[data-paid]');
-        let lastAuto = null;
+        const list = $('[data-lines]'), paid = $('[data-paid]'), discount = $('[data-discount]');
+        const template = list.querySelector('[data-line]').cloneNode(true);
 
         const channel = () => (form.querySelector('[data-channel]:checked') || {}).value || 'Offline';
         const listPrice = data => channel() === 'Offline' ? data.offline : (data.online || data.offline);
+        const lines = () => [...list.querySelectorAll('[data-line]')];
+
+        function renumber() {
+            lines().forEach((row, i) => row.querySelectorAll('[name^="lines["]').forEach(input => {
+                input.name = input.name.replace(/^lines\[\d+\]/, 'lines[' + i + ']');
+            }));
+            list.querySelectorAll('[data-remove-line]').forEach(button => button.disabled = lines().length === 1);
+        }
+
+        function totals() {
+            let subtotal = 0, cost = 0, units = 0;
+            const used = {};
+            lines().forEach(row => {
+                const data = catalog[row.querySelector('[data-item]').value];
+                const q = parseFloat(row.querySelector('[data-qty]').value) || 0;
+                const p = parseFloat(row.querySelector('[data-price]').value) || 0;
+                subtotal += q * p;
+                if (data) { cost += q * data.cost; units += q; used[row.querySelector('[data-item]').value] = (used[row.querySelector('[data-item]').value] || 0) + q; }
+            });
+            return { subtotal, cost, units, used };
+        }
 
         function refresh() {
-            const data = catalog[item.value];
-            const q = parseFloat(qty.value) || 0;
-            const p = parseFloat(price.value) || 0;
-            const total = q * p;
+            const { subtotal, cost, units, used } = totals();
+            const disc = parseFloat(discount.value) || 0;
+            const total = subtotal - disc;
             const cash = parseFloat(paid.value) || 0;
 
-            $('[data-list-prices]').hidden = !data;
-            if (data) {
-                $('[data-price-label="offline"]').textContent = rp(data.offline);
-                $('[data-price-label="online"]').textContent = rp(data.online);
-                $('[data-sum-name]').textContent = data.name;
-                $('[data-sum-meta]').textContent = data.sku + ' · stok ' + data.stock.toLocaleString('id-ID') + ' ' + data.unit;
-                $('[data-sum-meta]').classList.toggle('text-rose-600', q > data.stock);
-            } else {
-                $('[data-sum-name]').textContent = 'Belum pilih produk';
-                $('[data-sum-meta]').textContent = '—';
-            }
+            lines().forEach(row => {
+                const id = row.querySelector('[data-item]').value;
+                const data = catalog[id];
+                const q = parseFloat(row.querySelector('[data-qty]').value) || 0;
+                const p = parseFloat(row.querySelector('[data-price]').value) || 0;
+                const meta = row.querySelector('[data-line-meta]');
+                meta.textContent = data ? data.sku + ' · stok ' + data.stock.toLocaleString('id-ID') + ' ' + data.unit + ' · offline ' + rp(data.offline) + ' · online ' + rp(data.online) : '';
+                meta.classList.toggle('text-rose-600', !!data && used[id] > data.stock);
+                row.querySelector('[data-line-total]').textContent = q && p ? rp(q * p) : '';
+            });
 
-            $('[data-sum-line]').textContent = q && p ? q.toLocaleString('id-ID') + ' × ' + rp(p) : '—';
-            const profit = data && q ? total - q * data.cost : null;
+            const filled = lines().filter(row => catalog[row.querySelector('[data-item]').value]);
+            $('[data-sum-name]').textContent = filled.length ? filled.length + ' produk · ' + units.toLocaleString('id-ID') + ' unit' : 'Belum ada produk';
+            $('[data-sum-meta]').textContent = filled.map(row => catalog[row.querySelector('[data-item]').value].name).join(', ') || '—';
+            $('[data-sum-line]').textContent = rp(subtotal);
+            $('[data-sum-discount]').textContent = disc ? '−' + rp(disc) : 'Rp 0';
+            const profit = filled.length ? total - cost : null;
             const profitEl = $('[data-sum-profit]');
             profitEl.textContent = profit === null ? '—' : rp(profit);
             profitEl.className = 'font-medium tabular-nums ' + (profit === null ? 'text-ink' : profit >= 0 ? 'text-emerald-600' : 'text-rose-600');
@@ -180,31 +233,51 @@
         }
 
         // Harga daftar terisi otomatis sesuai saluran, selama belum diubah manual.
-        function autoPrice() {
-            const data = catalog[item.value];
+        function autoPrice(row) {
+            const data = catalog[row.querySelector('[data-item]').value];
+            const price = row.querySelector('[data-price]'), qty = row.querySelector('[data-qty]');
             if (!data) return;
             const suggested = listPrice(data);
-            if (price.value === '' || parseFloat(price.value) === lastAuto) {
+            if (price.value === '' || price.dataset.auto === price.value) {
                 price.value = suggested || '';
-                lastAuto = suggested;
+                price.dataset.auto = price.value;
             }
             if (qty.value === '') qty.value = 1;
         }
 
-        item.addEventListener('change', () => { autoPrice(); refresh(); });
-        form.querySelectorAll('[data-channel]').forEach(radio => radio.addEventListener('change', () => { autoPrice(); refresh(); }));
-        form.querySelectorAll('[data-use-price]').forEach(button => button.addEventListener('click', () => {
-            const data = catalog[item.value];
-            if (!data) return;
-            price.value = data[button.dataset.usePrice] || '';
-            lastAuto = null;
+        list.addEventListener('change', e => {
+            const row = e.target.closest('[data-line]');
+            if (row && e.target.matches('[data-item]')) autoPrice(row);
             refresh();
-        }));
+        });
+        list.addEventListener('click', e => {
+            const button = e.target.closest('[data-remove-line]');
+            if (!button || lines().length === 1) return;
+            button.closest('[data-line]').remove();
+            renumber();
+            refresh();
+        });
+        $('[data-add-line]').addEventListener('click', () => {
+            const row = template.cloneNode(true);
+            row.querySelectorAll('input').forEach(input => { input.value = ''; delete input.dataset.auto; });
+            row.querySelectorAll('select').forEach(select => select.value = '');
+            // Tombol dropdown hasil salinan dibuang; dropdown baru dibuat otomatis.
+            row.querySelectorAll('.error, .cselect-button').forEach(el => el.remove());
+            row.querySelectorAll('select').forEach(select => { delete select.dataset.cselect; select.classList.remove('cselect-native'); select.removeAttribute('tabindex'); });
+            row.querySelector('[data-line-meta]').textContent = '';
+            list.append(row);
+            renumber();
+            row.querySelector('[data-item]').focus();
+            refresh();
+        });
+        form.querySelectorAll('[data-channel]').forEach(radio => radio.addEventListener('change', () => { lines().forEach(autoPrice); refresh(); }));
         $('[data-pay-full]').addEventListener('click', () => {
-            paid.value = Math.round((parseFloat(qty.value) || 0) * (parseFloat(price.value) || 0)) || '';
+            const { subtotal } = totals();
+            paid.value = Math.round(subtotal - (parseFloat(discount.value) || 0)) || '';
             refresh();
         });
         form.addEventListener('input', refresh);
+        renumber();
         refresh();
     })();
 </script>

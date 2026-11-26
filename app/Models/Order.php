@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
@@ -21,6 +22,7 @@ class Order extends Model
     ];
 
     protected $fillable = [
+        'sale_id',
         'order_number',
         'customer_name',
         'customer_email',
@@ -28,6 +30,12 @@ class Order extends Model
         'status',
         'notes',
     ];
+
+    /** Nota penjualan yang dikirim: stok & uangnya dicatat di sana, bukan di pesanan. */
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class);
+    }
 
     public function shipments(): HasMany
     {

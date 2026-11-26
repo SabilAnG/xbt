@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Baris pembelian. Untuk pipa: qty = jumlah batang, unit_price = harga per batang. */
 class MaterialPurchaseItem extends Model
 {
-    protected $fillable = ['material_purchase_id', 'material_id', 'warehouse_id', 'qty', 'received_qty', 'cancelled_qty', 'bar_length_cm', 'unit_price', 'subtotal'];
+    protected $fillable = ['material_purchase_id', 'material_id', 'warehouse_id', 'qty', 'received_qty', 'cancelled_qty', 'returned_qty', 'bar_length_cm', 'unit_price', 'subtotal'];
 
     protected function casts(): array
     {
@@ -39,6 +39,12 @@ class MaterialPurchaseItem extends Model
     }
 
     /** Yang masih ditunggu datang (satuan beli). */
+    /** Yang sudah diterima dan belum diretur (boleh dikembalikan ke supplier). */
+    public function returnableQty(): float
+    {
+        return max(round((float) $this->received_qty - (float) $this->returned_qty, 4), 0);
+    }
+
     public function outstandingQty(): float
     {
         return max(round((float) $this->qty - (float) $this->received_qty - (float) $this->cancelled_qty, 3), 0);

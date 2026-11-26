@@ -8,6 +8,7 @@ use App\Models\MaterialPurchase;
 use App\Models\Production;
 use App\Models\ProductionPlan;
 use App\Models\PurchasePayment;
+use App\Models\PurchaseReturn;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Services\ProductionPlanner;
@@ -42,7 +43,7 @@ class MaterialPurchaseController extends Controller
     public function show(MaterialPurchase $purchase): View
     {
         return view('admin.purchases.show', [
-            'purchase' => $purchase->load('items.material.warehouse', 'items.warehouse', 'payments.wallet', 'plan', 'supplierRecord', 'receipts.items.purchaseItem.material', 'receipts.items.warehouse'),
+            'purchase' => $purchase->load('items.material.warehouse', 'items.warehouse', 'payments.wallet', 'plan', 'supplierRecord', 'receipts.items.purchaseItem.material', 'receipts.items.warehouse', 'returns.items.purchaseItem.material', 'payments.deposit'),
         ]);
     }
 
@@ -171,8 +172,41 @@ class MaterialPurchaseController extends Controller
         return back()->with('status', 'Pembayaran dicatat.');
     }
 
+    public function storeReturn(Request $request, MaterialPurchase $purchase, PurchaseService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'returned_at' => ['required', 'date'],
+            'items' => ['required', 'array'],
+            'items.*.material_purchase_item_id' => ['required', 'integer'],
+            'items.*.qty' => ['nullable', 'numeric', 'min:0'],
+            'refund_amount' => ['nullable', 'numeric', 'min:0'],
+            'wallet_id' => ['nullable', 'exists:wallets,id'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+        $data['items'] = collect($data['items'])->map(fn (array $row) => ['qty' => (float) ($row['qty'] ?? 0)] + $row)->all();
+
+        try {
+            $return = $service->returnGoods($purchase, $data);
+        } catch (RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Retur '.$return->return_number.' dicatat: stok keluar, tagihan turun '.rupiah($return->total).'.');
+    }
+
+    public function destroyReturn(PurchaseReturn $return, PurchaseService $service): RedirectResponse
+    {
+        $service->deleteReturn($return);
+
+        return back()->with('status', 'Retur dibatalkan; barang kembali ke gudang.');
+    }
+
     public function destroyPayment(PurchasePayment $payment, PurchaseService $service): RedirectResponse
     {
+        if (PurchaseReturn::where('purchase_payment_id', $payment->id)->exists()) {
+            return back()->with('error', 'Ini uang kembali dari retur. Batalkan returnya bila perlu.');
+        }
+
         $service->deletePayment($payment);
 
         return back()->with('status', 'Pembayaran dihapus.');

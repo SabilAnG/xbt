@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Item;
+use App\Models\ItemAdjustment;
 use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 /** Stok Produk — knalpot jadi. */
 class ItemController extends Controller
@@ -56,7 +58,39 @@ class ItemController extends Controller
         return view('admin.items.show', [
             'item' => $item->load('formula'),
             'movements' => $item->movements()->paginate(20),
+            'adjustments' => ItemAdjustment::query()->where('item_id', $item->id)->latest('adjusted_at')->latest('id')->limit(10)->get(),
+            'reasons' => ItemAdjustment::REASONS,
         ]);
+    }
+
+    /** Stok opname produk jadi: isi stok hasil hitung fisik. */
+    public function adjust(Request $request, Item $item, InventoryService $inventory): RedirectResponse
+    {
+        $data = $request->validate([
+            'adjusted_at' => ['required', 'date'],
+            'actual_qty' => ['required', 'numeric', 'min:0'],
+            'reason' => ['required', Rule::in(array_keys(ItemAdjustment::REASONS))],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $adjustment = $inventory->adjustItem($item, (float) $data['actual_qty'], $data['reason'], $data['adjusted_at'], $data['notes'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Stok disesuaikan ('.((float) $adjustment->difference > 0 ? '+' : '').qty((float) $adjustment->difference).').');
+    }
+
+    public function destroyAdjustment(ItemAdjustment $adjustment, InventoryService $inventory): RedirectResponse
+    {
+        try {
+            $inventory->deleteItemAdjustment($adjustment);
+        } catch (InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Penyesuaian dihapus; stok dikembalikan.');
     }
 
     public function create(): View

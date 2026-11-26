@@ -86,8 +86,8 @@
                 @forelse ($purchase->payments as $payment)
                     <tr>
                         <td class="whitespace-nowrap">{{ $payment->paid_at->translatedFormat('d M Y') }}</td>
-                        <td class="text-sm">{{ $payment->wallet?->name ?? '—' }}{{ $payment->notes ? ' · '.$payment->notes : '' }}</td>
-                        <td class="num font-semibold">{{ rupiah($payment->amount) }}</td>
+                        <td class="text-sm">{{ $payment->deposit ? 'Uang muka' : ($payment->wallet?->name ?? '—') }}{{ $payment->notes ? ' · '.$payment->notes : '' }}</td>
+                        <td class="num font-semibold {{ $payment->amount < 0 ? 'text-emerald-700' : '' }}">{{ rupiah($payment->amount) }}</td>
                         <td class="text-right"><x-admin.delete-button :action="route('admin.purchases.payments.destroy', $payment)" label="✕" confirm="Hapus pembayaran ini?" /></td>
                     </tr>
                 @empty
@@ -111,6 +111,58 @@
             </form>
         @endif
     </section>
+
+    @php $returnable = $purchase->isService() ? collect() : $purchase->items->filter(fn ($line) => ! $line->material->isPipe() && $line->returnableQty() > 0); @endphp
+    @if ($returnable->isNotEmpty() || $purchase->returns->isNotEmpty())
+        <section class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            <div class="card overflow-hidden">
+                <div class="card-header"><h2 class="card-title">Retur ke supplier</h2></div>
+                <table class="table">
+                    <tbody>
+                    @forelse ($purchase->returns as $return)
+                        <tr>
+                            <td class="font-mono text-xs whitespace-nowrap">{{ $return->return_number }}<p class="font-sans text-[11px] text-muted">{{ $return->returned_at->translatedFormat('d M Y') }}</p></td>
+                            <td class="text-sm">{{ $return->items->map(fn ($row) => $row->purchaseItem->material->name.' × '.qty($row->qty))->implode(' · ') }}
+                                @if ($return->notes)<p class="text-[11px] text-muted">{{ $return->notes }}</p>@endif
+                                @if ((float) $return->refund_amount)<p class="text-[11px] text-emerald-700">uang kembali {{ rupiah($return->refund_amount) }}</p>@endif
+                            </td>
+                            <td class="num font-semibold text-rose-600">−{{ rupiah($return->total) }}</td>
+                            <td class="text-right"><x-admin.delete-button :action="route('admin.purchases.returns.destroy', $return)" label="✕" confirm="Batalkan retur ini? Barang masuk gudang lagi dan tagihan kembali seperti semula." /></td>
+                        </tr>
+                    @empty
+                        <tr><td class="py-6 text-center text-slate-500">Belum ada retur.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($returnable->isNotEmpty())
+                <form method="POST" action="{{ route('admin.purchases.returns.store', $purchase) }}" class="card space-y-4 p-6">
+                    @csrf
+                    <div>
+                        <h2 class="card-title">Retur barang</h2>
+                        <p class="text-[12px] text-muted">Barang keluar dari gudang penerimaannya; tagihan turun senilai harga beli.</p>
+                    </div>
+                    <div class="space-y-2">
+                        @foreach ($returnable->values() as $i => $line)
+                            <div class="flex items-center gap-3 text-[13px]">
+                                <input type="hidden" name="items[{{ $i }}][material_purchase_item_id]" value="{{ $line->id }}">
+                                <span class="min-w-0 flex-1">{{ $line->material->name }}<span class="block text-[11px] text-muted">bisa diretur {{ qty($line->returnableQty()) }} · {{ rupiah($line->unit_price) }}/satuan</span></span>
+                                <input name="items[{{ $i }}][qty]" type="number" step="any" min="0" max="{{ $line->returnableQty() }}" class="input w-28" placeholder="0" value="{{ old("items.$i.qty") }}">
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <x-admin.field name="returned_at" label="Tanggal" type="date" :value="now()->toDateString()" required />
+                        <x-admin.field name="refund_amount" label="Uang kembali dari supplier (Rp)" type="number" step="any" min="0" hint="Bila sudah dibayar." />
+                        <x-admin.wallet-select class="sm:col-span-2" label="Uang kembali masuk ke" />
+                        <x-admin.field name="notes" label="Alasan" class="sm:col-span-2" placeholder="mis. plat penyok, salah ukuran" />
+                    </div>
+                    <div class="flex justify-end"><button class="btn btn-primary">Simpan retur</button></div>
+                </form>
+            @endif
+        </section>
+    @endif
 
     @if ($purchase->notes && ! $purchase->isService())
         <section class="card p-5 text-sm whitespace-pre-line text-slate-600">{{ $purchase->notes }}</section>

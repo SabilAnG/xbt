@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
@@ -60,6 +61,32 @@ class Sale extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    /** Riwayat uang masuk (DP, cicilan, pelunasan). */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SalePayment::class)->orderBy('paid_at')->orderBy('id');
+    }
+
+    /** Pesanan/tracking website untuk nota ini. */
+    public function order(): HasOne
+    {
+        return $this->hasOne(Order::class);
+    }
+
+    /** Uang masuk = jumlah semua pembayaran. */
+    public function refreshPaidAmount(): void
+    {
+        $this->forceFill(['paid_amount' => (float) $this->payments()->sum('amount')])->save();
+    }
+
+    /** Ringkas isi nota, mis. "Mio Racing ×2, Beat ×1". */
+    public function itemSummary(int $limit = 3): string
+    {
+        $lines = $this->items->map(fn (SaleItem $line) => ($line->item?->name ?? 'Produk').' ×'.qty($line->qty));
+
+        return $lines->take($limit)->implode(', ').($lines->count() > $limit ? ' +'.($lines->count() - $limit).' lagi' : '');
     }
 
     public function stockMovements(): MorphMany

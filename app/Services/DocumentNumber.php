@@ -29,6 +29,8 @@ class DocumentNumber
         'purchase_receipts' => 'PN',    // penerimaan barang pembelian
         'stock_transfers' => 'PD',      // pindah barang antar gudang
         'worker_payrolls' => 'GJ',      // slip gaji pekerja
+        'item_adjustments' => 'PP',     // penyesuaian stok produk jadi
+        'purchase_returns' => 'RB',     // retur pembelian ke supplier
     ];
 
     private const COLUMNS = [
@@ -44,6 +46,8 @@ class DocumentNumber
         'purchase_receipts' => 'receipt_number',
         'stock_transfers' => 'transfer_number',
         'worker_payrolls' => 'payroll_number',
+        'item_adjustments' => 'adjustment_number',
+        'purchase_returns' => 'return_number',
     ];
 
     /**

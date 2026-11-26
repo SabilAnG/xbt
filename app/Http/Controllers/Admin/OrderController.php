@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Sale;
 use App\Models\Shipment;
 use App\Models\ShipmentEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -19,11 +21,12 @@ class OrderController extends Controller
 {
     public function index(Request $request): View
     {
-        $orders = Order::query()->withCount('shipments')
+        $orders = Order::query()->with('sale')->withCount('shipments')
             ->when($request->input('status'), fn ($query, $status) => $query->where('status', $status))
             ->when($request->string('q')->trim()->value(), fn ($query, $search) => $query->where(
                 fn ($query) => $query->where('order_number', 'like', "%{$search}%")
                     ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhereHas('sale', fn ($query) => $query->where('invoice_number', 'like', "%{$search}%"))
                     ->orWhereHas('shipments', fn ($query) => $query->where('tracking_number', 'like', "%{$search}%"))
             ))
             ->latest()
@@ -32,9 +35,20 @@ class OrderController extends Controller
         return view('admin.website.orders.index', ['orders' => $orders, 'statuses' => Order::STATUSES]);
     }
 
-    public function create(): View
+    /** Dari nota penjualan (?penjualan=ID): nomor & data pembeli terisi otomatis. */
+    public function create(Request $request): View|RedirectResponse
     {
-        return view('admin.website.orders.form', ['order' => new Order(['status' => 'processing']), 'statuses' => Order::STATUSES]);
+        $order = new Order(['status' => 'processing']);
+
+        if ($sale = Sale::find($request->integer('penjualan'))) {
+            if ($sale->order) {
+                return redirect()->route('admin.orders.edit', $sale->order)->with('status', 'Nota ini sudah punya pesanan/tracking.');
+            }
+
+            $order->fill(['sale_id' => $sale->id, 'order_number' => $sale->invoice_number, 'customer_name' => $sale->customer_name, 'customer_phone' => $sale->customer_phone]);
+        }
+
+        return view('admin.website.orders.form', ['order' => $order, 'statuses' => Order::STATUSES, 'sales' => $this->saleOptions($order)]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -47,8 +61,9 @@ class OrderController extends Controller
     public function edit(Order $order): View
     {
         return view('admin.website.orders.form', [
-            'order' => $order->load('shipments.events'),
+            'order' => $order->load('shipments.events', 'sale'),
             'statuses' => Order::STATUSES,
+            'sales' => $this->saleOptions($order),
         ]);
     }
 
@@ -113,11 +128,24 @@ class OrderController extends Controller
     }
 
     /**
+     * Nota penjualan yang belum punya pesanan (ditambah nota pesanan ini sendiri).
+     *
+     * @return Collection<int, string>
+     */
+    private function saleOptions(Order $order): Collection
+    {
+        return Sale::query()->with('items.item')->latest('sold_at')->latest('id')->limit(200)
+            ->where(fn ($query) => $query->whereDoesntHave('order')->orWhere('id', $order->sale_id))
+            ->get()->mapWithKeys(fn (Sale $sale) => [$sale->id => $sale->invoice_number.' · '.$sale->sold_at->format('d/m').' · '.($sale->customer_name ?: 'tanpa nama').' · '.$sale->itemSummary()]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function validated(Request $request, ?Order $order = null): array
     {
         return $request->validate([
+            'sale_id' => ['nullable', 'exists:sales,id', Rule::unique('orders', 'sale_id')->ignore($order)],
             'order_number' => ['required', 'string', 'max:64', Rule::unique('orders', 'order_number')->ignore($order)],
             'status' => ['required', Rule::in(array_keys(Order::STATUSES))],
             'customer_name' => ['nullable', 'string', 'max:255'],
