@@ -110,7 +110,7 @@
                     </tr>
                 @empty
                     <tr><td colspan="7" class="py-12 text-center text-muted">
-                        <span class="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-white text-[#6b7cf5] shadow-(--shadow-soft)"><svg class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon('warehouse') }}"/></svg></span>
+                        <span class="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-white text-accent shadow-(--shadow-soft)"><svg class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon('warehouse') }}"/></svg></span>
                         Gudang masih kosong. Isi lewat <a href="{{ route('admin.purchases.create') }}" class="link">pembelian</a> atau <a href="{{ route('admin.adjustments.create') }}" class="link">stok awal</a>.
                     </td></tr>
                 @endforelse

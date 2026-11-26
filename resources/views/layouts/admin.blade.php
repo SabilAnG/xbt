@@ -79,7 +79,7 @@
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
         </label>
     </div>
-    <button type="button" id="nav-expand" class="mx-auto mb-5 hidden text-[#3f6bff] transition hover:translate-x-0.5 lg:block lg:[html[data-nav=open]_&]:mr-5 lg:[html[data-nav=open]_&]:rotate-180" aria-label="Lebarkan / sempitkan menu">
+    <button type="button" id="nav-expand" class="mx-auto mb-5 hidden text-accent-strong transition hover:translate-x-0.5 lg:block lg:[html[data-nav=open]_&]:mr-5 lg:[html[data-nav=open]_&]:rotate-180" aria-label="Lebarkan / sempitkan menu">
         <svg class="h-4 w-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 40 16"><path d="M7 3.5C3.5 3.5 2 5.5 2 8s1.5 4.5 5 4.5h31m0 0-4-3.5m4 3.5-4 3.5"/></svg>
     </button>
 
@@ -133,7 +133,7 @@
 
             <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
                 <span class="hidden items-center gap-2 px-2 text-[12.5px] font-medium text-ink-soft xl:inline-flex">
-                    <svg class="size-[17px] text-[#6b7cf5]" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" viewBox="0 0 24 24"><path d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
+                    <svg class="size-[17px] text-accent" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" viewBox="0 0 24 24"><path d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>
                     {{ now()->translatedFormat('l, d M Y') }}
                 </span>
                 <span class="mx-1 hidden h-7 w-px bg-line xl:block"></span>

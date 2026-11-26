@@ -91,7 +91,7 @@
                 <h2 class="card-title">Ringkasan penjualan</h2>
 
                 <div class="mt-4 flex items-center gap-3 rounded-[12px] bg-white px-3.5 py-3 shadow-[0_6px_16px_-10px_rgb(60_66_110/0.45)]">
-                    <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-[#5b6cf0]">
+                    <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent">
                         <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ \App\Support\AdminNavigation::icon('tag') }}"/></svg>
                     </span>
                     <div class="min-w-0 flex-1">
