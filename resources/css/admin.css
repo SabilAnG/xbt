@@ -164,6 +164,29 @@
     html[data-theme='dark'] .group-tile[aria-current='true'] {
         box-shadow: 0 0 0 1px rgb(234 255 58 / 0.25), 0 10px 24px -10px rgb(222 250 20 / 0.35);
     }
+    /* Kartu & cincin yang tadinya biru/ungu ikut kuning stabilo. */
+    html[data-theme='dark'] #ring-cyan stop:first-child,
+    html[data-theme='dark'] #ring-violet stop:first-child {
+        stop-color: #f8ff8a;
+    }
+    html[data-theme='dark'] #ring-cyan stop:last-child,
+    html[data-theme='dark'] #ring-violet stop:last-child {
+        stop-color: #d4f000;
+    }
+    html[data-theme='dark'] [class*='from-[#9fe3f5]'],
+    html[data-theme='dark'] [class*='from-[#dccafd]'],
+    html[data-theme='dark'] [class*='from-[#5fb7f7]'],
+    html[data-theme='dark'] [class*='from-[#d7a6ff]'] {
+        --tw-gradient-from: #f8ff7a !important;
+        --tw-gradient-to: #d4f000 !important;
+        color: #1b1d2e !important;
+        box-shadow: 0 10px 22px -10px rgb(222 250 20 / 0.6) !important;
+    }
+    html[data-theme='dark'] [style*='#3fbbe2']:not([class*='from-[']),
+    html[data-theme='dark'] [style*='#9553e0']:not([class*='from-[']) {
+        color: #eaff3a !important;
+        box-shadow: 0 10px 22px -10px rgb(222 250 20 / 0.6) !important;
+    }
     html.theme-switching *,
     html.theme-switching *::before,
     html.theme-switching *::after {
