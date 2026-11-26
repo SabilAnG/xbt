@@ -65,54 +65,73 @@
                     @endif
                 </div>
             </div>
-            <x-admin.field name="description" label="Deskripsi (HTML)" type="textarea" rows="10" :value="$product->description" class="sm:col-span-2"
-                hint="Boleh memakai tag HTML seperti <p>, <ul><li>, <strong>." />
+            <x-admin.rich-editor name="description" label="Deskripsi" :value="$product->description" class="sm:col-span-2" />
         </section>
 
         <section class="card" id="media-manager">
-            <div class="card-header">
-                <div>
+            <div class="flex flex-wrap items-center gap-3 px-5 pt-5 sm:px-6">
+                <span class="grid size-10 place-items-center rounded-[12px] bg-linear-to-br from-[#dccafd] to-[#8b49dc] text-white shadow-[0_8px_18px_-8px_#8b49dc]">
+                    <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 5h16v14H4zm0 11 4.5-4.5a1.5 1.5 0 0 1 2 0L15 16m-1.5-1.5 1.5-1.5a1.5 1.5 0 0 1 2 0L20 16M15 9h.01"/></svg>
+                </span>
+                <div class="min-w-0 flex-1">
                     <h2 class="card-title">Foto &amp; video</h2>
-                    <p class="mt-0.5 text-xs text-slate-500">Urutan terkecil tampil pertama di galeri. Foto pertama dipakai untuk kartu produk &amp; keranjang.</p>
+                    <p class="text-[12px] text-muted">Atur urutan dengan tombol ‹ ›. Foto pertama jadi foto utama.</p>
                 </div>
-                <span class="text-xs text-slate-500" data-media-count></span>
+                <span class="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-(--shadow-soft)" data-media-count></span>
             </div>
-            <div class="space-y-4 p-5">
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" data-media-grid>
+            <div class="space-y-4 p-5 sm:p-6">
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-4" data-media-grid>
                     @foreach ($product->exists ? $product->images : [] as $media)
-                        <div class="media-tile group relative overflow-hidden rounded-xl border border-slate-200 bg-white" data-media-existing
+                        <div class="media-tile group/tile relative overflow-hidden rounded-[16px] border-[1.5px] border-white bg-white shadow-(--shadow-soft) transition hover:-translate-y-0.5" data-media-existing
                             data-src="{{ asset($media->path) }}" data-thumb="{{ asset($media->thumb()) }}" data-type="{{ $media->isVideo() ? 'video' : 'image' }}">
                             <div class="relative aspect-square bg-slate-900">
                                 @if ($media->isVideo())
                                     <video src="{{ asset($media->path) }}#t=0.5" muted playsinline preload="metadata" class="size-full object-cover"></video>
-                                    <span class="absolute inset-0 grid place-items-center"><span class="grid size-10 place-items-center rounded-full bg-black/55 text-white"><svg class="ml-0.5 size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></span>
-                                    <span class="absolute left-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">VIDEO</span>
+                                    <span class="absolute inset-0 grid place-items-center"><span class="grid size-11 place-items-center rounded-full bg-black/45 text-white ring-1 ring-white/30 backdrop-blur"><svg class="ml-0.5 size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></span>
+                                    <span class="absolute bottom-2.5 left-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white backdrop-blur">VIDEO</span>
                                 @else
-                                    <img src="{{ asset($media->thumb()) }}" alt="" class="size-full object-cover">
+                                    <img src="{{ asset($media->thumb()) }}" alt="" class="size-full object-cover transition duration-300 group-hover/tile:scale-[1.04]">
                                 @endif
-                                <span class="media-main absolute right-2 top-2 hidden rounded-md bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">UTAMA</span>
+                                <span class="media-main absolute top-2.5 left-2.5 hidden items-center gap-1 rounded-full bg-linear-to-b from-[#f9922a] to-[#f2621f] px-2.5 py-1 text-[10px] font-bold tracking-wide text-white shadow-(--shadow-orange) [&:not(.hidden)]:inline-flex">
+                                    <svg class="size-3" fill="currentColor" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>UTAMA
+                                </span>
+                                <label class="absolute top-2.5 right-2.5 grid size-8 cursor-pointer place-items-center rounded-full bg-white/90 text-rose-600 shadow-(--shadow-soft) backdrop-blur transition hover:scale-110 has-[:checked]:bg-rose-600 has-[:checked]:text-white" title="Tandai untuk dihapus">
+                                    <input type="checkbox" name="images[{{ $media->id }}][delete]" value="1" class="sr-only" data-media-delete>
+                                    <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 7h16m-10 4v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+                                </label>
+                                <div class="pointer-events-none absolute inset-0 hidden place-items-center bg-rose-950/55 backdrop-blur-[2px] group-has-[[data-media-delete]:checked]/tile:grid">
+                                    <span class="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-rose-600">Akan dihapus</span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2 p-2">
-                                <label class="flex items-center gap-1 text-[11px] text-slate-500">#
-                                    <input type="number" min="0" name="images[{{ $media->id }}][sort_order]" value="{{ $media->sort_order }}" class="input w-14 px-2 py-1 text-xs" aria-label="Urutan" data-media-order>
-                                </label>
-                                <label class="ml-auto flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50">
-                                    <input type="checkbox" name="images[{{ $media->id }}][delete]" value="1" class="rounded border-slate-300" data-media-delete> Hapus
-                                </label>
+                            <div class="flex items-center justify-between gap-2 px-2.5 py-2">
+                                <span class="text-[11px] font-medium text-muted">Urutan</span>
+                                <div class="flex items-center gap-1 rounded-full bg-surface p-0.5">
+                                    <button type="button" class="grid size-7 place-items-center rounded-full text-ink-soft transition hover:bg-white hover:text-ink" data-order-step="-1" aria-label="Geser ke depan">
+                                        <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>
+                                    </button>
+                                    <input type="number" min="0" name="images[{{ $media->id }}][sort_order]" value="{{ $media->sort_order }}" aria-label="Urutan"
+                                        class="h-7 w-9 rounded-full border-0 bg-white text-center text-[12px] font-semibold text-ink shadow-[0_2px_6px_-3px_rgb(60_66_110/0.4)] focus:ring-2 focus:ring-brand-500/30 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" data-media-order>
+                                    <button type="button" class="grid size-7 place-items-center rounded-full text-ink-soft transition hover:bg-white hover:text-ink" data-order-step="1" aria-label="Geser ke belakang">
+                                        <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
 
-                <label for="new_media" class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-brand-400 hover:bg-brand-50/40" data-media-drop>
-                    <span class="grid size-11 place-items-center rounded-full bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
-                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                <label for="new_media" class="group/drop relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-[16px] border-2 border-dashed border-line bg-white/60 px-5 py-5 transition hover:border-brand-400 hover:bg-brand-50/40 sm:px-6" data-media-drop>
+                    <span class="grid size-12 shrink-0 place-items-center rounded-[14px] bg-linear-to-br from-[#fbbf94] to-[#e9643a] text-white shadow-[0_10px_20px_-10px_#e9643a] transition group-hover/drop:-translate-y-0.5">
+                        <svg class="size-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
                     </span>
-                    <span class="text-sm font-medium text-slate-800">Seret foto / video ke sini, atau <span class="text-brand-600 underline">pilih berkas</span></span>
-                    <span class="text-xs text-slate-500">Foto JPG/PNG/WebP maks 5 MB · Video MP4/WebM/MOV maks 50 MB · total sekali simpan maks 60 MB</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-[14px] font-semibold text-ink">Seret foto / video ke sini</span>
+                        <span class="mt-0.5 block text-[11.5px] leading-snug text-muted">Foto JPG/PNG/WebP maks 5 MB · Video MP4/WebM/MOV maks 50 MB · total sekali simpan maks 60 MB</span>
+                    </span>
+                    <span class="btn btn-primary btn-sm pointer-events-none hidden sm:inline-flex">Pilih berkas</span>
                     <input id="new_media" name="new_media[]" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" class="sr-only">
                 </label>
-                <p class="hidden rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700" data-media-warning></p>
+                <p class="hidden rounded-[12px] bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700" data-media-warning></p>
                 @error('new_media')<p class="error">{{ $message }}</p>@enderror
                 @foreach ($errors->get('new_media.*') as $messages)
                     <p class="error">{{ $messages[0] }}</p>
@@ -225,20 +244,21 @@
 
         function tileFor(p, index) {
             var el = document.createElement('div');
-            el.className = 'media-tile relative overflow-hidden rounded-xl border-2 border-dashed border-brand-300 bg-white';
+            el.className = 'media-tile relative overflow-hidden rounded-[16px] border-2 border-dashed border-brand-400 bg-white shadow-(--shadow-soft)';
             el.dataset.mediaPending = index;
             el.innerHTML =
                 '<div class="relative aspect-square bg-slate-900">' +
                 (p.type === 'video'
                     ? '<video src="' + p.url + '#t=0.5" muted playsinline preload="metadata" class="size-full object-cover"></video>' +
-                      '<span class="absolute left-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">VIDEO</span>'
+                      '<span class="absolute bottom-2.5 left-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-white">VIDEO</span>'
                     : '<img src="' + p.url + '" alt="" class="size-full object-cover">') +
-                '<span class="media-main absolute right-2 top-2 hidden rounded-md bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">UTAMA</span>' +
+                '<span class="media-main absolute top-2.5 left-2.5 hidden items-center rounded-full bg-linear-to-b from-[#f9922a] to-[#f2621f] px-2.5 py-1 text-[10px] font-bold tracking-wide text-white [&:not(.hidden)]:inline-flex">UTAMA</span>' +
+                '<button type="button" class="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-full bg-white/90 text-ink shadow-(--shadow-soft) transition hover:scale-110 hover:text-rose-600" data-remove aria-label="Batalkan unggahan">' +
+                '<svg class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
                 '</div>' +
-                '<div class="flex items-center gap-2 p-2">' +
-                '<span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">BARU</span>' +
-                '<span class="truncate text-[11px] text-slate-500">' + (p.file.size / 1024 / 1024).toFixed(1) + ' MB</span>' +
-                '<button type="button" class="ml-auto rounded-md px-1.5 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50" data-remove>Batal</button>' +
+                '<div class="flex items-center justify-between gap-2 px-2.5 py-2">' +
+                '<span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold tracking-wide text-brand-700">BARU</span>' +
+                '<span class="truncate text-[11px] font-medium text-muted">' + (p.file.size / 1024 / 1024).toFixed(1) + ' MB</span>' +
                 '</div>';
             el.querySelector('[data-remove]').addEventListener('click', function () {
                 URL.revokeObjectURL(p.url);
@@ -255,7 +275,6 @@
             var existing = Array.prototype.slice.call(grid.querySelectorAll('[data-media-existing]'))
                 .filter(function (el) {
                     var del = el.querySelector('[data-media-delete]').checked;
-                    el.classList.toggle('opacity-40', del);
                     return !del;
                 })
                 .map(function (el) { return { el: el, src: el.dataset.src, thumb: el.dataset.thumb, type: el.dataset.type, order: +el.querySelector('[data-media-order]').value || 0 }; })
@@ -374,12 +393,20 @@
             addFiles(files);
         });
         ['dragenter', 'dragover'].forEach(function (ev) {
-            drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('border-brand-500', 'bg-brand-50'); });
+            drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('border-brand-500', 'bg-brand-50', 'scale-[1.01]'); });
         });
         ['dragleave', 'drop'].forEach(function (ev) {
-            drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('border-brand-500', 'bg-brand-50'); });
+            drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('border-brand-500', 'bg-brand-50', 'scale-[1.01]'); });
         });
         drop.addEventListener('drop', function (e) { addFiles(e.dataTransfer.files); });
+        grid.addEventListener('click', function (e) {
+            var step = e.target.closest('[data-order-step]');
+            if (!step) return;
+            var field = step.parentElement.querySelector('[data-media-order]');
+            field.value = Math.max(0, (parseInt(field.value, 10) || 0) + parseInt(step.dataset.orderStep, 10));
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        });
         grid.addEventListener('input', render);
         grid.addEventListener('change', render);
         form.addEventListener('submit', function (e) {

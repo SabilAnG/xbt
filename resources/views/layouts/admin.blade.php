@@ -60,7 +60,7 @@
 {{-- ---------------------------------------------------------------- Sidebar --}}
 <label for="nav-toggle" class="fixed inset-0 z-40 hidden bg-ink/30 backdrop-blur-[2px] peer-checked:block lg:hidden" aria-hidden="true"></label>
 <aside class="rail fixed inset-y-0 left-0 z-50 flex w-[260px] -translate-x-full flex-col rounded-tr-[22px] bg-white shadow-[6px_0_30px_-20px_rgb(60_66_110/0.5)] transition-[width,transform] duration-200 peer-checked:translate-x-0 lg:w-(--rail) lg:translate-x-0">
-    <div class="flex shrink-0 items-center gap-3 px-[19px] pt-6 pb-4">
+    <div class="flex shrink-0 items-center gap-3 px-[19px] pt-6 pb-4 lg:[html:not([data-nav=open])_&]:justify-center lg:[html:not([data-nav=open])_&]:px-0">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
             <span class="relative grid size-[46px] shrink-0 place-items-center">
                 <svg viewBox="0 0 46 46" class="absolute inset-0" aria-hidden="true">
@@ -83,7 +83,7 @@
         <svg class="h-4 w-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 40 16"><path d="M7 3.5C3.5 3.5 2 5.5 2 8s1.5 4.5 5 4.5h31m0 0-4-3.5m4 3.5-4 3.5"/></svg>
     </button>
 
-    <nav class="scrollbar-thin flex-1 space-y-3 px-[19px] pb-6" id="sidebar-nav">
+    <nav class="scrollbar-thin flex-1 space-y-3 px-3 pb-6" id="sidebar-nav">
         @foreach ($groups as $group)
             @php
                 $active = collect($group['items'])->contains(fn ($item) => AdminNavigation::isActive($item, request()));
@@ -93,7 +93,7 @@
                 <a href="{{ route($first['route'], $first['params']) }}" class="group-tile" aria-current="{{ $active ? 'true' : 'false' }}" aria-label="{{ $group['label'] }}">
                     @include('layouts.partials.nav-glyph', ['group' => $group['label']])
                     @if ($groupDots[$group['label']] ?? false)
-                        <span class="absolute top-2 left-[29px] size-2.5 rounded-full border-2 border-white bg-[#ef3b3b] lg:[html:not([data-nav=open])_&]:top-[7px] lg:[html:not([data-nav=open])_&]:left-auto lg:[html:not([data-nav=open])_&]:right-[7px]"></span>
+                        <span class="absolute top-2 left-[29px] size-2.5 rounded-full border-2 border-white bg-[#ef3b3b] lg:[html:not([data-nav=open])_&]:top-1.5 lg:[html:not([data-nav=open])_&]:left-[calc(50%+6px)]"></span>
                     @endif
                     <span class="nav-label truncate">{{ $group['label'] }}</span>
                 </a>
