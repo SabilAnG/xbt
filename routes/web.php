@@ -97,6 +97,10 @@ Route::prefix('admin')->group(function () {
 
         // Inventori: formula → rencana → pembelian → gudang → produksi
         Route::post('formula/{formula}/salin', [Admin\FormulaController::class, 'duplicate'])->name('formulas.duplicate');
+        Route::post('simulasi-desain/hitung', [Admin\DesignSimulationController::class, 'simulate'])->name('design-sims.simulate');
+        Route::post('simulasi-desain/otomatis', [Admin\DesignSimulationController::class, 'auto'])->name('design-sims.auto');
+        Route::post('simulasi-desain/{designSim}/salin', [Admin\DesignSimulationController::class, 'duplicate'])->name('design-sims.duplicate');
+        Route::resource('simulasi-desain', Admin\DesignSimulationController::class)->except('show')->names('design-sims')->parameters(['simulasi-desain' => 'designSim']);
         Route::resource('formula', Admin\FormulaController::class)->names('formulas')->parameters(['formula' => 'formula']);
         Route::post('rencana-produksi/{plan}/sumber', [Admin\ProductionPlanController::class, 'updateSource'])->name('plans.source');
         Route::post('rencana-produksi/{plan}/tambah-formula', [Admin\ProductionPlanController::class, 'addFormula'])->name('plans.add-formula');

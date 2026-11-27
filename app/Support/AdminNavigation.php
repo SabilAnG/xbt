@@ -43,6 +43,7 @@ class AdminNavigation
         'warehouse' => 'M3 21V9l9-6 9 6v12M7 21v-8h10v8M7 17h10',
         'arrows' => 'M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4-4m-4 4 4 4',
         'inbox' => 'M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6l2-8Z',
+        'cube' => 'M12 2.5 21 7.5v9L12 21.5 3 16.5v-9L12 2.5Zm0 0v9m0 0 9-4m-9 4-9-4m9 4v10',
         'truck' => 'M3 6h11v10H3zm11 4h4l3 3v3h-7M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
     ];
 
@@ -92,6 +93,7 @@ class AdminNavigation
             ]],
             ['label' => 'Produksi', 'items' => [
                 $item('Formula', 'admin.formulas.index', 'admin.formulas.*', 'beaker'),
+                $item('Simulasi Desain', 'admin.design-sims.index', 'admin.design-sims.*', 'cube'),
                 $item('Data Komponen', 'admin.component-options.index', 'admin.component-options.*', 'list'),
                 $item('Jasa Vendor', 'admin.vendor-services.index', 'admin.vendor-services.*', 'wrench'),
                 $item('Data Ongkos', 'admin.cost-options.index', 'admin.cost-options.*', 'coins'),
@@ -130,7 +132,7 @@ class AdminNavigation
         'items' => ['master-items', 'materials', 'items'], 'units' => ['units'], 'brands' => ['brands'], 'motor-options' => ['motor-options'],
         'wallets' => ['wallets'], 'expenses' => ['expenses'], 'finance' => ['finance'],
         'warehouses' => ['warehouses'], 'transfers' => ['transfers'], 'stock-opname' => ['stock-opname'], 'adjustments' => ['adjustments'],
-        'formulas' => ['formulas'], 'component-options' => ['component-options'], 'vendor-services' => ['vendor-services'],
+        'formulas' => ['formulas'], 'design-sims' => ['design-sims'], 'component-options' => ['component-options'], 'vendor-services' => ['vendor-services'],
         'cost-options' => ['cost-options'], 'plans' => ['plans'], 'productions' => ['productions'], 'reports' => ['reports'],
         'production-settings' => ['production-settings'],
         'workers' => ['workers'], 'attendances' => ['attendances'], 'payrolls' => ['payrolls'],
