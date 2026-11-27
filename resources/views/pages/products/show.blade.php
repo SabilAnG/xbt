@@ -169,7 +169,7 @@
                     </h3>
 
                     <article class="product-description">
-                        {!! $product->description !!}
+                        {!! safe_html($product->description) !!}
                     </article>
                 </div>
             </div>

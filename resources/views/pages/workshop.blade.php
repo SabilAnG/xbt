@@ -136,15 +136,15 @@
                             <div class="subtitle">Get In Touch</div>
                             <h2 class="wow fadeInUp">{{ content('workshop.text.18', 'We are always ready to help you') }}</h2>
 
-                            <p>{!! content('workshop.text.19', 'Whether you have a question, a suggestion, or just want to say hello, this is the place to do
+                            <p>{!! safe_html(content('workshop.text.19', 'Whether you have a question, a suggestion, or just want to say hello, this is the place to do
                                 it. Please fill out the form below with your details and message, and we\'ll get back to you
-                                as soon as possible.') !!}</p>
+                                as soon as possible.')) !!}</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                        {!! content('workshop.text.20', 'Exhaust Specialist for Power & Performance') !!}
+                        {!! safe_html(content('workshop.text.20', 'Exhaust Specialist for Power & Performance')) !!}
                     </h2>
                     <p>{{ content('workshop.text.21', 'At Hypersonic Tech Speed, we are passionate about engineering high-performance exhaust systems that
                         elevate driving experiences. Since our beginning, we’ve committed ourselves to precision

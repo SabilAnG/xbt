@@ -12,10 +12,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::firstOrCreate(
-            ['email' => 'admin@hypersonic.id'],
-            ['name' => 'Admin', 'password' => 'password'],
-        );
+        // Akun bawaan berpassword "password" hanya untuk lokal; di server pakai `php artisan admin:user`.
+        if (app()->isProduction()) {
+            $this->command?->warn('Lewati akun admin bawaan di produksi — buat dengan `php artisan admin:user`.');
+        } else {
+            User::firstOrCreate(
+                ['email' => 'admin@hypersonic.id'],
+                ['name' => 'Admin', 'password' => 'password'],
+            );
+        }
 
         $this->call([
             SiteContentSeeder::class,

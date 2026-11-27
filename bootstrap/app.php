@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: SecurityHeaders::class);
+
         // Di produksi aplikasi berada di belakang nginx host yang memegang TLS.
         // Tanpa ini Laravel menganggap permintaan datang lewat http biasa, lalu
         // membangkitkan URL aset berawalan http di halaman https — browser

@@ -121,12 +121,22 @@
                         <label class="flex h-10 items-center gap-1.5 text-[12.5px]"><input type="checkbox" name="is_active" value="1" @checked($account->is_active)> Aktif</label>
                         <button class="btn btn-primary btn-sm">Simpan</button>
                     </div>
-                    @if (auth()->user()->isNot($account))
-                        <div class="-mt-1 flex justify-end sm:col-span-2 xl:col-span-5">
+                    <div class="-mt-1 flex items-center justify-end gap-4 sm:col-span-2 xl:col-span-5">
+                        @if ($account->hasTwoFactor())
+                            <span class="mr-auto rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">2 langkah aktif</span>
+                            <button form="reset-2fa-{{ $account->id }}" class="text-[12px] text-ink-soft hover:underline">Reset 2 langkah</button>
+                        @else
+                            <span class="mr-auto rounded-full bg-chip px-2 py-0.5 text-[11px] font-medium text-muted">2 langkah belum aktif</span>
+                        @endif
+                        @if (auth()->user()->isNot($account))
                             <button form="delete-user-{{ $account->id }}" class="text-[12px] text-rose-600 hover:underline">Hapus pengguna</button>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </form>
+                @if ($account->hasTwoFactor())
+                    <form id="reset-2fa-{{ $account->id }}" method="POST" action="{{ route('admin.users.two-factor.reset', $account) }}" class="hidden"
+                          data-confirm="Reset verifikasi 2 langkah {{ $account->name }}? Dia bisa masuk hanya dengan password sampai memasang ulang.">@csrf</form>
+                @endif
                 <form id="delete-user-{{ $account->id }}" method="POST" action="{{ route('admin.users.destroy', $account) }}" data-confirm="Hapus akun {{ $account->name }}? Dia tidak bisa masuk lagi." data-confirm-tone="danger" class="hidden">
                     @csrf
                     @method('DELETE')

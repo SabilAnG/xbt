@@ -196,7 +196,7 @@
                         <span class="grid size-[38px] place-items-center rounded-[10px] bg-linear-to-br from-[#ffb36b] to-[#d9573a] text-[12.5px] font-semibold text-white shadow-(--shadow-soft)">{{ strtoupper($initials) }}</span>
                         <span class="hidden text-left leading-tight md:block">
                             <span class="block max-w-32 truncate text-[13px] font-semibold text-ink">{{ $user?->name }}</span>
-                            <span class="block text-[11px] text-muted">Admin</span>
+                            <span class="block text-[11px] text-muted">{{ $user?->roleLabel() }}</span>
                         </span>
                         <svg class="hidden size-3 text-ink-soft transition group-open:rotate-180 md:block" viewBox="0 0 20 20" fill="currentColor"><path d="M5 7h10l-5 6z"/></svg>
                     </summary>
@@ -206,6 +206,9 @@
                             <p class="truncate text-xs text-muted">{{ $user?->email }}</p>
                         </div>
                         <div class="p-1.5">
+                            <a href="{{ route('admin.account.security') }}" class="flyout-link">Keamanan akun
+                                @unless ($user?->hasTwoFactor())<span class="ml-auto size-2 rounded-full bg-amber-500" title="Verifikasi 2 langkah belum aktif"></span>@endunless
+                            </a>
                             <a href="{{ route('home') }}" target="_blank" class="flyout-link">Lihat website</a>
                             <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf

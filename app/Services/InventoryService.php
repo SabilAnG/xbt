@@ -145,11 +145,14 @@ class InventoryService
             throw new InvalidArgumentException('Nominal pembayaran harus lebih dari 0.');
         }
 
-        if ($amount > $sale->receivable() + 0.01) {
-            throw new InvalidArgumentException($sale->receivable() > 0 ? 'Nominal melebihi sisa piutang '.rupiah($sale->receivable()).'.' : 'Nota ini tidak punya piutang.');
-        }
-
         return DB::transaction(function () use ($sale, $amount, $walletId, $date, $notes) {
+            // Kunci nota dulu: dua kiriman bersamaan (klik ganda) tidak boleh sama-sama lolos cek piutang.
+            $sale = Sale::lockForUpdate()->findOrFail($sale->id);
+
+            if ($amount > $sale->receivable() + 0.01) {
+                throw new InvalidArgumentException($sale->receivable() > 0 ? 'Nominal melebihi sisa piutang '.rupiah($sale->receivable()).'.' : 'Nota ini tidak punya piutang.');
+            }
+
             $payment = $sale->payments()->create(['wallet_id' => $walletId, 'paid_at' => Carbon::parse($date)->toDateString(), 'amount' => $amount, 'notes' => $notes]);
             app(WalletService::class)->sync($payment, $walletId, 'in', $amount, $date,
                 'Penjualan '.$sale->invoice_number.($sale->customer_name ? ' ('.$sale->customer_name.')' : '').($notes ? ' · '.$notes : ''));
@@ -162,15 +165,16 @@ class InventoryService
     /** Uang dikembalikan ke pembeli (nota retur / lebih bayar): pembayaran minus, dompet berkurang. */
     public function refundSale(Sale $sale, float $amount, int $walletId, CarbonInterface|string $date, ?string $notes = null): SalePayment
     {
-        $owed = -$sale->receivable();
-
-        if ($amount <= 0 || $amount > $owed + 0.01) {
-            throw new InvalidArgumentException($owed > 0
-                ? 'Uang yang perlu dikembalikan maksimal '.rupiah($owed).'.'
-                : 'Tidak ada uang yang perlu dikembalikan untuk nota ini.');
-        }
-
         return DB::transaction(function () use ($sale, $amount, $walletId, $date, $notes) {
+            $sale = Sale::lockForUpdate()->findOrFail($sale->id);
+            $owed = -$sale->receivable();
+
+            if ($amount <= 0 || $amount > $owed + 0.01) {
+                throw new InvalidArgumentException($owed > 0
+                    ? 'Uang yang perlu dikembalikan maksimal '.rupiah($owed).'.'
+                    : 'Tidak ada uang yang perlu dikembalikan untuk nota ini.');
+            }
+
             $payment = $sale->payments()->create(['wallet_id' => $walletId, 'paid_at' => Carbon::parse($date)->toDateString(), 'amount' => -$amount, 'notes' => $notes ?: 'Uang dikembalikan ke pembeli']);
             app(WalletService::class)->sync($payment, $walletId, 'out', $amount, $date,
                 'Uang kembali '.$sale->invoice_number.($sale->customer_name ? ' ('.$sale->customer_name.')' : ''));

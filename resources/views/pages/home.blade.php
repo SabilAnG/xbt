@@ -271,7 +271,7 @@
                 <div class="col-lg-6">
                     <div class="subtitle">Real Results</div>
                     <h2>
-                        {!! content('home.text.17', 'Before & After: Exhaust Performance Transformations') !!}
+                        {!! safe_html(content('home.text.17', 'Before & After: Exhaust Performance Transformations')) !!}
                     </h2>
                     <p>
                         {{ content('home.text.18', 'Experience the dramatic difference a precision-engineered exhaust makes—unleashing deeper sound,

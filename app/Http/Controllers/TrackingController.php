@@ -25,7 +25,7 @@ class TrackingController extends Controller
         $orderNumber = trim($validated['order_number']);
 
         $order = Order::with(['shipments.events'])
-            ->whereRaw('LOWER(order_number) = ?', [mb_strtolower($orderNumber)])
+            ->where('tracking_code', mb_strtoupper(preg_replace('/\s+/', '', $orderNumber)))
             ->first();
 
         if (! $order) {

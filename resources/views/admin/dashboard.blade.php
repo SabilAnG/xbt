@@ -92,6 +92,13 @@
 @endsection
 
 @section('content')
+    @if ($viewer?->isOwner() && ! $viewer->hasTwoFactor())
+        <a href="{{ route('admin.account.security') }}" class="card flex items-center gap-3 border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-800 transition hover:shadow-(--shadow-pop)">
+            <svg class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="M12 9v4m0 3h.01"/></svg>
+            <span><strong>Akun pemilik belum memakai verifikasi 2 langkah.</strong> Aktifkan agar password yang bocor saja tidak cukup untuk masuk panel.</span>
+            <span class="ml-auto shrink-0 font-semibold">Aktifkan →</span>
+        </a>
+    @endif
     @if ($showFinance)
     {{-- KPI bercincin --}}
     <section class="stat-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

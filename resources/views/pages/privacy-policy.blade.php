@@ -55,7 +55,7 @@
                             improve our services, and send you promotional offers (if you opt-in).') }}
                         </p>
 
-                        <h5 class="mt-4 text-orange">{!! content('privacy-policy.text.9', '3. Cookies & Tracking') !!}</h5>
+                        <h5 class="mt-4 text-orange">{!! safe_html(content('privacy-policy.text.9', '3. Cookies & Tracking')) !!}</h5>
                         <p>
                             {{ content('privacy-policy.text.10', 'Our website uses cookies and similar technologies to enhance your browsing experience, 
                             analyze traffic, and personalize content. You can disable cookies in your browser settings, 

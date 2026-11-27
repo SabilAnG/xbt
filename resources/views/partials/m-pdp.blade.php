@@ -249,7 +249,7 @@
     @if (filled(strip_tags((string) $product->description)))
         <div class="m-pdp-card">
             <h3>Deskripsi Produk</h3>
-            <div class="m-pdp-desc" id="m-pdp-desc">{!! $product->description !!}</div>
+            <div class="m-pdp-desc" id="m-pdp-desc">{!! safe_html($product->description) !!}</div>
             <button type="button" class="m-pdp-more" id="m-pdp-more">Lihat selengkapnya
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
             </button>

@@ -60,7 +60,7 @@ class SiteSettingController extends Controller
 
         foreach ($this->fields() as $key => [, $type, $group]) {
             $rules[self::inputName($key)] = match ($type) {
-                'image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,gif,svg,ico', 'max:4096'],
+                'image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,gif,ico', 'max:4096'],
                 'email' => ['nullable', 'email', 'max:255'],
                 'url' => ['nullable', 'url', 'max:500'],
                 'phone' => ['nullable', 'regex:/^[0-9]{6,20}$/'],

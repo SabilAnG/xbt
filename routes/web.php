@@ -6,6 +6,7 @@ use App\Http\Controllers\TrackingController;
 use App\Http\Middleware\EnsureRoleCanAccess;
 use App\Models\Product;
 use App\Models\Warehouse;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,7 +54,7 @@ Route::get('/products/{product:slug}', function (Product $product) {
 |--------------------------------------------------------------------------
 */
 
-Route::post('/tracking/track', [TrackingController::class, 'track'])->name('tracking.track');
+Route::post('/tracking/track', [TrackingController::class, 'track'])->middleware('throttle:20,1')->name('tracking.track');
 
 Route::get('/redirect/away', [RedirectController::class, 'away'])->name('redirect.away');
 Route::get('/redirect/product-direct-checkout', [RedirectController::class, 'productDirectCheckout'])
@@ -69,10 +70,19 @@ Route::prefix('admin')->group(function () {
     Route::middleware('guest')->group(function () {
         Route::get('login', [Admin\AuthController::class, 'showLogin'])->name('login');
         Route::post('login', [Admin\AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
+        Route::get('login/verifikasi', [Admin\AuthController::class, 'showTwoFactor'])->name('login.two-factor');
+        Route::post('login/verifikasi', [Admin\AuthController::class, 'verifyTwoFactor'])->middleware('throttle:10,1')->name('login.two-factor.verify');
     });
 
-    Route::middleware(['auth', EnsureRoleCanAccess::class])->name('admin.')->group(function () {
+    Route::middleware(['auth', AuthenticateSession::class, EnsureRoleCanAccess::class])->name('admin.')->group(function () {
         Route::post('logout', [Admin\AuthController::class, 'logout'])->name('logout');
+        Route::get('akun/keamanan', [Admin\AccountSecurityController::class, 'show'])->name('account.security');
+        Route::post('akun/keamanan/dua-langkah', [Admin\AccountSecurityController::class, 'start'])->name('account.two-factor.start');
+        Route::post('akun/keamanan/dua-langkah/konfirmasi', [Admin\AccountSecurityController::class, 'confirm'])->middleware('throttle:10,1')->name('account.two-factor.confirm');
+        Route::post('akun/keamanan/dua-langkah/batal', [Admin\AccountSecurityController::class, 'cancel'])->name('account.two-factor.cancel');
+        Route::delete('akun/keamanan/dua-langkah', [Admin\AccountSecurityController::class, 'disable'])->middleware('throttle:10,1')->name('account.two-factor.disable');
+        Route::post('akun/keamanan/kode-cadangan', [Admin\AccountSecurityController::class, 'regenerateCodes'])->middleware('throttle:10,1')->name('account.recovery-codes');
+        Route::put('akun/keamanan/password', [Admin\AccountSecurityController::class, 'updatePassword'])->middleware('throttle:10,1')->name('account.password');
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('stok-opname', [Admin\StockOpnameController::class, 'index'])->name('stock-opname.index');
         Route::post('stok-opname/produk', [Admin\StockOpnameController::class, 'storeItems'])->name('stock-opname.items');
@@ -81,6 +91,7 @@ Route::prefix('admin')->group(function () {
         Route::get('pengguna/aktivitas', [Admin\UserController::class, 'activity'])->name('users.activity');
         Route::post('pengguna/peran', [Admin\UserController::class, 'storeRole'])->name('users.roles.store');
         Route::put('pengguna/peran/{role}', [Admin\UserController::class, 'updateRole'])->name('users.roles.update');
+        Route::post('pengguna/{user}/reset-dua-langkah', [Admin\UserController::class, 'resetTwoFactor'])->name('users.two-factor.reset');
         Route::delete('pengguna/peran/{role}', [Admin\UserController::class, 'destroyRole'])->name('users.roles.destroy');
         Route::resource('pengguna', Admin\UserController::class)->only(['index', 'store', 'update', 'destroy'])->names('users')->parameters(['pengguna' => 'user']);
 

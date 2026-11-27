@@ -13,12 +13,12 @@
             <div class="col-lg-12 text-center">
                 <div class="spacer-double sm-hide"></div>
                 <h1 class="mb-3 wow fadeInUp" data-wow-delay=".2s">
-                    {!! content('terms-and-conditions.text.1', 'Terms &amp; Conditions') !!}
+                    {!! safe_html(content('terms-and-conditions.text.1', 'Terms &amp; Conditions')) !!}
                 </h1>
                 <div class="border-bottom mb-3"></div>
                 <ul class="crumb wow fadeInUp">
                     <li><a href="/">Home</a></li>
-                    <li class="active">{!! content('terms-and-conditions.text.2', 'Terms &amp; Conditions') !!}</li>
+                    <li class="active">{!! safe_html(content('terms-and-conditions.text.2', 'Terms &amp; Conditions')) !!}</li>
                 </ul>
             </div>
         </div>
@@ -35,7 +35,7 @@
                     <!-- Terms & Conditions -->
                     <div class="terms-card bg-dark text-white p-5 rounded-4 shadow-lg mb-5">
                         <h2 class="mb-4 text-orange fw-bold border-bottom border-3 border-orange d-inline-block pb-2">
-                            {!! content('terms-and-conditions.text.3', 'Terms & Conditions') !!}
+                            {!! safe_html(content('terms-and-conditions.text.3', 'Terms & Conditions')) !!}
                         </h2>
                         <p class="mb-4">
                             Welcome to <span class="fw-bold text-orange">{{ content('terms-and-conditions.text.4', 'Hypersonic.id') }}</span>. 
@@ -55,7 +55,7 @@
                             in color, specifications, or stock availability due to production updates or system limitations.') }}
                         </p>
 
-                        <h5 class="mt-4 text-orange">{!! content('terms-and-conditions.text.9', '3. Orders & Payments') !!}</h5>
+                        <h5 class="mt-4 text-orange">{!! safe_html(content('terms-and-conditions.text.9', '3. Orders & Payments')) !!}</h5>
                         <p>
                             {{ content('terms-and-conditions.text.10', 'All orders are considered valid once payment is verified. 
                             We reserve the right to cancel transactions in cases of pricing errors or suspected fraud.') }}
@@ -76,8 +76,8 @@
 
                         <h5 class="mt-4 text-orange">{{ content('terms-and-conditions.text.15', '6. Amendments') }}</h5>
                         <p>
-                            {!! content('terms-and-conditions.text.16', 'Hypersonic.id reserves the right to update or revise these Terms & Conditions at any time. 
-                            Any changes will be published on our official website.') !!}
+                            {!! safe_html(content('terms-and-conditions.text.16', 'Hypersonic.id reserves the right to update or revise these Terms & Conditions at any time. 
+                            Any changes will be published on our official website.')) !!}
                         </p>
 
                         <p class="mt-5 fst-italic text-muted">

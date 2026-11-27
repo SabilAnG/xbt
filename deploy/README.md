@@ -127,9 +127,8 @@ disalin lewat shell lain.
 SRV='ssh -i ~/.ssh/knalpot_vps root@147.93.81.184'
 DC='docker compose -f compose.prod.yaml'
 
-# 1. backup dulu, selalu
-$SRV "cd /opt/knalpot && mkdir -p backup && set -a && . ./.env && set +a && $DC exec -T db mysqldump -u root -p\"\$DB_ROOT_PASSWORD\" --single-transaction --routines \"\$DB_DATABASE\" > backup/pra-deploy-\$(date +%Y%m%d-%H%M).sql"
-$SRV 'cd /opt/knalpot && grep -c "CREATE TABLE" backup/*.sql | tail -1'
+# 1. backup dulu, selalu (terenkripsi; skrip menolak jalan bila BACKUP_PASSWORD kosong)
+$SRV 'cd /opt/knalpot && sh deploy/backup-db.sh pra-deploy'
 
 # 2. kirim source lewat tar
 tar -czf - --exclude=.git --exclude=node_modules --exclude=vendor --exclude=.env --exclude='storage/logs/*' --exclude=backup --exclude='public/uploads' --exclude='storage/framework/cache/*' --exclude='storage/framework/views/*' . | $SRV 'cd /opt/knalpot && tar -xzf -'
@@ -173,8 +172,29 @@ docker compose -f compose.prod.yaml exec app php artisan db:seed --class=Produks
 Upload pengguna aman: `public/uploads` dan `storage` ada di named volume, tidak
 ikut tertimpa image baru.
 
+## Backup database
+
+Backup selalu terenkripsi (AES-256) dengan `BACKUP_PASSWORD` dari `.env`, jadi
+salinan yang bocor tidak bisa dibaca. Simpan password itu juga di pengelola
+password — tanpa itu backup tidak bisa dipulihkan.
+
+```bash
+sh deploy/backup-db.sh manual                     # backup sekarang
+sh deploy/restore-db.sh backup/<file>.sql.gz.enc  # pulihkan (backup otomatis dulu)
+```
+
+Jadwal harian, simpan 14 hari (`crontab -e` di VPS):
+
+```
+30 2 * * * cd /opt/knalpot && sh deploy/backup-db.sh harian >> backup/backup.log 2>&1
+```
+
 ## Catatan
 
+- **Jangan pakai akun bawaan seeder.** `admin@hypersonic.id` / `password` hanya
+  untuk lokal; seeder menolak membuatnya di produksi. Buat admin dengan
+  `php artisan admin:user`, lalu aktifkan *Verifikasi 2 langkah* di menu akun
+  (pojok kanan atas → Keamanan akun).
 - **Jangan pakai `.env` dev di server.** `APP_DEBUG=true` membocorkan isi
   konfigurasi dan stack trace ke publik.
 - Wrapper `art` hanya untuk dev. Di image produksi seluruh source sudah dimiliki

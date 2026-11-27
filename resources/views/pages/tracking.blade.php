@@ -489,7 +489,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <div class="tracking-card">
-                        <label for="trackingNumber" class="m-track-label">{{ content('mobile.tracking.label', 'Nomor pesanan') }}</label>
+                        <label for="trackingNumber" class="m-track-label">{{ content('mobile.tracking.label', 'Kode tracking') }}</label>
 
                         <!-- FORM -->
                         <form id="trackingForm" class="tracking-form" autocomplete="off" novalidate>
@@ -572,6 +572,9 @@
             let currentShipments = [];
             let activeTabIndex = 0;
 
+            // Semua teks dari server / input pengunjung di-escape sebelum masuk innerHTML.
+            const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
             function showLoading() {
                 loading.classList.remove('d-none');
                 resultBox.classList.add('d-none');
@@ -591,8 +594,8 @@
                     tab.className = `shipment-tab ${index === activeTabIndex ? 'active' : ''}`;
                     tab.innerHTML = `
                         <i class="fas fa-shipping-fast"></i>
-                        ${shipment.provider || 'Unknown'}
-                        <span class="shipment-tab-badge">${shipment.tracking_number}</span>
+                        ${esc(shipment.provider || 'Unknown')}
+                        <span class="shipment-tab-badge">${esc(shipment.tracking_number)}</span>
                     `;
                     tab.addEventListener('click', () => switchShipmentTab(index));
                     shipmentTabs.appendChild(tab);
@@ -634,34 +637,34 @@
                     <div class="shipment-info">
                         <div class="info-item">
                             <span class="info-label">Tracking Number</span>
-                            <span class="info-value">${shipment.tracking_number}</span>
+                            <span class="info-value">${esc(shipment.tracking_number)}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Carrier</span>
-                            <span class="provider-badge">${shipment.provider}</span>
+                            <span class="provider-badge">${esc(shipment.provider)}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Current Status</span>
                             <span class="info-value" style="color: var(--primary-color); text-transform: capitalize;">
-                                ${(shipment.status || 'Unknown').toLowerCase().replace(/_/g, ' ')}
+                                ${esc((shipment.status || 'Unknown').toLowerCase().replace(/_/g, ' '))}
                             </span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Status Description</span>
-                            <span class="info-value">${shipment.status_description || 'No description available'}</span>
+                            <span class="info-value">${esc(shipment.status_description || 'No description available')}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Status Updated</span>
-                            <span class="info-value">${statusUpdated}</span>
+                            <span class="info-value">${esc(statusUpdated)}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Last Checked</span>
-                            <span class="info-value">${lastChecked}</span>
+                            <span class="info-value">${esc(lastChecked)}</span>
                         </div>
                     </div>
 
                     <div class="progress-line" aria-hidden="true">
-                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                        <div class="progress-fill" style="width: ${Number(progressPercent) || 0}%"></div>
                     </div>
 
                     ${events.length > 0 ? `
@@ -673,14 +676,14 @@
                                 <li class="timeline-item ${index === 0 ? 'active' : ''}">
                                     <div class="timeline-bullet"></div>
                                     <div class="timeline-content">
-                                        <p>${event.status || event.description || 'Status Update'}</p>
+                                        <p>${esc(event.status || event.description || 'Status Update')}</p>
                                         <small>
-                                            ${event.timestamp ? new Date(event.timestamp).toLocaleString() : ''}
+                                            ${event.timestamp ? esc(new Date(event.timestamp).toLocaleString()) : ''}
                                             ${event.location && event.location.address ?
-                                                ` • ${event.location.address.addressLocality || ''}` :
+                                                ` • ${esc(event.location.address.addressLocality || '')}` :
                                                 ''}
                                         </small>
-                                        ${event.description ? `<br><small style="color: #9aa0a6">${event.description}</small>` : ''}
+                                        ${event.description ? `<br><small style="color: #9aa0a6">${esc(event.description)}</small>` : ''}
                                     </div>
                                 </li>
                             `).reverse().join('')}
@@ -706,7 +709,7 @@
                 // Show order info
                 orderInfo.classList.remove('d-none');
                 document.getElementById('resultTitle').innerHTML =
-                    `<i class="fas fa-boxes"></i> Order: ${data.order_ref_number || orderNumber}`;
+                    `<i class="fas fa-boxes"></i> Order: ${esc(data.order_ref_number || orderNumber)}`;
                 document.getElementById('resultSub').textContent =
                     `${currentShipments.length} shipment${currentShipments.length > 1 ? 's' : ''} found`;
 
@@ -720,7 +723,7 @@
             function renderNoShipments(orderNumber) {
                 orderInfo.classList.remove('d-none');
                 document.getElementById('resultTitle').innerHTML =
-                    `<i class="fas fa-box"></i> Order: ${orderNumber}`;
+                    `<i class="fas fa-box"></i> Order: ${esc(orderNumber)}`;
                 document.getElementById('resultSub').textContent = 'No shipments found';
 
                 shipmentContent.innerHTML = `
@@ -744,7 +747,7 @@
                     <div class="error-state">
                         <i class="fas fa-exclamation-circle"></i>
                         <h5>Unable to Track</h5>
-                        <p>${message}</p>
+                        <p>${esc(message)}</p>
                     </div>
                 `;
 
@@ -830,6 +833,13 @@
                     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
                 }
             });
+
+            // Tautan dari admin/WhatsApp: /tracking?kode=HST... langsung dicari.
+            const sharedCode = new URLSearchParams(location.search).get('kode');
+            if (sharedCode) {
+                input.value = sharedCode;
+                form.requestSubmit();
+            }
         })();
     </script>
 @endpush

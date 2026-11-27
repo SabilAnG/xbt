@@ -98,6 +98,14 @@ class UserController extends Controller
     }
 
     /** Peran baru dengan fitur yang dicentang. */
+    /** HP pengguna hilang: pemilik mematikan 2 langkahnya, pengguna memasang ulang setelah masuk. */
+    public function resetTwoFactor(User $user): RedirectResponse
+    {
+        $user->forceFill(['two_factor_secret' => null, 'two_factor_recovery_codes' => null, 'two_factor_confirmed_at' => null])->save();
+
+        return back()->with('status', 'Verifikasi 2 langkah '.$user->name.' direset. Minta dia memasang ulang di Keamanan akun.');
+    }
+
     public function storeRole(Request $request): RedirectResponse
     {
         $data = $this->validatedRole($request);

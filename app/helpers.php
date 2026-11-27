@@ -2,6 +2,7 @@
 
 use App\Models\ContentBlock;
 use App\Models\Setting;
+use App\Support\SafeHtml;
 
 if (! function_exists('setting')) {
     /**
@@ -23,6 +24,14 @@ if (! function_exists('content')) {
     function content(string $key, ?string $default = null): ?string
     {
         return ContentBlock::get($key, $default);
+    }
+}
+
+if (! function_exists('safe_html')) {
+    /** Teks kaya (HTML) yang aman dicetak dengan {!! !!}: lihat App\Support\SafeHtml. */
+    function safe_html(?string $html): string
+    {
+        return SafeHtml::clean($html);
     }
 }
 

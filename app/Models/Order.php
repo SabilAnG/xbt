@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -24,12 +25,38 @@ class Order extends Model
     protected $fillable = [
         'sale_id',
         'order_number',
+        'tracking_code',
         'customer_name',
         'customer_email',
         'customer_phone',
         'status',
         'notes',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order) {
+            $order->tracking_code ??= self::newTrackingCode();
+        });
+    }
+
+    /**
+     * Kode yang dibagikan ke pembeli untuk cek pengiriman. Acak (bukan nomor
+     * nota berurutan), jadi status pesanan orang lain tidak bisa ditebak.
+     */
+    public static function newTrackingCode(): string
+    {
+        do {
+            $code = 'HST'.Str::upper(Str::random(13));
+        } while (static::where('tracking_code', $code)->exists());
+
+        return $code;
+    }
+
+    public function trackingUrl(): string
+    {
+        return route('tracking', ['kode' => $this->tracking_code]);
+    }
 
     /** Nota penjualan yang dikirim: stok & uangnya dicatat di sana, bukan di pesanan. */
     public function sale(): BelongsTo
@@ -48,7 +75,7 @@ class Order extends Model
     public function toTrackingPayload(): array
     {
         return [
-            'order_ref_number' => $this->order_number,
+            'order_ref_number' => $this->tracking_code,
             'status' => $this->status,
             'shipments' => $this->shipments->map->toTrackingPayload()->all(),
         ];

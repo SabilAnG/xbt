@@ -194,9 +194,16 @@ class WebsiteAdminTest extends TestCase
         $this->post(route('admin.shipments.events.store', $shipment), ['status' => 'Paket dikirim', 'happened_at' => '2026-11-20 10:00', 'location' => 'Bekasi'])
             ->assertRedirect();
 
-        $this->postJson(route('tracking.track'), ['order_number' => 'HS-777'])
+        // Nomor pesanan berurutan tidak bisa dipakai menebak; hanya kode acak.
+        $this->postJson(route('tracking.track'), ['order_number' => 'HS-777'])->assertNotFound();
+        $this->assertMatchesRegularExpression('/^HST[A-Z0-9]{13}$/', $order->tracking_code);
+        $this->get(route('admin.orders.edit', $order))->assertOk()->assertSee($order->tracking_code)->assertSee($order->trackingUrl(), false);
+
+        $this->postJson(route('tracking.track'), ['order_number' => strtolower($order->tracking_code)])
             ->assertOk()
+            ->assertJsonPath('data.order_ref_number', $order->tracking_code)
             ->assertSee('JNE123')
-            ->assertSee('Paket dikirim');
+            ->assertSee('Paket dikirim')
+            ->assertDontSee('HS-777');
     }
 }

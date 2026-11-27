@@ -14,12 +14,26 @@
             <p class="-mt-3 text-[12.5px]"><a href="{{ route('admin.sales.show', $order->sale) }}" class="link">Buka nota {{ $order->sale->invoice_number }}</a> · {{ rupiah($order->sale->total) }} · {{ $order->sale->isPaidOff() ? 'lunas' : 'piutang '.rupiah($order->sale->receivable()) }}</p>
         @endif
         <div class="grid gap-4 sm:grid-cols-3">
-            <x-admin.field name="order_number" label="No. pesanan" :value="$order->order_number" required hint="Yang diketik pelanggan di form tracking." />
+            <x-admin.field name="order_number" label="No. pesanan" :value="$order->order_number" required hint="Untuk internal (mis. nomor nota)." />
             <x-admin.select name="status" label="Status" :options="$statuses" :value="$order->status" :placeholder="false" required />
             <x-admin.field name="customer_name" label="Nama pembeli" :value="$order->customer_name" />
             <x-admin.field name="customer_phone" label="Telepon" :value="$order->customer_phone" />
             <x-admin.field name="customer_email" label="Email" type="email" :value="$order->customer_email" />
         </div>
+        @if ($order->exists)
+            <div class="rounded-[12px] border border-line bg-chip/50 p-4">
+                <p class="text-[12px] font-medium text-muted">Kode tracking untuk pembeli</p>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <code class="font-mono text-[15px] font-semibold tracking-wider text-ink">{{ $order->tracking_code }}</code>
+                    <button type="button" class="btn btn-sm" data-copy="{{ $order->trackingUrl() }}">Salin tautan tracking</button>
+                    @if ($order->customer_phone)
+                        <a class="btn btn-sm" target="_blank" rel="noopener"
+                           href="https://wa.me/{{ preg_replace('/^0/', '62', preg_replace('/\D/', '', $order->customer_phone)) }}?text={{ rawurlencode('Halo '.($order->customer_name ?: 'kak').', pesanan Anda bisa dicek di '.$order->trackingUrl()) }}">Kirim via WhatsApp</a>
+                    @endif
+                </div>
+                <p class="mt-1 text-[11.5px] text-muted">Halaman tracking hanya menerima kode acak ini, bukan nomor pesanan, supaya pesanan orang lain tidak bisa ditebak.</p>
+            </div>
+        @endif
         <x-admin.field name="notes" label="Catatan internal" type="textarea" :value="$order->notes" hint="Tidak pernah tampil di halaman tracking." />
         <div class="flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
             <div>
@@ -103,3 +117,15 @@
         </div>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+    document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', () => {
+        navigator.clipboard?.writeText(button.dataset.copy).then(() => {
+            const label = button.textContent;
+            button.textContent = 'Tersalin';
+            setTimeout(() => button.textContent = label, 1500);
+        });
+    }));
+</script>
+@endpush
