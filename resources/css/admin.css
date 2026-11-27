@@ -2,6 +2,7 @@
 
 @source '../views/admin/**/*.blade.php';
 @source '../views/layouts/admin.blade.php';
+@source '../views/layouts/partials/*.blade.php';
 @source '../views/components/admin/**/*.blade.php';
 @source '../../app/Support/AdminNavigation.php';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -1013,4 +1014,521 @@ html[data-intro='leaving'] .sl-card, html[data-intro='off'] .sl-card { animation
 @media (prefers-reduced-motion: reduce) {
     .intro { display: none !important; }
     .sl-hero { animation: none; }
+}
+
+/* =====================================================================
+ * Tampilan HP (di bawah lg): panel admin terasa seperti aplikasi.
+ * App bar ringkas, tab bawah, lembar (bottom sheet), FAB, tabel menjadi
+ * kartu, target sentuh >= 44px, teks lebih besar, input 16px (iOS tidak zoom).
+ * Sengaja tanpa @layer agar menang dari utilitas lebar/ukuran di tabel.
+ * ===================================================================== */
+.m-appbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: calc(60px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--color-white) 82%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+    backdrop-filter: saturate(1.6) blur(18px);
+    -webkit-backdrop-filter: saturate(1.6) blur(18px);
+}
+.m-appbar-logo img { width: 40px; height: 40px; object-fit: contain; }
+.m-appbar-kicker { font-size: 12px; line-height: 1.2; font-weight: 500; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-appbar-title { font-size: 18px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-icon-btn {
+    display: grid;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 14px;
+    color: var(--color-ink);
+    background: var(--color-white);
+    box-shadow: var(--shadow-soft);
+    -webkit-tap-highlight-color: transparent;
+}
+.m-icon-btn svg { width: 22px; height: 22px; }
+.m-icon-btn:active, .m-tab:active, .m-list-item:active, .m-fab:active { transform: scale(0.96); }
+.m-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 999px;
+    border: 2px solid var(--color-white);
+    background: #ef3b3b;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 15px;
+    text-align: center;
+}
+.m-avatar {
+    position: relative;
+    display: grid;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffb36b, #d9573a);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow-soft);
+}
+.m-avatar-dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 999px; border: 2px solid var(--color-white); background: #f59e0b; }
+
+/* ------------------------------------------------------------ tab bawah */
+.m-tabbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    /* Solid (tidak tembus pandang): isi halaman tidak terlihat di balik tab. */
+    background: var(--color-white);
+    border-top: 1px solid var(--color-line);
+    box-shadow: 0 -8px 24px -16px rgb(50 56 96 / 0.35);
+}
+html[data-theme="dark"] .m-tabbar { background: #1c1f33; }
+.m-tab {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 2px 4px;
+    border-radius: 14px;
+    color: var(--color-muted);
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s, transform 0.1s;
+}
+.m-tab-icon {
+    position: relative;
+    display: grid;
+    width: 52px;
+    height: 30px;
+    place-items: center;
+    border-radius: 999px;
+    transition: background 0.2s;
+}
+.m-tab-icon > svg { width: 23px; height: 23px; filter: grayscale(1) opacity(0.55); transition: filter 0.2s; }
+.m-tab-icon-menu > svg { filter: none; color: var(--color-ink-soft); }
+.m-tab-label { max-width: 100%; overflow: hidden; font-size: 11.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.m-tab.is-active { color: var(--color-ink); }
+.m-tab.is-active .m-tab-icon { background: var(--color-accent-soft); }
+.m-tab.is-active .m-tab-icon > svg { filter: none; }
+.m-tab.is-active .m-tab-label { font-weight: 600; }
+.m-tab-dot { position: absolute; top: 1px; right: 10px; width: 9px; height: 9px; border-radius: 999px; border: 2px solid var(--color-white); background: #ef3b3b; }
+.m-tab-dot.static { position: static; display: inline-block; margin-left: 4px; }
+
+/* -------------------------------------------------------------- lembar */
+html.m-locked { overflow: hidden; }
+.m-sheet { position: fixed; inset: 0; z-index: 95; }
+.m-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(20 22 40 / 0.45);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.m-sheet-panel {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    max-height: 82dvh;
+    flex-direction: column;
+    border-radius: 26px 26px 0 0;
+    background: var(--color-white);
+    box-shadow: 0 -20px 50px -20px rgb(20 22 40 / 0.5);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.m-sheet-full { height: calc(100dvh - 28px - env(safe-area-inset-top)); max-height: none; }
+.m-sheet.is-open .m-sheet-backdrop { opacity: 1; }
+.m-sheet.is-open .m-sheet-panel { transform: translateY(0); }
+.m-sheet-handle { flex: none; padding: 10px 0 4px; touch-action: none; }
+.m-sheet-handle::before { content: ""; display: block; width: 44px; height: 5px; margin: 0 auto; border-radius: 999px; background: var(--color-line); }
+.m-sheet-head { display: flex; flex: none; align-items: center; justify-content: space-between; padding: 4px 18px 10px; }
+.m-sheet-head h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.m-sheet-head .m-icon-btn { width: 38px; height: 38px; box-shadow: none; background: var(--color-hover); }
+.m-sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px calc(20px + env(safe-area-inset-bottom)); }
+
+.m-account { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; background: var(--color-hover); }
+.m-account-avatar { display: grid; width: 48px; height: 48px; flex: none; place-items: center; border-radius: 16px; background: linear-gradient(135deg, #ffb36b, #d9573a); color: #fff; font-size: 16px; font-weight: 600; }
+.m-alert { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: 16px; background: var(--color-amber-50); color: var(--color-amber-700); font-size: 14px; font-weight: 600; }
+.m-alert svg { width: 20px; height: 20px; flex: none; }
+.m-search { position: relative; display: block; margin: 14px 0 4px; }
+.m-search svg { position: absolute; top: 50%; left: 14px; width: 20px; height: 20px; transform: translateY(-50%); color: var(--color-muted); pointer-events: none; }
+.m-search input { width: 100%; height: 48px; padding: 0 14px 0 44px; border-radius: 14px; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink); font-size: 16px; outline: none; }
+.m-search input:focus { border-color: var(--color-brand-400); box-shadow: 0 0 0 4px rgb(247 132 31 / 0.12); }
+.m-group { margin-top: 18px; }
+.m-group-title { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); }
+.m-group-glyph svg { width: 20px; height: 20px; }
+.m-list { overflow: hidden; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-line); }
+.m-list > * + * { border-top: 1px solid var(--color-line); }
+.m-list-item { display: flex; width: 100%; min-height: 54px; align-items: center; gap: 12px; padding: 8px 14px; font-size: 15.5px; font-weight: 500; color: var(--color-ink); -webkit-tap-highlight-color: transparent; }
+.m-list-item.is-active { background: var(--color-brand-50); color: var(--color-brand-700); font-weight: 600; }
+.m-list-icon { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 11px; background: var(--color-white); color: var(--color-ink-soft); box-shadow: 0 2px 6px -3px rgb(60 66 110 / 0.3); }
+.m-list-icon svg { width: 19px; height: 19px; }
+.m-list-item.is-active .m-list-icon { color: var(--color-brand-600); }
+.m-chevron { width: 18px; height: 18px; flex: none; color: var(--color-muted); }
+.m-switch { position: relative; width: 46px; height: 28px; flex: none; border-radius: 999px; background: var(--color-chip); transition: background 0.2s; }
+.m-switch span { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 999px; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.25); transition: transform 0.2s; }
+[aria-checked="true"] > .m-switch { background: #f2621f; }
+[aria-checked="true"] > .m-switch span { transform: translateX(18px); }
+.m-empty { padding: 30px 0; text-align: center; font-size: 15px; color: var(--color-muted); }
+.m-notif { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--color-line); }
+.m-notif:last-child { border-bottom: 0; }
+
+/* ----------------------------------------------- tombol aksi melayang */
+.m-fab {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    z-index: 44;
+    display: inline-flex;
+    height: 56px;
+    max-width: calc(100vw - 32px);
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px 0 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f9922a, #f2621f);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 14px 28px -10px rgb(242 98 31 / 0.85);
+    -webkit-tap-highlight-color: transparent;
+    transition: padding 0.2s, gap 0.2s, transform 0.1s;
+}
+.m-fab svg { width: 24px; height: 24px; flex: none; }
+.m-fab span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 220px; transition: max-width 0.2s; }
+.m-fab.is-compact { gap: 0; padding: 0 16px; }
+.m-fab.is-compact span { max-width: 0; }
+
+@media (max-width: 1023.98px) {
+    html { scroll-padding-top: 80px; }
+    body { font-size: 15px; background-attachment: scroll; }
+    html[data-theme="dark"] body { background-attachment: scroll; }
+
+    /* Teks kecil dinaikkan agar terbaca di layar HP. */
+    .text-\[10px\], .text-\[10\.5px\], .text-\[11px\], .text-\[11\.5px\] { font-size: 12px; }
+    .text-xs, .text-\[12px\], .text-\[12\.5px\] { font-size: 13px; }
+    .text-\[13px\], .text-sm { font-size: 14px; }
+    .text-\[13\.5px\] { font-size: 14.5px; }
+
+    /* Permukaan & tombol: sudut lebih bulat, target sentuh >= 44px. */
+    .card { border-radius: 20px; }
+    .card-header { padding: 16px 16px 10px; }
+    .card-title { font-size: 16.5px; }
+    .btn { height: 44px; padding-inline: 16px; border-radius: 13px; font-size: 14.5px; }
+    .btn-sm { height: 38px; padding-inline: 13px; border-radius: 11px; font-size: 13.5px; }
+    .pill { height: 44px; font-size: 14px; }
+    .tile { width: 42px; height: 42px; }
+    .label { margin-bottom: 7px; font-size: 14px; }
+    .input { height: 48px; border-radius: 13px; font-size: 16px; }
+    textarea.input, input[type="file"].input { height: auto; }
+    input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
+    .hint, .error { font-size: 13px; }
+    .link { font-weight: 600; }
+    .m-fab-source { display: none !important; }
+
+    /* Aksi halaman: satu baris yang bisa digeser, bukan menumpuk. */
+    .page-actions { flex-wrap: nowrap; overflow-x: auto; margin-inline: -16px; padding: 2px 16px 6px; scrollbar-width: none; }
+    .page-actions::-webkit-scrollbar { display: none; }
+    .page-actions:not(:has(> :not(.m-fab-source))) { display: none; }
+
+    /* Statistik dua kolom yang ringkas. */
+    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+    .stat-grid > .stat:last-child:nth-child(odd) { grid-column: span 2; }
+    .stat-grid > .stat { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+    .stat-grid > .stat > span:first-child { width: 44px; height: 44px; }
+    .stat-grid > .stat > span:first-child > span { width: 28px; height: 28px; }
+
+    /* Toast di atas, tepat di bawah app bar. */
+    [aria-live="polite"].fixed { top: calc(72px + env(safe-area-inset-top)) !important; }
+
+    /* --------------------------------------------- tabel menjadi kartu */
+    .card:has(> .overflow-x-auto > .table.m-cards),
+    .card:has(> .table.m-cards) {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    .card:has(> .overflow-x-auto > .table.m-cards) > .card-header,
+    .card:has(> .table.m-cards) > .card-header { padding-inline: 4px; }
+    .overflow-x-auto:has(> .table.m-cards) { overflow: visible; }
+    .table.m-cards, .table.m-cards > tbody, .table.m-cards > tfoot { display: block; font-size: 14.5px; }
+    .table.m-cards > thead { display: none; }
+    .table.m-cards > tbody > tr, .table.m-cards > tfoot > tr {
+        position: relative;
+        display: block;
+        margin-bottom: 12px;
+        padding: 12px 16px;
+        border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+        border-radius: 18px;
+        background: var(--color-white);
+        box-shadow: 0 10px 24px -18px rgb(60 66 110 / 0.45);
+    }
+    .table.m-cards > tfoot > tr { background: var(--color-brand-50); border-color: var(--color-brand-100); }
+    .table.m-cards > tbody > tr > td, .table.m-cards > tfoot > tr > td {
+        display: flex;
+        min-width: 0 !important;
+        max-width: none !important;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 7px 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        text-align: right !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+    .table.m-cards > tbody > tr > td::before, .table.m-cards > tfoot > tr > td::before {
+        content: attr(data-label);
+        flex: none;
+        max-width: 46%;
+        padding-top: 1px;
+        color: var(--color-muted);
+        font-size: 13px;
+        font-weight: 500;
+        text-align: left;
+        overflow-wrap: normal;
+    }
+    /* Sel pertama = judul kartu. */
+    .table.m-cards > tbody > tr > td:first-child { padding-top: 2px !important; color: var(--color-ink); font-size: 15.5px; font-weight: 600; }
+    /* Sel tanpa judul kolom (biasanya tombol aksi) -> baris tombol di bawah kartu. */
+    .table.m-cards > tbody > tr > td[data-label=""] {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 6px;
+        padding-top: 12px !important;
+        border-top: 1px dashed var(--color-line) !important;
+    }
+    .table.m-cards > tbody > tr > td[data-label=""]::before { display: none; }
+    .table.m-cards > tbody > tr > td[data-label=""]:first-child { margin-top: 0; padding-top: 2px !important; border-top: 0 !important; justify-content: flex-start; }
+    .table.m-cards > tbody > tr > td:empty { display: none; }
+    /* Sel berisi isian: judul di atas, isian penuh. */
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button) { flex-direction: column; align-items: stretch; gap: 6px; text-align: left !important; }
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button)::before { max-width: none; }
+    .table.m-cards > tbody > tr > td[data-span], .table.m-cards > tfoot > tr > td[data-span] { display: block; text-align: center !important; }
+    .table.m-cards > tbody > tr > td[data-span]::before, .table.m-cards > tfoot > tr > td[data-span]::before { display: none; }
+    .table.m-cards > tbody > tr:has(> td[data-span]:only-child) { padding-block: 26px; color: var(--color-muted); }
+    .table.m-cards > tbody > tr:hover > td { background: transparent !important; }
+
+    /* Tabel ringkas yang tetap tabel: tepi lebih rapat. */
+    .table:not(.m-cards) thead th:first-child, .table:not(.m-cards) tbody td:first-child, .table:not(.m-cards) tfoot td:first-child { padding-left: 16px; }
+    .table:not(.m-cards) thead th:last-child, .table:not(.m-cards) tbody td:last-child, .table:not(.m-cards) tfoot td:last-child { padding-right: 16px; }
+
+    /* -------------------------------------------- pilihan & dialog = sheet */
+    .cselect-panel {
+        top: auto !important;
+        right: 10px !important;
+        bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+        left: 10px !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 8px;
+        border-radius: 22px;
+        box-shadow: 0 0 0 100vmax rgb(20 22 40 / 0.45), 0 -10px 40px -10px rgb(0 0 0 / 0.4);
+        animation: m-sheet-up 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    .cselect-list { max-height: 55dvh; }
+    .cselect-option { min-height: 48px; padding: 10px 14px; font-size: 15.5px; border-radius: 13px; }
+    .cselect-group { font-size: 12px; }
+    .cselect-search input { height: 46px; font-size: 16px; border-radius: 13px; }
+
+    .confirm-modal { align-items: end; padding: 0; }
+    .confirm-card {
+        width: 100%;
+        border-radius: 28px 28px 0 0;
+        padding: 26px 20px calc(20px + env(safe-area-inset-bottom));
+        transform: translateY(100%);
+    }
+    .confirm-card .btn { flex: 1; height: 50px; font-size: 15.5px; }
+
+    /* Filter terlipat di HP (lihat komponen filters). */
+    .m-filters:not(.is-open) > :not(.m-filters-toggle) { display: none !important; }
+}
+@media (min-width: 1024px) {
+    /* Elemen khusus HP tidak pernah tampil di layar lebar (CSS ini di luar @layer, jadi lg:hidden saja kalah). */
+    .m-filters-toggle, .m-appbar, .m-tabbar, .m-fab, .m-sheet { display: none !important; }
+}
+@keyframes m-sheet-up { from { transform: translateY(100%); } }
+@media (max-width: 1023.98px) {
+    .table.m-cards > tbody > tr > td[data-span]:only-child { font-size: 15px; font-weight: 500; color: var(--color-muted); }
+    /* Isi sel berbentuk form/baris (mis. isian + tombol) tersusun penuh lebar. */
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button) > form,
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button) > div { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button) .input { flex: 1 1 140px; width: auto; min-width: 0; }
+}
+
+/* Kartu tabel versi ringkas: judul di atas, isi grid 2 kolom (label di atas nilai). */
+@media (max-width: 1023.98px) {
+    .table.m-cards > tbody > tr:not(:has(> td[data-span]:only-child)) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 14px;
+        row-gap: 10px;
+        padding: 14px 16px;
+    }
+    .table.m-cards > tbody > tr > td {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 2px;
+        padding: 0 !important;
+        text-align: left !important;
+        font-size: 14.5px;
+    }
+    .table.m-cards > tbody > tr > td::before {
+        max-width: none;
+        padding: 0;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        letter-spacing: 0.01em;
+    }
+    /* Judul kartu: sel pertama penuh lebar, besar, tanpa label. */
+    .table.m-cards > tbody > tr > td:first-child {
+        grid-column: 1 / -1;
+        padding: 0 0 10px !important;
+        border-bottom: 1px solid var(--color-line) !important;
+        font-size: 16px;
+        line-height: 1.35;
+    }
+    .table.m-cards > tbody > tr > td:first-child::before { font-size: 12px; font-weight: 500; }
+    /* Sel panjang (deskripsi produk/catatan) & isian: penuh lebar. */
+    .table.m-cards > tbody > tr > td[class*='min-w-'],
+    .table.m-cards > tbody > tr > td:has(.input, select, textarea, .cselect-button) { grid-column: 1 / -1; }
+    .table.m-cards > tbody > tr > td.num { font-variant-numeric: tabular-nums; }
+    /* Baris tombol aksi di bawah, rata kanan. */
+    .table.m-cards > tbody > tr > td[data-label=''] {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        margin-top: 2px;
+        padding-top: 12px !important;
+    }
+    .table.m-cards > tbody > tr > td[data-label='']:first-child { flex-direction: column; align-items: flex-start; padding: 0 0 10px !important; }
+    .table.m-cards > tbody > tr > td[data-label=''] .btn { flex: 1 1 auto; max-width: 100%; }
+    .table.m-cards > tbody > tr > td[data-label=''] form { display: contents; }
+}
+
+/* Deret kartu yang bisa digeser ke samping di HP (mis. pilihan gudang). */
+@media (max-width: 639.98px) {
+    .m-scroller {
+        display: flex !important;
+        gap: 12px !important;
+        margin-inline: -16px;
+        padding: 4px 16px 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: 16px;
+        scrollbar-width: none;
+    }
+    .m-scroller::-webkit-scrollbar { display: none; }
+    .m-scroller > * { flex: 0 0 78%; scroll-snap-align: start; }
+}
+
+/* ------------------------------------------------------------------
+ * Pemilih tanggal (layouts/partials/custom-date): tombol "27 Nov 2026"
+ * + kalender bergaya panel dropdown. Di HP ikut aturan .cselect-panel
+ * menjadi bottom sheet.
+ * ------------------------------------------------------------------ */
+.cdate-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.cdate-button {
+    position: relative;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 9px;
+    padding-right: 2.25rem;
+    text-align: left;
+}
+.cdate-button .cdate-icon { width: 18px; height: 18px; flex: none; color: var(--color-brand-600); }
+.cdate-label { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cdate-label.is-placeholder { color: var(--color-muted); }
+.cdate-button[aria-expanded="true"] { border-color: var(--color-brand-400); box-shadow: 0 0 0 4px rgb(247 132 31 / 0.12); }
+.cdate-button[aria-expanded="true"] .cselect-caret { transform: translateY(-50%) rotate(180deg); }
+.cdate-button.is-invalid { border-color: #fda4af; box-shadow: 0 0 0 4px rgb(244 63 94 / 0.12); }
+.cdate-button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.cdate-panel { width: 312px; padding: 12px; }
+.cdate-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 10px; }
+.cdate-title { font-size: 15px; font-weight: 600; color: var(--color-ink); }
+.cdate-nav { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; color: var(--color-ink); background: var(--color-hover); transition: background 0.15s; }
+.cdate-nav:hover { background: var(--color-chip); }
+.cdate-nav svg { width: 18px; height: 18px; }
+.cdate-week, .cdate-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.cdate-week span { padding: 4px 0 6px; font-size: 11.5px; font-weight: 600; text-align: center; color: var(--color-muted); }
+.cdate-week span:last-child { color: #e5465c; }
+.cdate-months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cdate-cell {
+    position: relative;
+    display: grid;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--color-ink);
+    font-variant-numeric: tabular-nums;
+    transition: background 0.12s, color 0.12s;
+}
+.cdate-months .cdate-cell { aspect-ratio: auto; height: 44px; }
+.cdate-cell:hover:not([disabled]) { background: var(--color-hover); }
+.cdate-cell:focus-visible { outline: 2px solid var(--color-brand-400); outline-offset: 1px; }
+.cdate-cell.is-muted { color: var(--color-muted); opacity: 0.55; }
+.cdate-cell.is-sunday:not(.is-selected) { color: #e5465c; }
+.cdate-cell.is-today:not(.is-selected) { box-shadow: inset 0 0 0 1.5px var(--color-brand-400); color: var(--color-brand-700); font-weight: 600; }
+.cdate-cell.is-selected { background: linear-gradient(180deg, #f9922a, #f2621f); color: #fff; font-weight: 600; box-shadow: 0 8px 16px -8px rgb(242 98 31 / 0.9); }
+.cdate-cell[disabled] { cursor: not-allowed; opacity: 0.25; }
+.cdate-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-line); }
+.cdate-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.cdate-chip { height: 32px; padding: 0 12px; border-radius: 10px; background: var(--color-brand-50); color: var(--color-brand-700); font-size: 12.5px; font-weight: 600; transition: filter 0.15s; }
+.cdate-chip:hover:not([disabled]) { filter: brightness(0.97); }
+.cdate-chip[disabled] { opacity: 0.4; cursor: not-allowed; }
+.cdate-chip.is-clear { background: var(--color-hover); color: var(--color-ink-soft); }
+.cdate-time { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--color-ink-soft); }
+.cdate-select { height: 34px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1023.98px) {
+    .cdate-panel { width: auto; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); }
+    .cdate-panel::before { content: ""; display: block; width: 44px; height: 5px; margin: 2px auto 10px; border-radius: 999px; background: var(--color-line); }
+    .cdate-title { font-size: 17px; }
+    .cdate-nav { width: 42px; height: 42px; border-radius: 13px; }
+    .cdate-week span { font-size: 13px; }
+    .cdate-days { gap: 4px; }
+    .cdate-cell { font-size: 16px; border-radius: 14px; }
+    .cdate-months .cdate-cell { height: 54px; font-size: 16px; }
+    .cdate-chip { height: 42px; padding: 0 16px; border-radius: 13px; font-size: 14.5px; }
+    .cdate-time { font-size: 14.5px; }
+    .cdate-select { height: 44px; padding: 0 12px; font-size: 16px; border-radius: 12px; }
+    .cdate-button .cdate-icon { width: 20px; height: 20px; }
 }

@@ -36,10 +36,10 @@
 
 @section('content')
     {{-- Pilih gudang --}}
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+    <section class="m-scroller grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         @foreach ($tiles as $tile)
             @php [$gradient, $color, $icon] = $styles[$tile['warehouse']->type]; $active = $tile['warehouse']->is($warehouse); @endphp
-            <a href="{{ route('admin.stock-opname.index', ['gudang' => $tile['warehouse']->slug()]) }}"
+            <a href="{{ route('admin.stock-opname.index', ['gudang' => $tile['warehouse']->slug()]) }}" @if ($active) aria-current="page" @endif
                @class(['card flex items-center gap-3.5 p-4 transition hover:-translate-y-0.5 hover:shadow-(--shadow-pop)', 'ring-2 ring-accent' => $active])>
                 <span class="grid size-11 shrink-0 place-items-center rounded-[13px] bg-linear-to-br {{ $gradient }} text-white" style="box-shadow: 0 10px 20px -10px {{ $color }}">
                     <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ AdminNavigation::icon($icon) }}"/></svg>
@@ -59,7 +59,7 @@
 
         {{-- Judul + alat bantu --}}
         <div class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1 max-lg:basis-full">
                 <h2 class="card-title">Opname {{ $warehouse->name }}</h2>
                 <p class="text-[12px] text-muted">Isi stok hasil hitung fisik. Kosong / sama dengan sistem = tidak diubah.{{ $pieces->isNotEmpty() ? ' Pipa: hapus centang "Ada" untuk batang/potongan yang tidak ditemukan.' : '' }}
                     @if ($lastCount)<span class="ml-1 text-ink-soft">Opname terakhir {{ $lastCount->adjusted_at->translatedFormat('d M Y') }} oleh <strong>{{ $lastCount->counted_by }}</strong>.</span>@endif

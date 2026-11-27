@@ -22,13 +22,33 @@
         ['Bahan habis / menipis', $lowMaterials.' bahan di bawah stok minimum', route('admin.master-items.index'), 'box', 'from-[#fdbac4] to-[#df3f58]', $lowMaterials, 'admin.master-items.index'],
         ['Piutang penjualan', $unpaidSales.' nota belum lunas', route('admin.sales.index', ['payment' => 'unpaid']), 'cart', 'from-[#c4eaa9] to-[#46ad37]', $unpaidSales, 'admin.sales.index'],
     ])->filter(fn ($row) => $row[5] > 0 && AdminNavigation::allows($user, $row[6]))->values();
+
+    // Tampilan HP: tab bawah = Ringkasan + 3 grup utama yang boleh dibuka + Menu.
+    $groupsByLabel = collect($groups)->keyBy('label');
+    $tabGroups = collect(['Penjualan', 'Gudang', 'Produksi', 'Pembelian', 'Keuangan', 'Katalog', 'Pekerja', 'Website'])
+        ->filter(fn ($label) => $groupsByLabel->has($label))->take(3)
+        ->map(fn ($label) => $groupsByLabel[$label])->values();
+    $currentGroup = $current['group'] ?? ($isDashboard ? 'Ringkasan' : null);
+    $menuActive = ! $isDashboard && ! $tabGroups->pluck('label')->contains($currentGroup);
+    // Tombol kembali: halaman detail/form → daftarnya; halaman daftar → Ringkasan.
+    $listUrl = $current ? route($current['item']['route'], $current['item']['params']) : null;
+    $backUrl = $listUrl && $listUrl !== url()->current() ? $listUrl : route('admin.dashboard');
+    $notifCount = min($notifications->sum(fn ($row) => $row[5]), 99);
 @endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#f7f7fa" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#15172a" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="IHC Racing">
+    <link rel="manifest" href="{{ asset('admin.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <title>{{ $title ?? 'Admin' }} · {{ config('app.name') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -63,7 +83,7 @@
 
 {{-- ---------------------------------------------------------------- Sidebar --}}
 <label for="nav-toggle" class="fixed inset-0 z-40 hidden bg-ink/30 backdrop-blur-[2px] peer-checked:block lg:hidden" aria-hidden="true"></label>
-<aside class="rail fixed inset-y-0 left-0 z-50 flex w-[260px] -translate-x-full flex-col rounded-tr-[22px] bg-white shadow-[6px_0_30px_-20px_rgb(60_66_110/0.5)] transition-[width,transform] duration-200 peer-checked:translate-x-0 lg:w-(--rail) lg:translate-x-0">
+<aside class="rail fixed inset-y-0 left-0 z-50 flex w-[260px] max-lg:hidden -translate-x-full flex-col rounded-tr-[22px] bg-white shadow-[6px_0_30px_-20px_rgb(60_66_110/0.5)] transition-[width,transform] duration-200 peer-checked:translate-x-0 lg:w-(--rail) lg:translate-x-0">
     <div class="flex shrink-0 items-center gap-3 px-[19px] pt-6 pb-4 lg:[html:not([data-nav=open])_&]:justify-center lg:[html:not([data-nav=open])_&]:px-0">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
             <img src="{{ asset('assets/images/logo-mark.png') }}" alt="Hyper Sonic" class="size-[46px] shrink-0 object-contain drop-shadow-[0_6px_10px_rgb(30_80_200/0.25)]">
@@ -113,7 +133,9 @@
 {{-- ------------------------------------------------------------------ Konten --}}
 <div class="flex min-h-screen min-w-0 flex-col lg:pl-(--rail)">
     {{-- Nav atas: kartu kaca melayang, terpisah dari sidebar. --}}
-    <header class="sticky top-0 z-30 w-full max-w-[1560px] px-3 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-5 xl:px-10">
+    @include('layouts.partials.mobile-appbar')
+
+    <header class="sticky top-0 z-30 w-full max-w-[1560px] px-3 pt-3 max-lg:hidden sm:px-6 sm:pt-4 lg:px-8 lg:pt-5 xl:px-10">
         <div class="flex h-[64px] items-center gap-2 rounded-[18px] border-[1.5px] border-white/90 bg-white/80 px-2.5 shadow-[0_16px_40px_-20px_rgb(60_66_110/0.35),0_2px_6px_-3px_rgb(60_66_110/0.08)] backdrop-blur-xl sm:gap-3 sm:px-3.5">
             <label for="nav-toggle" class="topbar-icon lg:hidden" aria-label="Buka menu">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -221,15 +243,15 @@
         </div>
     </header>
 
-    <main class="w-full max-w-[1560px] min-w-0 flex-1 px-4 pt-6 pb-8 sm:px-6 lg:px-8 xl:px-10">
+    <main class="w-full max-w-[1560px] min-w-0 flex-1 px-4 pt-4 pb-[calc(104px+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pt-6 lg:pb-8 xl:px-10">
         {{-- Sapaan (dashboard) atau breadcrumb --}}
         @if ($isDashboard)
-            <div class="mb-4">
+            <div class="mb-4 max-lg:hidden">
                 <p class="text-[24px] leading-tight font-semibold tracking-tight text-ink sm:text-[27px]">Halo {{ $firstName }}!</p>
                 <p class="mt-1.5 max-w-md text-[12.5px] leading-snug font-medium text-ink-soft">Pantau perkembangan omzet, produksi, dan stok knalpot setiap bulannya.</p>
             </div>
         @else
-            <nav class="mb-2 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted" aria-label="Breadcrumb">
+            <nav class="mb-2 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted max-lg:hidden" aria-label="Breadcrumb">
                 <a href="{{ route('admin.dashboard') }}" class="hover:text-ink">Ringkasan</a>
                 @if ($current && $current['group'] !== 'Ringkasan')
                     <span>/</span><span class="truncate">{{ $current['group'] }}</span>
@@ -241,15 +263,15 @@
         @endif
 
         {{-- Judul halaman + aksi --}}
-        <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div class="min-w-0">
-                <h1 class="text-[22px] leading-tight font-semibold tracking-tight text-ink sm:text-[25px]">{{ $isDashboard ? 'Ringkasan' : ($title ?? 'Admin') }}</h1>
+        <div class="mb-5 flex flex-col gap-3 max-lg:mb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="min-w-0 max-lg:empty:hidden">
+                <h1 class="text-[22px] leading-tight font-semibold tracking-tight text-ink max-lg:hidden sm:text-[25px]">{{ $isDashboard ? 'Ringkasan' : ($title ?? 'Admin') }}</h1>
                 @if (isset($subtitle) && ! $isDashboard)
                     <p class="mt-1.5 max-w-3xl text-[12.5px] leading-relaxed text-ink-soft">{{ $subtitle }}</p>
                 @endif
             </div>
             @hasSection('actions')
-                <div class="flex shrink-0 flex-wrap items-center gap-2.5">@yield('actions')</div>
+                <div class="page-actions flex shrink-0 flex-wrap items-center gap-2.5" data-page-actions>@yield('actions')</div>
             @endif
         </div>
 
@@ -260,26 +282,28 @@
         </div>
     </main>
 
-    <footer class="w-full max-w-[1560px] px-4 pb-6 text-xs text-muted sm:px-6 lg:px-8 xl:px-10">
+    <footer class="w-full max-w-[1560px] px-4 pb-6 text-xs text-muted max-lg:hidden sm:px-6 lg:px-8 xl:px-10">
         {{ config('app.name') }} · Admin panel
     </footer>
 </div>
+
+@include('layouts.partials.mobile-nav')
 
 <script>
     (() => {
         const root = document.documentElement;
 
         // Switch tema terang / gelap.
-        const toggle = document.getElementById('theme-toggle');
-        const paint = () => toggle?.setAttribute('aria-checked', root.dataset.theme === 'dark' ? 'true' : 'false');
+        const toggles = document.querySelectorAll('#theme-toggle, [data-theme-toggle]');
+        const paint = () => toggles.forEach(t => t.setAttribute('aria-checked', root.dataset.theme === 'dark' ? 'true' : 'false'));
         paint();
-        toggle?.addEventListener('click', () => {
+        toggles.forEach(toggle => toggle.addEventListener('click', () => {
             root.classList.add('theme-switching');
             root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
             try { localStorage.setItem('admin.theme', root.dataset.theme); } catch (e) {}
             paint();
             setTimeout(() => root.classList.remove('theme-switching'), 400);
-        });
+        }));
 
         // Lebarkan / sempitkan sidebar di desktop.
         document.getElementById('nav-expand')?.addEventListener('click', () => {
@@ -324,6 +348,7 @@
 </script>
 @stack('scripts')
 @include('layouts.partials.custom-select')
+@include('layouts.partials.custom-date')
 @include('layouts.partials.confirm-modal')
 </body>
 </html>
