@@ -1669,3 +1669,16 @@ html.m-locked { overflow: hidden; }
 .ds-ref-view.is-vector { background: #fff; }
 .ds-ref-view.is-vector img { filter: contrast(1.18) saturate(1.2) drop-shadow(1.6px 0 0 #121318) drop-shadow(-1.6px 0 0 #121318) drop-shadow(0 1.6px 0 #121318) drop-shadow(0 -1.6px 0 #121318) drop-shadow(0 28px 18px rgb(0 0 0 / 0.14)); }
 .ds-source { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--color-line); background: var(--color-brand-50); color: var(--color-brand-900); font-size: 12.5px; }
+
+.ds-render { padding: 14px; border-radius: 16px; border: 1px solid var(--color-brand-100); background: linear-gradient(180deg, var(--color-brand-50), transparent); }
+.ds-render-result { display: grid; gap: 10px; margin-top: 12px; }
+.ds-render-result img { width: 100%; border-radius: 14px; box-shadow: var(--shadow-card); }
+.ds-busy-overlay { position: absolute; inset: 0; z-index: 6; display: grid; place-content: center; gap: 10px; text-align: center; background: rgb(15 16 22 / 0.62); color: #fff; font-size: 14px; font-weight: 600; backdrop-filter: blur(2px); }
+.ds-busy-overlay i { width: 34px; height: 34px; margin: 0 auto; border-radius: 999px; border: 3px solid rgb(255 255 255 / 0.3); border-top-color: #f2621f; animation: ds-spin 0.8s linear infinite; }
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+
+.ds-model3d { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--color-line); background: var(--color-accent-soft); font-size: 12.5px; font-weight: 600; color: var(--color-ink); }
+.ds-model3d i { width: 16px; height: 16px; flex: none; border-radius: 999px; border: 2px solid var(--color-line); border-top-color: #f2621f; animation: ds-spin 0.8s linear infinite; }
+.ds-model3d b { height: 6px; flex: 0 0 120px; margin-left: auto; overflow: hidden; border-radius: 999px; background: var(--color-chip); }
+.ds-model3d em { display: block; height: 100%; width: 0; background: #f2621f; transition: width 0.4s; }
+.ds-glb-adjust { display: grid; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-surface); }

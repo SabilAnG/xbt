@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\StoresSiteUploads;
 use App\Http\Controllers\Controller;
 use App\Models\DesignSimulation;
+use App\Services\DesignAi;
+use App\Services\Tripo3d;
 use App\Support\ExhaustSimulator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -71,7 +73,8 @@ class DesignSimulationController extends Controller
 
     public function destroy(DesignSimulation $designSim): RedirectResponse
     {
-        foreach ([...($designSim->references ?? []), ...($designSim->motor_photos ?? []), $designSim->thumbnail] as $path) {
+        $models = array_filter([$designSim->params['models']['exhaust'] ?? null, $designSim->params['models']['motor'] ?? null]);
+        foreach ([...($designSim->references ?? []), ...($designSim->motor_photos ?? []), ...($designSim->renders ?? []), ...$models, $designSim->thumbnail] as $path) {
             $this->deleteSiteUpload($path);
         }
         $designSim->delete();
@@ -81,7 +84,7 @@ class DesignSimulationController extends Controller
 
     public function duplicate(DesignSimulation $designSim): RedirectResponse
     {
-        $copy = $designSim->replicate(['references', 'motor_photos', 'thumbnail']);
+        $copy = $designSim->replicate(['references', 'motor_photos', 'renders', 'thumbnail']);
         $copy->name = Str::limit($designSim->name, 240, '').' (salinan)';
         $copy->user_id = auth()->id();
         $copy->save();
@@ -124,7 +127,8 @@ class DesignSimulationController extends Controller
             'styles' => ExhaustSimulator::STYLES,
             'tips' => ExhaustSimulator::TIPS,
             'finishes' => ExhaustSimulator::FINISHES,
-            'aiReady' => false,
+            'model3dReady' => app(Tripo3d::class)->enabled(),
+            'aiReady' => app(DesignAi::class)->enabled(),
             'motorPhotos' => $design->motorPhotoUrls(),
         ]);
     }

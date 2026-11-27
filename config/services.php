@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    // Simulasi Desain: pasang otomatis di foto, baca referensi, render foto-realistis.
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'vision_model' => env('OPENAI_VISION_MODEL', 'gpt-5.5'),
+        'image_model' => env('OPENAI_IMAGE_MODEL', 'gpt-image-2'),
+        'image_quality' => env('OPENAI_IMAGE_QUALITY', 'medium'),
+    ],
+
+    // Foto → model 3D (GLB) untuk tampilan 360° knalpot & motor.
+    'tripo' => [
+        'key' => env('TRIPO_API_KEY'),
+        'model' => env('TRIPO_MODEL', 'v3.1-20260211'),
+        'texture_quality' => env('TRIPO_TEXTURE_QUALITY', 'standard'),
+    ],
+
 ];

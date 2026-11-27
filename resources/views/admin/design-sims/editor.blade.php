@@ -38,7 +38,10 @@
 <form id="design-form" method="POST" enctype="multipart/form-data"
       action="{{ $design->exists ? route('admin.design-sims.update', $design) : route('admin.design-sims.store') }}"
       class="ds-shell" data-design-sim
-      data-simulate-url="{{ route('admin.design-sims.simulate') }}" data-auto-url="{{ route('admin.design-sims.auto') }}">
+      data-simulate-url="{{ route('admin.design-sims.simulate') }}" data-auto-url="{{ route('admin.design-sims.auto') }}"
+      data-ai="{{ $aiReady ? 1 : 0 }}" data-design-id="{{ $design->id }}"
+      data-model3d="{{ $model3dReady ? 1 : 0 }}" data-model3d-start-url="{{ route('admin.design-sims.model3d.start') }}" data-model3d-poll-url="{{ route('admin.design-sims.model3d.poll', '__TASK__') }}"
+      data-ai-locate-url="{{ route('admin.design-sims.ai.locate') }}" data-ai-reference-url="{{ route('admin.design-sims.ai.reference') }}" data-ai-render-url="{{ route('admin.design-sims.ai.render') }}">
     @csrf
     @if ($design->exists) @method('PUT') @endif
     <input type="hidden" name="params" value="{{ json_encode($p) }}" data-params-input>
@@ -73,6 +76,9 @@
                 <button type="button" class="btn btn-sm" data-export="png" title="Unduh gambar PNG">PNG</button>
                 <button type="button" class="btn btn-sm" data-export="stl" title="Unduh model 3D (STL, satuan mm) untuk CAD / cetak 3D">STL</button>
             </div>
+        </div>
+        <div class="ds-model3d" hidden data-model3d-status>
+            <i></i><span data-model3d-text>Membuat model 3D…</span><b><em data-model3d-bar></em></b>
         </div>
         <div class="ds-source" hidden data-source-chip>
             <span><strong>Desain dari foto referensi</strong> — bentuk &amp; warna asli knalpot di foto, model bawaan disembunyikan.</span>
@@ -239,6 +245,51 @@
                 <button type="button" class="btn btn-sm" data-mockup-reset>Atur ulang posisi</button>
                 <p class="w-full text-[12px] text-muted" data-auto-status>Saat foto dipilih, roda motor dideteksi lalu knalpot dipasang otomatis di samping roda belakang dengan skala sesuai ukuran ban.</p>
             </div>
+            <div class="ds-wide ds-ai">
+                <div>
+                    <p class="text-[13px] font-semibold text-ink">Motor 3D 360° dari foto {!! $model3dReady ? '<span class="ds-chip" data-level="good">aktif</span>' : '' !!}</p>
+                    <p class="text-[12px] text-muted">{{ $model3dReady ? 'Foto motor ini dijadikan model 3D (Tripo3D, ±1–2 menit), lalu knalpot terpasang & bisa diputar 360° di mode Motor 3D. Hasil terbaik: foto samping penuh, latar tidak ramai.' : 'Belum aktif: isi TRIPO_API_KEY di .env server.' }}</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary" data-model3d-motor @disabled(! $model3dReady)>Jadikan motor 3D</button>
+            </div>
+            <div class="ds-wide ds-glb-adjust" hidden data-glb-adjust>
+                <p class="text-[13px] font-semibold text-ink">Penyesuaian model 3D dari foto</p>
+                <div class="grid gap-3 sm:grid-cols-3">
+                    @include('admin.design-sims.slider', ['key' => 'models.offset.x', 'label' => 'Maju / mundur', 'min' => -400, 'max' => 400, 'step' => 5, 'unit' => 'mm', 'value' => $p['models']['offset']['x']])
+                    @include('admin.design-sims.slider', ['key' => 'models.offset.y', 'label' => 'Naik / turun', 'min' => -300, 'max' => 300, 'step' => 5, 'unit' => 'mm', 'value' => $p['models']['offset']['y']])
+                    @include('admin.design-sims.slider', ['key' => 'models.offset.z', 'label' => 'Keluar / masuk', 'min' => -200, 'max' => 200, 'step' => 5, 'unit' => 'mm', 'value' => $p['models']['offset']['z']])
+                </div>
+                <div class="flex flex-wrap items-center gap-4 text-[13px] text-ink">
+                    <label class="flex items-center gap-2"><input type="checkbox" data-param="models.motor_flip" @checked($p['models']['motor_flip'])> Balik arah motor</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" data-param="models.exhaust_flip" @checked($p['models']['exhaust_flip'])> Balik arah knalpot</label>
+                    <button type="button" class="text-[12.5px] text-muted hover:underline" data-glb-clear="motor">Pakai motor generik</button>
+                    <button type="button" class="text-[12.5px] text-muted hover:underline" data-glb-clear="exhaust">Hapus knalpot 3D</button>
+                </div>
+            </div>
+            <div class="ds-wide ds-render">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[14px] font-semibold text-ink">Render foto-realistis (AI)</p>
+                        <p class="text-[12px] text-muted">{{ $aiReady ? 'AI membuat foto baru motor ini dengan knalpot desainmu terpasang: cahaya, bayangan & pantulan menyatu seperti foto asli. ±30 detik, memotong saldo OpenAI.' : 'Belum aktif: isi OPENAI_API_KEY di .env server.' }}</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-ai-render @disabled(! $aiReady)>Render foto AI</button>
+                </div>
+                <div class="ds-render-result" hidden data-render-result>
+                    <img alt="Hasil render AI" data-render-img>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <a class="btn btn-sm" download data-render-download>Unduh hasil render</a>
+                        <span class="text-[12px] text-muted" data-render-note></span>
+                    </div>
+                </div>
+                @if ($design->renders)
+                    <p class="mt-3 text-[12px] font-semibold text-ink-soft">Render tersimpan</p>
+                    <div class="ds-refs mt-2">
+                        @foreach ($design->renders as $render)
+                            <a class="ds-ref" href="{{ asset($render) }}" target="_blank" rel="noopener"><img src="{{ asset($render) }}" alt="Render AI" loading="lazy"></a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
             <div class="ds-wide flex flex-wrap gap-2">
                 <button type="button" class="btn btn-sm btn-primary" data-export="mockup">Unduh gambar di motor</button>
             </div>
@@ -247,6 +298,13 @@
         <div class="ds-panel" data-panel="refs" hidden>
             <p class="ds-wide text-[12.5px] text-ink-soft">Unggah foto knalpot contoh (tampak samping, latar polos lebih akurat), lalu tekan <strong>Terapkan</strong>: bentuk, proporsi silincer dan warnanya dibaca dari foto lalu diterapkan ke desain.</p>
             <p class="ds-wide text-[12px] font-medium text-brand-700" data-apply-status hidden></p>
+            <div class="ds-wide ds-ai">
+                <div>
+                    <p class="text-[13px] font-semibold text-ink">Knalpot 3D 360° dari foto {!! $model3dReady ? '<span class="ds-chip" data-level="good">aktif</span>' : '' !!}</p>
+                    <p class="text-[12px] text-muted">{{ $model3dReady ? 'Saat Terapkan, knalpot di foto otomatis dijadikan model 3D (Tripo3D, ±1–2 menit) yang bisa diputar 360°. Memotong kredit Tripo3D.' : 'Belum aktif: isi TRIPO_API_KEY di .env server.' }}</p>
+                </div>
+                <button type="button" class="btn btn-sm" data-model3d-exhaust @disabled(! $model3dReady)>Jadikan knalpot 3D</button>
+            </div>
             @if ($references)
                 <div class="ds-refs">
                     @foreach ($design->references as $i => $path)
@@ -267,10 +325,9 @@
 
             <div class="ds-ai">
                 <div>
-                    <p class="text-[13px] font-semibold text-ink">Saran ukuran dari foto (AI)</p>
-                    <p class="text-[12px] text-muted">Membaca foto referensi lalu mengisi bentuk & ukuran awal otomatis. Aktif setelah integrasi Claude API dipasang dan API key diisi.</p>
+                    <p class="text-[13px] font-semibold text-ink">Baca foto dengan AI {!! $aiReady ? '<span class="ds-chip" data-level="good">aktif</span>' : '' !!}</p>
+                    <p class="text-[12px] text-muted">{{ $aiReady ? 'Tombol Terapkan memakai AI (OpenAI) untuk membaca bentuk, finishing, ujung & proporsi silincer dengan lebih akurat.' : 'Belum aktif: isi OPENAI_API_KEY di .env server.' }}</p>
                 </div>
-                <button type="button" class="btn btn-sm" disabled title="Belum aktif: butuh API key Anthropic">Belum aktif</button>
             </div>
         </div>
     </section>

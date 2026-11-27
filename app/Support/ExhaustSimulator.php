@@ -172,11 +172,28 @@ class ExhaustSimulator
                 'brightness' => $num($m['brightness'] ?? null, $mock['brightness'], 0.3, 2),
                 'body_color' => preg_match('/^#[0-9a-f]{6}$/i', (string) ($m['body_color'] ?? '')) ? strtolower($m['body_color']) : $mock['body_color'],
             ],
+            // Model 3D dari foto (Tripo3D): hanya file di folder 3D milik aplikasi.
+            'models' => [
+                'exhaust' => self::modelPath($params['models']['exhaust'] ?? null),
+                'motor' => self::modelPath($params['models']['motor'] ?? null),
+                'exhaust_flip' => filter_var($params['models']['exhaust_flip'] ?? false, FILTER_VALIDATE_BOOL),
+                'motor_flip' => filter_var($params['models']['motor_flip'] ?? false, FILTER_VALIDATE_BOOL),
+                'offset' => [
+                    'x' => $num($params['models']['offset']['x'] ?? null, 0, -400, 400),
+                    'y' => $num($params['models']['offset']['y'] ?? null, 0, -300, 300),
+                    'z' => $num($params['models']['offset']['z'] ?? null, 0, -200, 200),
+                ],
+            ],
             // Desain yang ditampilkan: model parametrik, atau knalpot dari foto referensi (urutan ke-index).
             'source' => ($params['source']['type'] ?? null) === 'reference'
                 ? ['type' => 'reference', 'index' => (int) $num($params['source']['index'] ?? null, 0, 0, 20), 'share' => $num($params['source']['share'] ?? null, 0.6, 0.1, 1)]
                 : ['type' => 'parametric'],
         ];
+    }
+
+    private static function modelPath(mixed $path): ?string
+    {
+        return is_string($path) && preg_match('#^uploads/desain/3d/[A-Za-z0-9_-]+\.glb$#', $path) ? $path : null;
     }
 
     /**

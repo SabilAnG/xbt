@@ -12,7 +12,7 @@ class DesignSimulation extends Model
 {
     use RecordsActivity;
 
-    protected $fillable = ['name', 'motor', 'params', 'references', 'motor_photos', 'thumbnail', 'notes', 'user_id'];
+    protected $fillable = ['name', 'motor', 'params', 'references', 'motor_photos', 'renders', 'thumbnail', 'notes', 'user_id'];
 
     protected function casts(): array
     {
@@ -20,6 +20,7 @@ class DesignSimulation extends Model
             'params' => 'array',
             'references' => 'array',
             'motor_photos' => 'array',
+            'renders' => 'array',
         ];
     }
 

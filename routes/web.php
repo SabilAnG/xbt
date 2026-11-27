@@ -99,6 +99,13 @@ Route::prefix('admin')->group(function () {
         Route::post('formula/{formula}/salin', [Admin\FormulaController::class, 'duplicate'])->name('formulas.duplicate');
         Route::post('simulasi-desain/hitung', [Admin\DesignSimulationController::class, 'simulate'])->name('design-sims.simulate');
         Route::post('simulasi-desain/otomatis', [Admin\DesignSimulationController::class, 'auto'])->name('design-sims.auto');
+        Route::middleware('throttle:10,1')->group(function () {
+            Route::post('simulasi-desain/ai/roda', [Admin\DesignAiController::class, 'locate'])->name('design-sims.ai.locate');
+            Route::post('simulasi-desain/ai/referensi', [Admin\DesignAiController::class, 'reference'])->name('design-sims.ai.reference');
+            Route::post('simulasi-desain/ai/render', [Admin\DesignAiController::class, 'render'])->name('design-sims.ai.render');
+            Route::post('simulasi-desain/3d', [Admin\DesignModel3dController::class, 'start'])->name('design-sims.model3d.start');
+        });
+        Route::get('simulasi-desain/3d/{task}', [Admin\DesignModel3dController::class, 'poll'])->middleware('throttle:60,1')->name('design-sims.model3d.poll');
         Route::post('simulasi-desain/{designSim}/salin', [Admin\DesignSimulationController::class, 'duplicate'])->name('design-sims.duplicate');
         Route::resource('simulasi-desain', Admin\DesignSimulationController::class)->except('show')->names('design-sims')->parameters(['simulasi-desain' => 'designSim']);
         Route::resource('formula', Admin\FormulaController::class)->names('formulas')->parameters(['formula' => 'formula']);

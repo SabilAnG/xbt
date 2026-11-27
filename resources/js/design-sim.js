@@ -22,6 +22,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const MM = 0.01; // 1 satuan scene = 100 mm
 const SEGMENTS = 72; // titik per penampang silincer
@@ -1172,6 +1173,114 @@ function init(root) {
     let showDims = false, motorStyle = 'vector', rig = null;
     // Desain dari foto referensi: knalpot asli dari foto (dipotong & diluruskan) menggantikan model bawaan.
     let refDesign = null, refMesh = null;
+    // Model 3D dari foto (Tripo3D): { path, scene } per jenis; dipakai ulang (geometri tidak dibuang).
+    const glb = { exhaust: null, motor: null };
+    const gltfLoader = new GLTFLoader();
+    const markShared = obj => obj.traverse(o => { if (o.isMesh) o.userData.shared = true; });
+    const disposeTree = obj => obj.traverse(o => { if (!o.userData.shared) o.geometry?.dispose(); });
+
+    // Sebaran tebal di sepertiga kiri vs kanan sumbu x (untuk menebak sisi silincer).
+    function endThickness(obj) {
+        obj.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(obj), third = (box.max.x - box.min.x) / 3;
+        const ends = { neg: [Infinity, -Infinity], pos: [Infinity, -Infinity] }, v = new THREE.Vector3();
+        obj.traverse(o => {
+            if (!o.isMesh) return;
+            const pos = o.geometry.attributes.position, step = Math.max(1, Math.floor(pos.count / 4000));
+            for (let i = 0; i < pos.count; i += step) {
+                v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+                const end = v.x < box.min.x + third ? ends.neg : v.x > box.max.x - third ? ends.pos : null;
+                if (end) { end[0] = Math.min(end[0], v.y); end[1] = Math.max(end[1], v.y); }
+            }
+        });
+        return { neg: ends.neg[1] - ends.neg[0], pos: ends.pos[1] - ends.pos[0] };
+    }
+    // Batas sisi +z di bagian belakang motor (x > batas) → tempat menempelkan knalpot.
+    function rearSideZ(obj, minX) {
+        const v = new THREE.Vector3();
+        let maxZ = 0;
+        obj.updateMatrixWorld(true);
+        obj.traverse(o => {
+            if (!o.isMesh) return;
+            const pos = o.geometry.attributes.position, step = Math.max(1, Math.floor(pos.count / 6000));
+            for (let i = 0; i < pos.count; i += step) {
+                v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+                if (v.x > minX) maxZ = Math.max(maxZ, v.z);
+            }
+        });
+        return maxZ;
+    }
+    // Gaya vektor untuk model foto: matcap netral × tekstur asli + garis luar.
+    function cartoonize(obj, worldScale) {
+        const outline = new THREE.ShaderMaterial({
+            uniforms: { thickness: { value: (1.25 * MM) / worldScale } },
+            vertexShader: mats.outline.vertexShader, fragmentShader: mats.outline.fragmentShader, side: THREE.BackSide,
+        });
+        const meshes = [];
+        obj.traverse(o => { if (o.isMesh) meshes.push(o); });
+        meshes.forEach(m => {
+            const src = Array.isArray(m.material) ? m.material[0] : m.material;
+            m.material = new THREE.MeshMatcapMaterial({ matcap: mats.ill.carbon.matcap, map: src?.map ?? null, color: src?.map ? 0xffffff : (src?.color ?? 0xcccccc) });
+            const line = new THREE.Mesh(m.geometry, outline);
+            line.userData.shared = true;
+            m.add(line);
+        });
+    }
+    // Normalisasi: sumbu terpanjang → x, skala ke ukuran nyata, pusat di titik asal.
+    function fitGlb(src, lengthMm, horizontalOnly) {
+        const inner = src.clone(true);
+        markShared(inner);
+        let size = new THREE.Box3().setFromObject(inner).getSize(new THREE.Vector3());
+        if (size.z > size.x && (horizontalOnly || size.z >= size.y)) inner.rotation.y = Math.PI / 2;
+        else if (!horizontalOnly && size.y > size.x && size.y > size.z) inner.rotation.z = Math.PI / 2;
+        const holder = new THREE.Group();
+        holder.add(inner);
+        holder.updateMatrixWorld(true);
+        size = new THREE.Box3().setFromObject(holder).getSize(new THREE.Vector3());
+        const k = (lengthMm * MM) / Math.max(size.x, 1e-6);
+        holder.scale.setScalar(k);
+        holder.updateMatrixWorld(true);
+        const center = new THREE.Box3().setFromObject(holder).getCenter(new THREE.Vector3());
+        holder.position.sub(center);
+        return { holder, k };
+    }
+    function glbExhaust(vector) {
+        const lengthMm = refDesign?.lengthMm ?? params.silencer.length / Math.max(params.source?.share ?? 0.7, 0.3);
+        const { holder, k } = fitGlb(glb.exhaust.scene, lengthMm, false);
+        const ends = endThickness(holder);
+        let silencerRight = ends.pos >= ends.neg;
+        if (params.models.exhaust_flip) silencerRight = !silencerRight;
+        const group = new THREE.Group();
+        group.add(holder);
+        if (!silencerRight) group.rotation.y = Math.PI;   // samakan arah: silincer di +x (belakang)
+        group.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = !vector; });
+        if (vector) cartoonize(group, k);
+        const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3());
+        return { group, glb: true, lengthMm, width: size.z, dims: { w: size.z / MM, h: size.y / MM } };
+    }
+    function glbMotor(vector) {
+        const spec = SCOOTER[params.motor] || SCOOTER.custom;
+        const lengthMm = spec.wheelbase * 1.45;
+        const { holder, k } = fitGlb(glb.motor.scene, lengthMm, true);
+        const group = new THREE.Group();
+        group.add(holder);
+        // Tripo menghadap +x; konvensi di sini depan −x (belakang +x, sisi knalpot +z).
+        group.rotation.y = params.models.motor_flip ? 0 : Math.PI;
+        group.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(group);
+        group.position.y -= box.min.y;                     // berdiri di lantai
+        group.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = !vector; });
+        if (vector) cartoonize(group, k);
+        group.updateMatrixWorld(true);
+        const rearX = box.max.x - 0.2 * (box.max.x - box.min.x);
+        return { group, rearX: rearX / MM, axleY: spec.tire / 2, tireHalf: 42, sideZ: rearSideZ(group, rearX - 0.25 * (box.max.x - box.min.x)) / MM };
+    }
+    function loadGlb(kind, path) {
+        return gltfLoader.loadAsync(new URL('/' + path, location.origin).href).then(gltf => {
+            glb[kind] = { path, scene: gltf.scene };
+            applyMode();
+        });
+    }
     const refView = Object.assign(document.createElement('div'), { className: 'ds-ref-view', hidden: true });
     const refImg = Object.assign(document.createElement('img'), { alt: 'Desain dari foto referensi' });
     refView.appendChild(refImg);
@@ -1195,29 +1304,34 @@ function init(root) {
     const studioBackground = new THREE.Color(STUDIO);
 
     function rebuild() {
-        if (model) { model.group.parent?.remove(model.group); model.group.traverse(o => o.geometry?.dispose()); }
+        if (model) { model.group.parent?.remove(model.group); disposeTree(model.group); }
         if (reflection) { scene.remove(reflection); reflection = null; }
         if (dims) { scene.remove(dims); dims.traverse(o => { o.geometry?.dispose(); if (o.element) o.element.remove(); }); dims = null; }
-        if (rig) { scene.remove(rig); rig.traverse(o => o.geometry?.dispose()); rig = null; }
+        if (rig) { scene.remove(rig); disposeTree(rig); rig = null; }
         if (refMesh) { refMesh.parent?.remove(refMesh); refMesh.geometry.dispose(); refMesh = null; }
         const vectorStyle = mode === 'cad' || (mode === 'motor' && motorStyle === 'vector');
-        model = buildModel(params, mats, vectorStyle);
+        model = glb.exhaust ? glbExhaust(vectorStyle) : buildModel(params, mats, vectorStyle);
         let framed = model.group;
         if (mode === 'motor') {
-            // Knalpot dipasang di sisi kanan skuter: silincer di samping roda belakang.
-            const bike = buildScooter(params.motor, params.mockup.body_color, mats, vectorStyle);
+            // Knalpot dipasang di sisi kanan motor (+z): silincer di samping roda belakang.
+            const bike = glb.motor ? glbMotor(vectorStyle) : buildScooter(params.motor, params.mockup.body_color, mats, vectorStyle);
+            const side = bike.sideZ ?? bike.tireHalf + 14;
+            const off = params.models.offset, nudge = new THREE.Vector3(off.x, off.y, off.z).multiplyScalar(MM);
             rig = new THREE.Group();
             rig.add(bike.group);
-            if (refDesign) { // knalpot dari foto: dipasang sebagai panel di sisi kanan, ukuran nyata
+            if (model.glb) {
+                model.group.position.set((bike.rearX - 0.1 * model.lengthMm) * MM, (bike.axleY + 40) * MM, side * MM + model.width / 2).add(nudge);
+                rig.add(model.group);
+            } else if (refDesign) { // knalpot dari foto: panel di sisi kanan, ukuran nyata
                 const width = refDesign.lengthMm * MM;
                 refMesh = refPlane(width);
-                const target = new THREE.Vector3((bike.rearX - 170 + 0.6 * params.silencer.length) * MM, (bike.axleY + 30) * MM, (bike.tireHalf + 70) * MM);
-                refMesh.position.copy(target).sub(new THREE.Vector3((refAnchorX() - 0.5) * width, (0.5 - refDesign.anchor.y) * width * refDesign.aspect, 0));
+                const target = new THREE.Vector3((bike.rearX - 170 + 0.6 * params.silencer.length) * MM, (bike.axleY + 30) * MM, (side + 56) * MM);
+                refMesh.position.copy(target).sub(new THREE.Vector3((refAnchorX() - 0.5) * width, (0.5 - refDesign.anchor.y) * width * refDesign.aspect, 0)).add(nudge);
                 rig.add(refMesh);
             } else {
                 const start = model.curve.getPoint(1);
-                const silencerZ = (bike.tireHalf + 14 + model.dims.w / 2) * MM;
-                model.group.position.set((bike.rearX - 170) * MM - start.x, (bike.axleY + 30) * MM - start.y, silencerZ - start.z);
+                const silencerZ = (side + model.dims.w / 2) * MM;
+                model.group.position.set((bike.rearX - 170) * MM - start.x, (bike.axleY + 30) * MM - start.y, silencerZ - start.z).add(nudge);
                 rig.add(model.group);
             }
             framed = rig;
@@ -1228,7 +1342,7 @@ function init(root) {
         size = extent.length();
         if (mode === 'mockup') {
             // Pusat knalpot di titik asal, tampak samping.
-            if (refDesign) {
+            if (refDesign && !model.glb) {
                 refMesh = refPlane(1);
                 mockRoot.add(refMesh);
                 mockBase = { length: 1, height: refDesign.aspect };
@@ -1246,22 +1360,22 @@ function init(root) {
         } else {
             mockRoot.remove(contactShadow);
             scene.add(rig || model.group);
-            const floorY = box.min.y - (mode === 'real' ? 0.06 : 0.15);
+            const floorY = box.min.y - (mode === 'real' ? 0.06 : mode === 'motor' ? 0.005 : 0.15);
             ground.position.y = grid.position.y = floorY + 0.002;
             floorFade.position.y = floorLevel = floorY;
             floorShadow.visible = true;
             floorShadow.renderOrder = 3;
             floorShadow.position.set(center.x, floorY + 0.004, center.z);
-            if (mode === 'motor') floorShadow.scale.set(extent.x * 1.05, extent.z * 1.6, 1);
+            floorShadow.scale.set(extent.x * 1.15, Math.max(extent.z, extent.x * 0.2) * 1.3, 1);
             if (mode === 'real') { // bayangan cermin knalpot di bawah lantai
                 reflection = model.group.clone(true);
+                markShared(reflection);
                 reflection.scale.y = -1;
                 reflection.position.y = 2 * floorY;
                 reflection.traverse(o => { o.castShadow = o.receiveShadow = false; });
                 scene.add(reflection);
             }
-            floorShadow.scale.set(extent.x * 1.15, Math.max(extent.z, extent.x * 0.2) * 1.3, 1);
-            if (mode === 'cad' && showDims) { dims = dimensionLayer(model, params, mats); scene.add(dims); }
+            if (mode === 'cad' && showDims && !model.glb) { dims = dimensionLayer(model, params, mats); scene.add(dims); }
             controls.target.copy(center);
         }
     }
@@ -1276,13 +1390,14 @@ function init(root) {
         floorFade.visible = mode === 'real';
         grid.visible = false;
         floorShadow.visible = !mock;
-        const refShown = !!refDesign && (mode === 'real' || mode === 'cad');
+        const refShown = !!refDesign && !glb.exhaust && (mode === 'real' || mode === 'cad');
         refView.hidden = !refShown;
         refView.classList.toggle('is-vector', mode === 'cad');
         renderer.domElement.style.visibility = refShown ? 'hidden' : '';
         labels.domElement.hidden = refShown;
         root.querySelector('[data-source-chip]').hidden = !refDesign;
-        root.querySelector('[data-export="stl"]').disabled = !!refDesign;
+        root.querySelector('[data-export="stl"]').disabled = !!refDesign || !!glb.exhaust;
+        root.querySelector('[data-glb-adjust]').hidden = !(glb.motor || glb.exhaust);
         root.querySelector('[data-dims-toggle]').hidden = mode !== 'cad' || refShown;
         root.querySelector('[data-motor-style]').hidden = !motor;
         root.querySelector('[data-motor-color]').hidden = !motor;
@@ -1378,11 +1493,13 @@ function init(root) {
         const pxPerMm = wheelPx / tire;
         m.flip = facingRight;                                         // roda belakang di kiri → silincer menghadap kiri
         m.rotation = 0;
-        const lengthMm = refDesign ? refDesign.lengthMm : mockBase.length / MM;
+        const lengthMm = model.glb ? model.lengthMm : refDesign ? refDesign.lengthMm : mockBase.length / MM;
         m.scale = THREE.MathUtils.clamp(lengthMm * pxPerMm / iw, 0.05, 3);
         // Titik 60% sepanjang silincer diletakkan sedikit di belakang as roda belakang.
         let anchor;
-        if (refDesign) {
+        if (model.glb) {
+            anchor = new THREE.Vector3(0.25 * mockBase.length, 0, 0);   // silincer di +x
+        } else if (refDesign) {
             anchor = new THREE.Vector3((refAnchorX() - 0.5) * mockBase.length, (0.5 - refDesign.anchor.y) * mockBase.height, 0);
         } else {
             model.silencer.updateMatrix();
@@ -1399,9 +1516,46 @@ function init(root) {
         return { wheelPx, tire };
     }
 
-    function autoPlace() {
+    /* --------------------------------------------- AI (OpenAI, lewat server) */
+    const aiOn = root.dataset.ai === '1';
+    const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;
+    async function aiPost(url, fields) {
+        const form = new FormData();
+        Object.entries(fields).forEach(([key, value]) => {
+            if (value instanceof Blob) form.append(key, value, key + (value.type === 'image/png' ? '.png' : '.jpg'));
+            else if (value !== null && value !== undefined && value !== '') form.append(key, value);
+        });
+        const response = await fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrfToken(), Accept: 'application/json' }, body: form });
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(json.message || (response.status === 429 ? 'Terlalu sering, tunggu sebentar.' : 'HTTP ' + response.status));
+        return json;
+    }
+    // Gambar (elemen, kanvas atau URL) → berkas kecil untuk dikirim (maks 1600 px).
+    async function imageBlob(source, max = 1600, type = 'image/jpeg') {
+        let el = source;
+        if (typeof source === 'string') el = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = source; });
+        const w = el.naturalWidth || el.width, h = el.naturalHeight || el.height, k = Math.min(1, max / Math.max(w, h));
+        const canvas = Object.assign(document.createElement('canvas'), { width: Math.round(w * k), height: Math.round(h * k) });
+        const g = canvas.getContext('2d');
+        if (type === 'image/jpeg') { g.fillStyle = '#ffffff'; g.fillRect(0, 0, canvas.width, canvas.height); }
+        g.drawImage(el, 0, 0, canvas.width, canvas.height);
+        return new Promise(ok => canvas.toBlob(ok, type, 0.9));
+    }
+
+    async function autoPlace() {
         const status = root.querySelector('[data-auto-status]');
         if (mode !== 'mockup' || !model || !photoEl.naturalWidth) return false;
+        if (aiOn) {
+            status.textContent = 'AI sedang membaca posisi roda di foto…';
+            try {
+                const r = await aiPost(root.dataset.aiLocateUrl, { photo: await imageBlob(photoEl) });
+                const { wheelPx, tire } = placeFromWheel(r.rear_wheel, r.facing === 'right');
+                status.textContent = 'Dipasang oleh AI (keyakinan ' + Math.round(r.confidence * 100) + '%): roda belakang Ø' + Math.round(wheelPx) + ' px ≈ ban ' + tire + ' mm, motor menghadap ' + (r.facing === 'right' ? 'kanan' : 'kiri') + '. Geser bila perlu, lalu coba "Render foto AI".';
+                return true;
+            } catch (err) {
+                status.textContent = 'AI gagal (' + err.message + '), memakai deteksi biasa… ';
+            }
+        }
         const found = detectWheels(photoEl);
         if (!found) { startTapping('Roda tidak terdeteksi otomatis di foto ini. '); return false; }
         const { wheelPx, tire } = placeFromWheel(found.rear, found.facingRight);
@@ -1837,6 +1991,7 @@ function init(root) {
                 sil.finish = found.finish;
             }
             const cut = makeCutout(img, found);
+            if (!initial && glb.exhaust) { glb.exhaust = null; params.models.exhaust = null; }
             refDesign = { ...cut, lengthMm: sil.length / Math.max(found.silencerShare, 0.3), share: found.silencerShare, button };
             refImg.src = cut.url;
             params.source = { type: 'reference', index: 0, share: found.silencerShare };
@@ -1846,6 +2001,8 @@ function init(root) {
             if (initial) { applyMode(); return; }
             changed();
             status.textContent = 'Desain sekarang memakai knalpot dari foto referensi ini (bentuk & warna asli). Lihat di Realistis, CAD, Motor 3D, atau Di foto. Estimasi tenaga memakai ukuran perkiraan: silincer Ø' + sil.width + ' mm.';
+            if (aiOn) aiReadReference(img, status);
+            if (model3dOn) imageBlob(cut.canvas, 1600, 'image/png').then(blob => start3d('exhaust', blob));
             if (mode !== 'real' && mode !== 'motor' && mode !== 'mockup') mode = 'real';
             applyMode();
             root.querySelector('.ds-stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1853,6 +2010,146 @@ function init(root) {
         img.onerror = () => { button?.classList.remove('is-busy'); status.hidden = false; status.textContent = 'Foto tidak bisa dibaca.'; };
         img.src = url;
     }
+
+    const TIP_LABEL = { straight: 'lurus', slash: 'potong miring', double: 'dobel', cap: 'tutup karbon' };
+    async function aiReadReference(img, status) {
+        status.textContent += ' AI sedang membaca detailnya…';
+        try {
+            const r = await aiPost(root.dataset.aiReferenceUrl, { image: await imageBlob(img) });
+            const sil = params.silencer;
+            sil.shape = r.shape;
+            sil.finish = r.finish;
+            sil.tip = r.tip;
+            sil.width = Math.round(THREE.MathUtils.clamp(sil.length * r.diameter_ratio, 50, 180));
+            sil.height = ['round', 'hexagon', 'megaphone'].includes(sil.shape) ? sil.width : Math.round(sil.width * 0.78);
+            if (refDesign) {
+                refDesign.share = r.silencer_share;
+                refDesign.lengthMm = sil.length / Math.max(r.silencer_share, 0.3);
+                params.source.share = r.silencer_share;
+            }
+            syncInputs();
+            changed();
+            status.textContent = 'Desain memakai knalpot dari foto referensi. AI: ' + r.summary + ' (bentuk ' + SHAPE_LABEL[sil.shape] + ', ' + FINISH_LABEL[sil.finish] + ', ujung ' + TIP_LABEL[sil.tip] + ', silincer Ø' + sil.width + ' mm).';
+        } catch (err) {
+            status.textContent += ' (AI gagal: ' + err.message + ')';
+        }
+    }
+
+    /* -------------------------------- render foto-realistis (AI) */
+    // Knalpot parametrik dirender tampak samping dengan latar transparan (bahan untuk AI).
+    function exhaustPng() {
+        const previous = { mode, view: currentView };
+        mode = 'real';
+        applyMode();
+        setView('side');
+        scene.background = null;
+        renderer.setClearColor(0x000000, 0);
+        [ground, floorFade, floorShadow].forEach(o => { o.visible = false; });
+        if (reflection) reflection.visible = false;
+        renderer.render(scene, camera);
+        const url = renderer.domElement.toDataURL('image/png');
+        mode = previous.mode;
+        applyMode();
+        setView(previous.view);
+        return url;
+    }
+
+    const photoReady = () => new Promise(ok => (photoEl.complete && photoEl.naturalWidth ? ok() : photoEl.addEventListener('load', ok, { once: true })));
+    async function aiRender(button) {
+        const status = root.querySelector('[data-auto-status]');
+        if (!photos.length) { status.textContent = 'Unggah foto motor dulu (tab Di motor), lalu tekan Render foto AI.'; return; }
+        const exhaust = refDesign ? await imageBlob(refDesign.canvas, 1600, 'image/png') : await (await fetch(exhaustPng())).blob();
+        if (mode !== 'mockup') { mode = 'mockup'; applyMode(); }
+        await photoReady();
+        const busy = document.createElement('div');
+        busy.className = 'ds-busy-overlay';
+        busy.innerHTML = '<i></i><span>AI sedang merender foto… ±30 detik</span>';
+        viewport.appendChild(busy);
+        button.disabled = true;
+        try {
+            const m = params.mockup;
+            const hint = 'Perkiraan posisi silincer: ' + Math.round(m.x * 100) + '% dari kiri dan ' + Math.round(m.y * 100) + '% dari atas foto, ujung silincer menghadap ' + (m.flip ? 'kiri' : 'kanan') + ' foto.';
+            const r = await aiPost(root.dataset.aiRenderUrl, { photo: await imageBlob(photoEl), exhaust, motor: params.motor, hint, design_id: root.dataset.designId });
+            const result = root.querySelector('[data-render-result]');
+            root.querySelector('[data-render-img]').src = r.url;
+            const link = root.querySelector('[data-render-download]');
+            link.href = r.url;
+            link.download = (root.querySelector('input[name="name"]')?.value || 'render').trim().replace(/[^\w-]+/g, '-').toLowerCase() + '-render-ai.png';
+            root.querySelector('[data-render-note]').textContent = r.saved ? 'Tersimpan di desain ini.' : 'Simpan desain dulu agar hasil render berikutnya ikut tersimpan.';
+            result.hidden = false;
+            status.textContent = 'Render AI selesai. Hasilnya di bawah tombol Render.';
+            result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (err) {
+            status.textContent = 'Render gagal: ' + err.message;
+        } finally {
+            busy.remove();
+            button.disabled = false;
+        }
+    }
+    root.querySelector('[data-ai-render]')?.addEventListener('click', e => aiRender(e.currentTarget));
+
+    /* ------------------------------------- foto → model 3D 360° (Tripo3D) */
+    const model3dOn = root.dataset.model3d === '1';
+    const model3dJobs = {};
+    const KIND_LABEL = { exhaust: 'knalpot', motor: 'motor' };
+    function model3dStatus(text, progress, busy = true) {
+        const bar = root.querySelector('[data-model3d-status]');
+        bar.hidden = !text;
+        bar.querySelector('i').hidden = !busy;
+        root.querySelector('[data-model3d-text]').textContent = text || '';
+        root.querySelector('[data-model3d-bar]').style.width = (progress ?? 0) + '%';
+    }
+    async function start3d(kind, blob) {
+        if (!model3dOn) return;
+        const job = model3dJobs[kind] = Symbol(kind);
+        model3dStatus('Mengunggah foto ' + KIND_LABEL[kind] + ' ke Tripo3D…', 3);
+        try {
+            const { task_id: task } = await aiPost(root.dataset.model3dStartUrl, { image: blob, kind });
+            const deadline = Date.now() + 8 * 60 * 1000;
+            while (Date.now() < deadline) {
+                await new Promise(r => setTimeout(r, 3000));
+                if (model3dJobs[kind] !== job) return;              // sudah diganti permintaan baru
+                const res = await fetch(root.dataset.model3dPollUrl.replace('__TASK__', task), { headers: { Accept: 'application/json' } });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(json.message || 'HTTP ' + res.status);
+                if (json.status === 'success') {
+                    params.models[kind] = json.path;
+                    paramsInput.value = JSON.stringify(params);
+                    model3dStatus('Model 3D ' + KIND_LABEL[kind] + ' jadi. Memuat…', 100);
+                    await loadGlb(kind, json.path);
+                    if (kind === 'motor' && mode !== 'motor') { mode = 'motor'; applyMode(); }
+                    if (kind === 'exhaust' && (mode === 'mockup')) { mode = 'real'; applyMode(); }
+                    model3dStatus('Model 3D ' + KIND_LABEL[kind] + ' siap: putar 360° dengan seret. Tekan Simpan desain agar tersimpan.', 100, false);
+                    return;
+                }
+                model3dStatus('Membuat model 3D ' + KIND_LABEL[kind] + '… ' + (json.progress || 0) + '% (' + (json.status === 'queued' ? 'antre' : 'diproses') + ')', Math.max(5, json.progress || 0));
+            }
+            throw new Error('terlalu lama (lebih dari 8 menit)');
+        } catch (err) {
+            if (model3dJobs[kind] === job) model3dStatus('Model 3D ' + KIND_LABEL[kind] + ' gagal: ' + err.message, 0, false);
+        }
+    }
+    root.querySelector('[data-model3d-exhaust]')?.addEventListener('click', async () => {
+        if (!refDesign) { model3dStatus('Terapkan foto referensi knalpot dulu (tombol Terapkan di kartu fotonya).', 0, false); return; }
+        start3d('exhaust', await imageBlob(refDesign.canvas, 1600, 'image/png'));
+    });
+    root.querySelector('[data-model3d-motor]')?.addEventListener('click', async () => {
+        if (!photos.length) { model3dStatus('Unggah foto motor dulu di tab Di motor.', 0, false); return; }
+        if (mode !== 'mockup') { mode = 'mockup'; applyMode(); }
+        await photoReady();
+        start3d('motor', await imageBlob(photoEl, 2048));
+    });
+    root.querySelectorAll('[data-glb-clear]').forEach(b => b.addEventListener('click', () => {
+        const kind = b.dataset.glbClear;
+        glb[kind] = null;
+        params.models[kind] = null;
+        paramsInput.value = JSON.stringify(params);
+        applyMode();
+    }));
+    // Desain tersimpan dengan model 3D → muat.
+    ['exhaust', 'motor'].forEach(kind => {
+        if (params.models?.[kind]) loadGlb(kind, params.models[kind]).catch(() => model3dStatus('Model 3D ' + KIND_LABEL[kind] + ' tersimpan tidak bisa dimuat.', 0, false));
+    });
 
     // Urutan foto referensi saat disimpan (yang dicentang Hapus dilewati, foto baru di belakang).
     function finalRefIndex() {
@@ -1867,6 +2164,8 @@ function init(root) {
 
     root.querySelector('[data-source-reset]')?.addEventListener('click', () => {
         refDesign = null;
+        glb.exhaust = null;
+        params.models.exhaust = null;
         params.source = { type: 'parametric' };
         paramsInput.value = JSON.stringify(params);
         applyMode();
